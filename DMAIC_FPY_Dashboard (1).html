@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Richard Milburn, DMAIC Project Board: First Pass Yield, Stage 8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #0B1220;
+    --surface: #11192B;
+    --border: #2A3A52;
+    --teal: #00D9C0;
+    --gold: #FFB800;
+    --green: #00E68A;
+    --red: #FF3B5C;
+    --text: #F1F5F9;
+    --muted: #8B9CB5;
+    --dim: #5A6B85;
+    --font-body: "Barlow", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-head: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 16px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 1400px; margin: 0 auto; }
+  a { color: var(--teal); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  header { margin-bottom: 24px; }
+  .backlink { display: inline-block; font-size: 14px; margin-bottom: 14px; }
+  header h1 {
+    font-family: var(--font-head);
+    font-size: clamp(32px, 5vw, 46px);
+    line-height: 1.05;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  header .sub { font-size: 15px; color: var(--muted); margin-bottom: 2px; max-width: 80ch; }
+  header .obj {
+    font-size: 15px;
+    color: var(--gold);
+    background: var(--surface);
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 6px;
+    margin-top: 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+  }
+
+  .board { display: flex; flex-wrap: wrap; gap: 12px; }
+  .col {
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    min-width: 240px;
+  }
+  @media (max-width: 1100px) { .col { flex: 1 1 45%; } }
+  @media (max-width: 640px) { .col { flex: 1 1 100%; } }
+
+  .col-head {
+    padding: 12px 14px;
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 2px solid var(--teal);
+  }
+  .col-head .n {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--teal);
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .col-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 11px 12px; }
+  .card h4 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+  .card p, .card li { font-size: 14px; color: var(--text); margin: 0; }
+  .card ul { padding-left: 18px; margin: 2px 0 0; }
+  .card li { margin-bottom: 4px; }
+  .card .note { color: var(--muted); margin-top: 8px; font-size: 13.5px; }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .lbl { color: var(--muted); }
+  .stat-row .val { color: var(--text); font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .val.bad { color: var(--red); }
+  .val.good { color: var(--green); }
+  .val.warn { color: var(--gold); }
+
+  .bignum { font-family: var(--font-head); font-size: 28px; font-weight: 700; line-height: 1.1; white-space: nowrap; }
+  .bignum.bad { color: var(--red); }
+  .bignum.good { color: var(--green); }
+  .arrow-flow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .arrow-flow .to { color: var(--muted); font-size: 15px; }
+
+  .tag {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 1px 8px;
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .tag.rpn-hi { background: rgba(255, 59, 92, 0.2); border-color: var(--red); }
+
+  .chart-box { position: relative; width: 100%; height: 220px; }
+  canvas { max-width: 100%; }
+
+  .rca-branch {
+    font-size: 14px;
+    padding-left: 10px;
+    border-left: 2px solid var(--teal);
+    margin-bottom: 6px;
+  }
+  .rca-branch b { font-weight: 600; }
+  .i1 { margin-left: 14px; }
+  .i2 { margin-left: 28px; }
+  .i3 { margin-left: 42px; }
+  .flag { color: var(--gold); margin-top: 8px; }
+  .small { color: var(--muted); font-size: 13px; }
+
+  footer { margin-top: 30px; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <a class="backlink" href="index.html">Back to the portfolio hub</a>
+    <h1>DMAIC Project Board</h1>
+    <div class="sub">Lean Six Sigma Green Belt project: First Pass Yield at Stage 8, caravan assembly line</div>
+    <div class="sub">Richard Milburn, Erwin Hymer Group UK (Elddis), Cell Leader</div>
+    <div class="obj">Objective: raise Stage 8 First Pass Yield from a low-50s baseline to a sustained 96%+</div>
+  </header>
+
+  <div class="board">
+
+    <!-- DEFINE -->
+    <section class="col define" aria-labelledby="h-define">
+      <h2 class="col-head" id="h-define" style="margin:0"><span class="n">1</span>Define</h2>
+      <div class="col-body">
+
+        <div class="card">
+          <h4>Problem statement</h4>
+          <p>Stage 8 First Pass Yield was inconsistent and frequently below target, driving rework, delayed sign-off, and Damaged-in-Production scrap cost above budget.</p>
+        </div>
+
+        <div class="card">
+          <h4>Project charter</h4>
+          <ul>
+            <li><b>Project:</b> Improve FPY at Stage 8</li>
+            <li><b>Method:</b> DMAIC</li>
+            <li><b>Scope:</b> Caravan assembly, Stage 8 PDI checkpoint</li>
+            <li><b>Team:</b> Production, Quality, Engineering (DCR)</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>SIPOC (summary)</h4>
+          <p><b>Suppliers:</b> Goods-in, upstream stages<br>
+          <b>Inputs:</b> Torque wrench cal., operator competency, jig cal., DCR status<br>
+          <b>Process:</b> Stage 8 assembly &amp; PDI check<br>
+          <b>Outputs:</b> Pass/fail status, fault category<br>
+          <b>Customers:</b> PDI, downstream stages, end customer</p>
+        </div>
+
+        <div class="card">
+          <h4>VOC / CTQ</h4>
+          <ul>
+            <li>First-time pass rate</li>
+            <li>Consistent, auditable measurement</li>
+            <li>Reduced DiP scrap cost</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MEASURE -->
+    <section class="col measure" aria-labelledby="h-measure">
+      <h2 class="col-head" id="h-measure" style="margin:0"><span class="n">2</span>Measure</h2>
+      <div class="col-body">
+
+        <div class="card">
+          <h4>Baseline data</h4>
+          <div class="stat-row"><span class="lbl">Pre-programme mean FPY</span><span class="val bad">68.8%</span></div>
+          <div class="stat-row"><span class="lbl">Post-programme mean FPY</span><span class="val good">82.4%</span></div>
+          <div class="stat-row"><span class="lbl">Individual weeks reaching</span><span class="val good">100%</span></div>
+          <div class="stat-row"><span class="lbl">Sustained peak performance</span><span class="val">96%+</span></div>
+          <p class="note">The low 50s is the starting baseline and 96%+ is the sustained peak. The 68.8% and 82.4% figures are the averages either side of the programme.</p>
+        </div>
+
+        <div class="card">
+          <h4>Data collection plan</h4>
+          <p style="margin-bottom:5px;">2 Y variables, 4 X variables tracked:</p>
+          <ul>
+            <li><b>Y:</b> Pass/fail status (Avante system)</li>
+            <li><b>Y:</b> Fault category</li>
+            <li><b>X:</b> Torque wrench calibration</li>
+            <li><b>X:</b> Operator competency stage</li>
+            <li><b>X:</b> Jig/fixture calibration</li>
+            <li><b>X:</b> DCR status</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Measurement system</h4>
+          <p>All faults logged on Avante, including on-the-spot corrections. Vans cannot receive final sign-off until every fault clears, which gives an auditable, gap-free measure of first-time pass performance.</p>
+        </div>
+
+        <div class="card">
+          <h4>FPY trend (illustrative)</h4>
+          <p class="small" style="margin-bottom:6px;">Shape reflects the real baseline to sustained 96%+ improvement. A formal weekly tracking gap existed between wk3 and wk16 before the programme was fully established.</p>
+          <div class="chart-box"><canvas id="fpyChart" role="img" aria-label="Illustrative weekly First Pass Yield trend, rising from the mid 50s to the mid to high 90s, with a tracking gap between week 3 and week 16"></canvas></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ANALYZE -->
+    <section class="col analyze" aria-labelledby="h-analyze">
+      <h2 class="col-head" id="h-analyze" style="margin:0"><span class="n">3</span>Analyze</h2>
+      <div class="col-body">
+
+        <div class="card">
+          <h4>C&amp;E matrix: top inputs</h4>
+          <div class="stat-row"><span class="lbl">Operator competency</span><span class="val warn">543</span></div>
+          <div class="stat-row"><span class="lbl">Torque wrench calibration</span><span class="val warn">433</span></div>
+          <div class="stat-row"><span class="lbl">SOP / work instruction clarity</span><span class="val">411</span></div>
+          <div class="stat-row"><span class="lbl">Jig / fixture calibration</span><span class="val">385</span></div>
+          <div class="stat-row"><span class="lbl">Goods-in component quality</span><span class="val">381</span></div>
+        </div>
+
+        <div class="card">
+          <h4>PFMEA: highest RPN</h4>
+          <p style="margin-bottom:6px;">Both top failure modes trace to torque discipline:</p>
+          <div class="stat-row"><span class="lbl">Torque wrench calibration</span><span class="tag rpn-hi">RPN 192</span></div>
+          <div class="stat-row"><span class="lbl">Operator torque discipline</span><span class="tag rpn-hi">RPN 192</span></div>
+          <p class="flag">Both flagged with weak or no current detection control, so the action is to collect data.</p>
+        </div>
+
+        <div class="card">
+          <h4>Root cause (5 Why style)</h4>
+          <div class="rca-branch"><b>Fault:</b> torque-related rework at Stage 8</div>
+          <div class="rca-branch i1">Why? No continuous torque reading recorded</div>
+          <div class="rca-branch i2">Why? Wrench calibration tracked as pass/fail only</div>
+          <div class="rca-branch i3">Why? No formal continuous calibration log existed</div>
+        </div>
+
+        <div class="card">
+          <h4>Regression check</h4>
+          <p>Weekly FPY vs time: quadratic fit R&sup2; = 0.275. Time alone is a weak predictor, which points to the process inputs above, not the passage of time, as the real drivers.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- IMPROVE -->
+    <section class="col improve" aria-labelledby="h-improve">
+      <h2 class="col-head" id="h-improve" style="margin:0"><span class="n">4</span>Improve</h2>
+      <div class="col-body">
+
+        <div class="card">
+          <h4>Interventions</h4>
+          <ul>
+            <li>Shop-floor teams given direct ownership of quality at Stage 8</li>
+            <li>Torque wrench &amp; jig calibration upgraded from attribute (in/out) to continuous logging</li>
+            <li>DCR escalation used to route recurring faults to Engineering for design-level fix</li>
+            <li>Cross-functional 3x3 training raised operator capability from about 70% to 100% across 3 roles in 5 months</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Result</h4>
+          <div class="arrow-flow">
+            <span class="bignum bad">low 50s</span>
+            <span class="to">to</span>
+            <span class="bignum good">96%+</span>
+          </div>
+          <p style="margin-top:4px;">Sustained, with individual weeks reaching 100%.</p>
+        </div>
+
+        <div class="card">
+          <h4>Linked wins</h4>
+          <div class="stat-row"><span class="lbl">Vehicle defect reduction</span><span class="val good">40%</span></div>
+          <div class="stat-row"><span class="lbl">DiP scrap vs annual budget</span><span class="val good">17.7% under</span></div>
+          <div class="stat-row"><span class="lbl">Team skills competency</span><span class="val">36% to 86.6%</span></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CONTROL -->
+    <section class="col control" aria-labelledby="h-control">
+      <h2 class="col-head" id="h-control" style="margin:0"><span class="n">5</span>Control</h2>
+      <div class="col-body">
+
+        <div class="card">
+          <h4>Control strategy</h4>
+          <ul>
+            <li>Sustain gains through daily SQCDP performance tracking</li>
+            <li>Continuous torque &amp; jig calibration logs kept live, not retrospective</li>
+            <li>Root-cause escalation via DCR remains standing process</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Control plan</h4>
+          <div class="stat-row"><span class="lbl">SOP / QVA critical coverage</span><span class="val good">97.7%</span></div>
+          <div class="stat-row"><span class="lbl">DCR close rate</span><span class="val good">93%</span></div>
+          <div class="stat-row"><span class="lbl">Site DCRs raised</span><span class="val">29 of 38</span></div>
+          <div class="stat-row"><span class="lbl">Cross-functionality</span><span class="val">44.2%</span></div>
+        </div>
+
+        <div class="card">
+          <h4>Lessons learned</h4>
+          <ul>
+            <li>Clear direction and genuine team ownership drove results, not top-down enforcement alone</li>
+            <li>Continuous data beats attribute data even when it costs more upfront to set up</li>
+            <li>Data-driven root cause outperforms inspection/rework as the fix</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h4>Note on scope</h4>
+          <p class="small">C&amp;E matrix and PFMEA scoring shown here reflect the Green Belt project workup built from this data. FPY baseline and improvement figures are the real, verified production results.</p>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <footer>DMAIC turns process data into sustainable improvement. Richard Milburn, Lean Six Sigma Green Belt (CSSC Accredited, July 2026)</footer>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+(function () {
+  if (typeof Chart === 'undefined') return;
+  const cs = getComputedStyle(document.body);
+  Chart.defaults.font.family = cs.fontFamily;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  new Chart(document.getElementById('fpyChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['wk42','wk43','wk44','wk45','wk46','wk47','wk48','wk49','wk50','wk51','wk52','wk1','wk2','wk3','(gap: not tracked)','wk16','wk17','wk18','wk19','wk20','wk21','wk22','wk23','wk24','wk25','wk26'],
+      datasets: [{
+        label: 'FPY %',
+        data: [58,62,55,64,70,66,72,68,74,71,69,73,75,72,null,78,84,88,91,96,94,100,97,95,98,96],
+        borderColor: '#00D9C0',
+        backgroundColor: 'rgba(0,217,192,0.15)',
+        borderWidth: 2,
+        pointRadius: 2,
+        spanGaps: false,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: reduce ? false : undefined,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8B9CB5', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: '#2A3A52' } },
+        y: { min: 40, max: 100, ticks: { color: '#8B9CB5', font: { size: 11 }, callback: v => v + '%' }, grid: { color: '#2A3A52' } }
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>

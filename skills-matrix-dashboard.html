@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Skills Matrix and Cross-Training Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+:root {
+  --bg: #0B1220;
+  --surface: #11192B;
+  --border: #2A3A52;
+  --teal: #00D9C0;
+  --gold: #FFB800;
+  --green: #00E68A;
+  --red: #FF3B5C;
+  --text: #F1F5F9;
+  --muted: #8B9CB5;
+  --dim: #5A6B85;
+  --font-body: "Barlow", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-head: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+a { color: var(--teal); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Header */
+.top { padding: 28px 0 8px; }
+.back { font-size: 14px; }
+h1 {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: clamp(32px, 6vw, 48px);
+  line-height: 1.05;
+  letter-spacing: 0.2px;
+  margin: 14px 0 10px;
+}
+.lede { color: var(--muted); max-width: 64ch; margin: 0; }
+
+/* Fact band */
+.facts {
+  list-style: none;
+  margin: 24px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.facts li { padding: 16px 18px; border-left: 1px solid var(--border); }
+.facts li:first-child { border-left: 0; }
+.fact-val {
+  display: block;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--teal);
+}
+.fact-lbl { display: block; font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+/* Sections and panels */
+main section { margin-top: 36px; }
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+}
+h2 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+h3 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.2;
+  margin: 0 0 4px;
+}
+.note { color: var(--muted); font-size: 14px; margin: 0 0 16px; max-width: 78ch; }
+
+/* Matrix controls */
+.controls { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; margin-bottom: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.seg button {
+  font: 500 14px var(--font-body);
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 8px 14px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--bg); color: var(--teal); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.sw-full { background: var(--green); }
+.sw-high { background: var(--teal); }
+.sw-mid { background: var(--gold); }
+.sw-low { background: var(--red); }
+
+/* Matrix table */
+.matrix-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; }
+table.matrix { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 700px; }
+.matrix th, .matrix td { padding: 3px; }
+.matrix thead th {
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--muted);
+  text-align: center;
+  vertical-align: bottom;
+  padding: 10px 4px;
+  min-width: 70px;
+  border-bottom: 1px solid var(--border);
+}
+.matrix th.rowh {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--surface);
+  text-align: left;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
+  padding: 3px 12px;
+  min-width: 108px;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+}
+.matrix thead th.rowh { color: var(--muted); font-size: 13px; z-index: 2; }
+.matrix tbody tr:last-child td, .matrix tbody tr:last-child th { padding-bottom: 6px; }
+.matrix .totcol { border-left: 1px solid var(--border); }
+button.cell {
+  display: block;
+  width: 100%;
+  height: 38px;
+  border: 0;
+  border-left: 3px solid var(--dim);
+  border-radius: 4px;
+  color: var(--text);
+  background: var(--bg);
+  font: 600 15px var(--font-body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+button.cell.full { background: rgba(0, 230, 138, 0.20); border-left-color: var(--green); }
+button.cell.high { background: rgba(0, 217, 192, 0.20); border-left-color: var(--teal); }
+button.cell.mid  { background: rgba(255, 184, 0, 0.20); border-left-color: var(--gold); }
+button.cell.low  { background: rgba(255, 59, 92, 0.22); border-left-color: var(--red); }
+button.cell.is-active { outline: 2px solid var(--text); outline-offset: 1px; }
+.matrix tfoot td, .matrix tfoot th {
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  border-top: 1px solid var(--border);
+  padding: 8px 4px;
+}
+.matrix tfoot th.rowh { text-align: left; color: var(--muted); white-space: normal; line-height: 1.25; }
+.matrix tfoot tr + tr td, .matrix tfoot tr + tr th { border-top: 0; padding-top: 2px; }
+.readout { min-height: 24px; margin: 12px 0 0; font-size: 15px; }
+.callout { margin: 6px 0 0; font-size: 15px; color: var(--muted); max-width: 80ch; }
+.callout strong { color: var(--gold); font-weight: 600; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button.cell { animation: cellin 0.35s ease-out both; animation-delay: var(--d, 0ms); }
+  @keyframes cellin { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* Radars */
+.radars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.radar { background: var(--bg); border: 1px solid var(--border); border-top: 3px solid var(--dim); border-radius: 8px; padding: 12px 12px 8px; min-width: 0; }
+.radar.full { border-top-color: var(--green); }
+.radar.high { border-top-color: var(--teal); }
+.radar.mid  { border-top-color: var(--gold); }
+.radar.low  { border-top-color: var(--red); }
+.rhead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rname { font-family: var(--font-head); font-weight: 600; font-size: 20px; line-height: 1.2; margin: 0; }
+.rstat { margin: 0; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.radar svg { display: block; width: 100%; max-width: 380px; height: auto; margin: 4px auto 0; }
+svg .ring, svg .spoke { fill: none; stroke: var(--border); stroke-width: 1; }
+svg .team { fill: none; stroke: var(--gold); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linejoin: round; }
+svg .opoly { fill: rgba(0, 217, 192, 0.22); stroke: var(--teal); stroke-width: 2.5; stroke-linejoin: round; }
+svg .marker.v-full { fill: var(--green); stroke: var(--bg); stroke-width: 1.5; }
+svg .marker.v-high { fill: var(--teal); stroke: var(--bg); stroke-width: 1.5; }
+svg .marker.v-mid  { fill: var(--gold); stroke: var(--bg); stroke-width: 1.5; }
+svg .marker.v-low  { fill: var(--red); stroke: var(--bg); stroke-width: 1.5; }
+svg .rlabel { fill: var(--muted); font-family: var(--font-body); font-size: 13px; }
+.legend svg { width: 24px; height: 8px; }
+
+/* Charts */
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.charts > figure { min-width: 0; }
+.chart-host { width: 100%; }
+.chart-host svg { display: block; overflow: visible; }
+svg .grid { stroke: var(--border); stroke-width: 1; }
+svg .axis { fill: var(--muted); font-family: var(--font-body); font-size: 12px; }
+svg .dlabel {
+  fill: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 10px 0 0; padding: 0; font-size: 13px; color: var(--muted); }
+.key li { display: inline-flex; align-items: center; gap: 8px; }
+.key svg { width: 30px; height: 10px; }
+
+/* Method cycle */
+.cycle { list-style: none; margin: 16px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 22px; counter-reset: step; }
+.cycle li { counter-increment: step; border-top: 2px solid var(--teal); padding: 14px 0 10px; }
+.cycle .st-head { display: block; font-family: var(--font-head); font-weight: 600; font-size: 20px; color: var(--teal); }
+.cycle .st-head::before { content: counter(step) ". "; color: var(--gold); }
+.cycle .st-body { display: block; margin-top: 2px; }
+.cycle-note { margin: 12px 0 0; padding-left: 12px; border-left: 3px solid var(--gold); max-width: 80ch; }
+
+/* Evidence */
+.evidence { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.evidence li { padding: 16px 18px 16px 0; border-bottom: 1px solid var(--border); }
+.evidence li:nth-child(even) { padding-left: 18px; border-left: 1px solid var(--border); padding-right: 0; }
+.evidence .ev-head { display: block; font-family: var(--font-head); font-weight: 600; font-size: 20px; color: var(--teal); }
+.evidence .ev-body { display: block; color: var(--text); margin-top: 2px; }
+
+footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
+
+@media (max-width: 999px) {
+  .radars { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 699px) {
+  .radars { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .charts { grid-template-columns: 1fr; }
+  .cycle { grid-template-columns: repeat(2, 1fr); }
+  .facts { grid-template-columns: repeat(2, 1fr); }
+  .facts li:nth-child(3) { border-left: 0; }
+  .facts li:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 14px; }
+  .panel { padding: 16px; }
+  .facts { grid-template-columns: 1fr; }
+  .facts li { border-left: 0; border-top: 1px solid var(--border); }
+  .facts li:first-child { border-top: 0; }
+  .evidence { grid-template-columns: 1fr; }
+  .cycle { grid-template-columns: 1fr; }
+  .evidence li, .evidence li:nth-child(even) { padding: 14px 0; border-left: 0; }
+  h2 { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="back" href="index.html">Back to the portfolio hub</a>
+    <h1>Skills matrix and cross-training</h1>
+    <p class="lede">How a direct team of 11 grew process coverage on a caravan production line, and how cross-training took three job roles to full competency. Names are anonymised.</p>
+    <ul class="facts">
+      <li><span class="fact-val">36% to 86.6%</span><span class="fact-lbl">skills coverage over two years</span></li>
+      <li><span class="fact-val">348 of 401</span><span class="fact-lbl">processes at Operating status</span></li>
+      <li><span class="fact-val">70% to 100%</span><span class="fact-lbl">competency in three roles in five months</span></li>
+      <li><span class="fact-val">260</span><span class="fact-lbl">critical processes mapped from scratch</span></li>
+    </ul>
+  </div>
+</header>
+
+<main class="wrap">
+  <noscript><p class="note">This dashboard needs JavaScript to draw the matrix and charts.</p></noscript>
+
+  <section id="matrix" aria-labelledby="matrix-h">
+    <div class="panel">
+      <h2 id="matrix-h">Skills by operator, direct team of 11</h2>
+      <p class="note">Each radar shows one operator's share of assigned processes at Operating in each area, against the team average. Dot colours mark the coverage bands. Switch to the matrix for exact counts. Team totals match the verified figures. The split by person and by area is illustrative, and operator names are anonymised.</p>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Choose view">
+          <button type="button" id="view-radar" aria-pressed="true">Radar per operator</button>
+          <button type="button" id="view-matrix" aria-pressed="false">Matrix</button>
+        </div>
+        <div class="seg" role="group" aria-label="Sort operators">
+          <button type="button" id="sort-order" aria-pressed="true">Operator order</button>
+          <button type="button" id="sort-gaps" aria-pressed="false">Lowest coverage first</button>
+        </div>
+        <ul class="legend" aria-label="Colour key for coverage">
+          <li><span class="swatch sw-full"></span>All at Operating</li>
+          <li><span class="swatch sw-high"></span>80% to 99%</li>
+          <li><span class="swatch sw-mid"></span>50% to 79%</li>
+          <li><span class="swatch sw-low"></span>Under 50%</li>
+          <li id="legend-team"><svg viewBox="0 0 24 8" aria-hidden="true"><line x1="1" y1="4" x2="23" y2="4" stroke="#FFB800" stroke-width="2" stroke-dasharray="5 4"/></svg>Team average</li>
+        </ul>
+      </div>
+      <div class="radars" id="radar-view"></div>
+      <div id="matrix-view" hidden>
+        <div class="matrix-wrap" tabindex="-1">
+          <table class="matrix" id="matrix-table">
+            <caption class="sr-only">Processes at Operating status out of processes assigned, by operator and process area</caption>
+            <thead id="matrix-head"></thead>
+            <tbody id="matrix-body"></tbody>
+            <tfoot id="matrix-foot"></tfoot>
+          </table>
+        </div>
+        <p class="readout" id="readout" aria-live="polite">Select a cell to see the detail.</p>
+      </div>
+      <p class="callout" id="callout"></p>
+    </div>
+  </section>
+
+  <section id="trends" aria-label="Coverage and cross-training trends">
+    <div class="charts">
+      <figure class="panel" style="margin:0">
+        <h3>Skills coverage over two years</h3>
+        <p class="note">Share of assigned processes at Operating status, by quarter. The start point is the first measurement and the end point comes from the matrix. The quarters between are illustrative.</p>
+        <div class="chart-host" id="chart-coverage"></div>
+      </figure>
+      <figure class="panel" style="margin:0">
+        <h3>3x3 cross-training programme</h3>
+        <p class="note">Competency in three job roles over five months, with months along the bottom. Start and end points are my own figures. The months between are illustrative. The vertical axis starts at 60%.</p>
+        <div class="chart-host" id="chart-cross"></div>
+        <ul class="key" id="cross-key"></ul>
+      </figure>
+    </div>
+  </section>
+
+  <section id="method" aria-labelledby="method-h">
+    <div class="panel">
+      <h2 id="method-h">How I developed people</h2>
+      <ol class="cycle">
+        <li><span class="st-head">SOPs first</span><span class="st-body">Training started from the standard operating procedure on the critical processes.</span></li>
+        <li><span class="st-head">Buddy up</span><span class="st-body">Each person was paired with an operative who had years of experience on the process.</span></li>
+        <li><span class="st-head">Quality audit</span><span class="st-body">Quality audits made sure the job was done right.</span></li>
+        <li><span class="st-head">Widen the skills</span><span class="st-body">Once someone reached the level the company required, they trained on other processes where the single point of failure risk was highest.</span></li>
+      </ol>
+      <p class="cycle-note">Then the cycle started again, until there were no gaps left.</p>
+    </div>
+  </section>
+
+  <section id="evidence" aria-labelledby="evidence-h">
+    <div class="panel">
+      <h2 id="evidence-h">Evidence behind the numbers</h2>
+      <ul class="evidence">
+        <li><span class="ev-head">Built from scratch</span><span class="ev-body">Built the skills matrix covering 260 critical processes and led a team of 29.</span></li>
+        <li><span class="ev-head">Cross-training that landed</span><span class="ev-body">The 3x3 programme took three job roles from about 70% to 100% competency in five months.</span></li>
+        <li><span class="ev-head">Coverage you can verify</span><span class="ev-body">Skills coverage rose from 36% to 86.6% over two years, with 348 of 401 processes at Operating status across my direct team of 11.</span></li>
+        <li><span class="ev-head">Engagement in safety</span><span class="ev-body">108 near-miss reports raised through SafetyQube, an EHS management system, closed at 99.7%, with a 22% uplift in site-wide near-miss reporting.</span></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Richard Milburn, operations and continuous improvement. Team totals are verified against the matrix. The person-level and month-level detail is illustrative.</div>
+</footer>
+
+<script>
+/* Edit the figures here. Totals must stay consistent with your CV and interview evidence. */
+const DATA = {
+  "areas": [
+    "Chassis and floor",
+    "Walls and frame",
+    "Roof and body",
+    "Electrical",
+    "Plumbing and gas",
+    "Fit out",
+    "Finishing and trim",
+    "Final checks"
+  ],
+  "areasShort": [
+    "Chassis",
+    "Walls",
+    "Roof",
+    "Electrical",
+    "Plumbing",
+    "Fit out",
+    "Finishing",
+    "Checks"
+  ],
+  "operators": [
+    {
+      "name": "Operator 1",
+      "cells": [
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 3,
+          "o": 2
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 6
+        }
+      ]
+    },
+    {
+      "name": "Operator 2",
+      "cells": [
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 3,
+          "o": 3
+        }
+      ]
+    },
+    {
+      "name": "Operator 3",
+      "cells": [
+        {
+          "n": 3,
+          "o": 2
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 2
+        }
+      ]
+    },
+    {
+      "name": "Operator 4",
+      "cells": [
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 4,
+          "o": 4
+        }
+      ]
+    },
+    {
+      "name": "Operator 5",
+      "cells": [
+        {
+          "n": 6,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 7,
+          "o": 7
+        },
+        {
+          "n": 5,
+          "o": 3
+        }
+      ]
+    },
+    {
+      "name": "Operator 6",
+      "cells": [
+        {
+          "n": 5,
+          "o": 2
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 3
+        },
+        {
+          "n": 4,
+          "o": 1
+        },
+        {
+          "n": 7,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 4,
+          "o": 2
+        }
+      ]
+    },
+    {
+      "name": "Operator 7",
+      "cells": [
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 7,
+          "o": 6
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 3,
+          "o": 3
+        }
+      ]
+    },
+    {
+      "name": "Operator 8",
+      "cells": [
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 3,
+          "o": 3
+        }
+      ]
+    },
+    {
+      "name": "Operator 9",
+      "cells": [
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 4
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 3
+        }
+      ]
+    },
+    {
+      "name": "Operator 10",
+      "cells": [
+        {
+          "n": 6,
+          "o": 4
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 6,
+          "o": 5
+        },
+        {
+          "n": 4,
+          "o": 4
+        },
+        {
+          "n": 6,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 6
+        }
+      ]
+    },
+    {
+      "name": "Operator 11",
+      "cells": [
+        {
+          "n": 4,
+          "o": 3
+        },
+        {
+          "n": 6,
+          "o": 5
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 5,
+          "o": 5
+        },
+        {
+          "n": 6,
+          "o": 6
+        },
+        {
+          "n": 7,
+          "o": 7
+        },
+        {
+          "n": 3,
+          "o": 3
+        },
+        {
+          "n": 3,
+          "o": 3
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "labels": [
+      "Start",
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q5",
+      "Q6",
+      "Q7",
+      "Q8"
+    ],
+    "values": [
+      36,
+      44,
+      53,
+      61,
+      69,
+      75,
+      80,
+      84,
+      86.6
+    ]
+  },
+  "cross": {
+    "labels": [
+      "Start",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "roles": [
+      {
+        "name": "Job role 1",
+        "values": [
+          70,
+          76,
+          83,
+          90,
+          96,
+          100
+        ]
+      },
+      {
+        "name": "Job role 2",
+        "values": [
+          68,
+          74,
+          80,
+          88,
+          95,
+          100
+        ]
+      },
+      {
+        "name": "Job role 3",
+        "values": [
+          72,
+          78,
+          85,
+          91,
+          97,
+          100
+        ]
+      }
+    ]
+  }
+};
+
+const $ = (s, r = document) => r.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+
+function bandOf(p) { return p >= 1 ? 'full' : p >= 0.8 ? 'high' : p >= 0.5 ? 'mid' : 'low'; }
+const pct = (o, n) => Math.round((o / n) * 100);
+
+/* ---------- Operators: radar and matrix ---------- */
+let sortMode = 'order';
+let view = 'radar';
+let activeBtn = null;
+
+function opStats(op) {
+  const n = op.cells.reduce((a, c) => a + c.n, 0);
+  const o = op.cells.reduce((a, c) => a + c.o, 0);
+  return { n, o, p: o / n };
+}
+
+function orderedOps() {
+  const ops = DATA.operators.map((op, idx) => Object.assign({ idx }, op, opStats(op)));
+  if (sortMode === 'gaps') ops.sort((a, b) => a.p - b.p || a.idx - b.idx);
+  return ops;
+}
+
+function areaTotals() {
+  return DATA.areas.map((_, j) => ({
+    o: DATA.operators.reduce((a, op) => a + op.cells[j].o, 0),
+    n: DATA.operators.reduce((a, op) => a + op.cells[j].n, 0)
+  }));
+}
+
+function radarSVG(op, totals) {
+  const areas = DATA.areas, short = DATA.areasShort, n = areas.length;
+  const W = 320, H = 262, cx = 160, cy = 130, R = 78;
+  const ang = i => (i * 2 * Math.PI) / n;
+  const pt = (i, f, r = R) => [cx + Math.sin(ang(i)) * r * f, cy - Math.cos(ang(i)) * r * f];
+  const path = fr => 'M' + fr.map((f, i) => pt(i, f).map(v => v.toFixed(1)).join(' ')).join(' L') + ' Z';
+  const opVals = op.cells.map(c => c.o / c.n);
+  const teamVals = totals.map(t => t.o / t.n);
+  const label = `${op.name}: ` + areas.map((a, j) => `${a} ${pct(op.cells[j].o, op.cells[j].n)}%`).join(', ');
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">`;
+  [0.25, 0.5, 0.75, 1].forEach(f => { s += `<path class="ring" d="${path(Array(n).fill(f))}"/>`; });
+  for (let i = 0; i < n; i++) {
+    const p = pt(i, 1);
+    s += `<line class="spoke" x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"/>`;
+  }
+  s += `<path class="team data-line" d="${path(teamVals)}"/>`;
+  s += `<path class="opoly data-line" d="${path(opVals)}"/>`;
+  op.cells.forEach((c, i) => {
+    const p = pt(i, c.o / c.n);
+    s += `<circle class="marker v-${bandOf(c.o / c.n)}" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5"><title>${op.name}, ${areas[i]}: ${c.o} of ${c.n} at Operating (${pct(c.o, c.n)}%)</title></circle>`;
+  });
+  for (let i = 0; i < n; i++) {
+    const sin = Math.sin(ang(i)), cos = Math.cos(ang(i));
+    const p = pt(i, 1, R + 16);
+    const anchor = sin > 0.3 ? 'start' : sin < -0.3 ? 'end' : 'middle';
+    const y = cos > 0.5 ? p[1] - 2 : cos < -0.5 ? p[1] + 12 : p[1] + 4;
+    s += `<text class="rlabel" x="${p[0].toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}">${short[i]}</text>`;
+  }
+  return s + '</svg>';
+}
+
+function renderRadars(ops) {
+  const totals = areaTotals();
+  $('#radar-view').innerHTML = ops.map(op =>
+    `<article class="radar ${bandOf(op.p)}"><div class="rhead"><h3 class="rname">${op.name}</h3>` +
+    `<p class="rstat">${op.o}/${op.n}, ${pct(op.o, op.n)}%</p></div>${radarSVG(op, totals)}</article>`
+  ).join('');
+}
+
+function renderMatrix(ops) {
+  const head = $('#matrix-head');
+  const body = $('#matrix-body');
+  const foot = $('#matrix-foot');
+  const areas = DATA.areas;
+
+  head.innerHTML = '<tr><th scope="col" class="rowh">Operator</th>' +
+    areas.map(a => `<th scope="col">${a}</th>`).join('') +
+    '<th scope="col" class="totcol">All areas</th></tr>';
+
+  body.innerHTML = '';
+  ops.forEach((op, r) => {
+    const tr = document.createElement('tr');
+    let html = `<th scope="row" class="rowh">${op.name}</th>`;
+    op.cells.forEach((c, j) => {
+      const label = `${op.name}, ${areas[j]}: ${c.o} of ${c.n} processes at Operating`;
+      html += `<td><button type="button" class="cell ${bandOf(c.o / c.n)}" style="--d:${j * 40 + r * 12}ms" ` +
+        `data-op="${op.name}" data-area="${areas[j]}" data-o="${c.o}" data-n="${c.n}" aria-label="${label}">${c.o}/${c.n}</button></td>`;
+    });
+    html += `<td class="totcol"><button type="button" class="cell ${bandOf(op.p)}" style="--d:${areas.length * 40 + r * 12}ms" ` +
+      `data-op="${op.name}" data-area="All areas" data-o="${op.o}" data-n="${op.n}" aria-label="${op.name}, all areas: ${op.o} of ${op.n} processes at Operating">${op.o}/${op.n}</button></td>`;
+    tr.innerHTML = html;
+    body.appendChild(tr);
+  });
+
+  const totals = areaTotals();
+  const grand = totals.reduce((a, t) => ({ o: a.o + t.o, n: a.n + t.n }), { o: 0, n: 0 });
+  const depth = areas.map((_, j) => DATA.operators.filter(op => op.cells[j].o / op.cells[j].n >= 0.8).length);
+  foot.innerHTML =
+    '<tr><th scope="row" class="rowh">Team total</th>' +
+    totals.map(t => `<td>${t.o}/${t.n}</td>`).join('') +
+    `<td class="totcol">${grand.o}/${grand.n}</td></tr>` +
+    '<tr><th scope="row" class="rowh">Operators at 80% or more</th>' +
+    depth.map(d => `<td>${d} of ${DATA.operators.length}</td>`).join('') +
+    '<td class="totcol"></td></tr>';
+
+  const ranked = areas.map((a, j) => ({ a, d: depth[j], p: totals[j].o / totals[j].n }))
+    .sort((x, y) => x.d - y.d || x.p - y.p);
+  const t1 = ranked[0], t2 = ranked[1];
+  $('#callout').innerHTML = `<strong>Thinnest cover:</strong> ${t1.a} (${t1.d} of ${DATA.operators.length} operators at 80% or more) and ${t2.a} (${t2.d} of ${DATA.operators.length}).`;
+
+  activeBtn = null;
+}
+
+function renderAll() {
+  const ops = orderedOps();
+  renderRadars(ops);
+  renderMatrix(ops);
+}
+
+function showDetail(btn) {
+  if (!btn) return;
+  if (activeBtn) activeBtn.classList.remove('is-active');
+  btn.classList.add('is-active');
+  activeBtn = btn;
+  const o = +btn.dataset.o, n = +btn.dataset.n;
+  $('#readout').textContent = `${btn.dataset.op}, ${btn.dataset.area}: ${o} of ${n} processes at Operating (${pct(o, n)}%).`;
+}
+
+const table = $('#matrix-table');
+['click', 'focusin', 'mouseover'].forEach(ev => table.addEventListener(ev, e => {
+  const btn = e.target.closest && e.target.closest('button.cell');
+  if (btn && btn !== activeBtn) showDetail(btn);
+}));
+
+function setSort(mode) {
+  sortMode = mode;
+  $('#sort-order').setAttribute('aria-pressed', String(mode === 'order'));
+  $('#sort-gaps').setAttribute('aria-pressed', String(mode === 'gaps'));
+  renderAll();
+}
+function setView(v) {
+  view = v;
+  $('#view-radar').setAttribute('aria-pressed', String(v === 'radar'));
+  $('#view-matrix').setAttribute('aria-pressed', String(v === 'matrix'));
+  $('#radar-view').hidden = v !== 'radar';
+  $('#matrix-view').hidden = v !== 'matrix';
+  $('#legend-team').hidden = v !== 'radar';
+}
+$('#sort-order').addEventListener('click', () => setSort('order'));
+$('#sort-gaps').addEventListener('click', () => setSort('gaps'));
+$('#view-radar').addEventListener('click', () => setView('radar'));
+$('#view-matrix').addEventListener('click', () => setView('matrix'));
+
+/* ---------- Charts ---------- */
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function lineChart(host, cfg) {
+  const W = Math.max(280, Math.floor(host.clientWidth));
+  const H = cfg.height || 300;
+  host.innerHTML = '';
+  const svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': cfg.label }, host);
+  const m = { l: 44, r: 22, t: 34, b: 34 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b, n = cfg.xLabels.length;
+  const X = i => m.l + (i * pw) / (n - 1);
+  const Y = v => m.t + ((cfg.yMax - v) / (cfg.yMax - cfg.yMin)) * ph;
+
+  cfg.yTicks.forEach(t => {
+    el('line', { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+    const tx = el('text', { x: m.l - 8, y: Y(t), class: 'axis', 'text-anchor': 'end', 'dominant-baseline': 'central' }, svg);
+    tx.textContent = t + '%';
+  });
+
+  const skip = pw / (n - 1) < 44 ? 2 : 1;
+  cfg.xLabels.forEach((l, i) => {
+    if (i % skip) return;
+    const anchor = i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle';
+    const tx = el('text', { x: X(i), y: H - 10, class: 'axis', 'text-anchor': anchor }, svg);
+    tx.textContent = l;
+  });
+
+  cfg.series.forEach((s, si) => {
+    const pts = s.values.map((v, i) => [X(i), Y(v)]);
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    if (cfg.area && si === 0) {
+      el('path', { d: d + ` L${X(n - 1).toFixed(1)} ${Y(cfg.yMin)} L${X(0).toFixed(1)} ${Y(cfg.yMin)} Z`, fill: 'rgba(0,217,192,0.12)', stroke: 'none' }, svg);
+    }
+    const attrs = { d, fill: 'none', stroke: s.color, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', class: 'data-line' };
+    if (s.dash) attrs['stroke-dasharray'] = s.dash;
+    el('path', attrs, svg);
+    pts.forEach((p, i) => {
+      el('circle', { cx: p[0], cy: p[1], r: 4, fill: i === pts.length - 1 ? s.color : '#11192B', stroke: s.color, 'stroke-width': 2, class: 'marker' }, svg);
+    });
+  });
+
+  (cfg.labels || []).forEach(lb => {
+    const v = cfg.series[lb.s].values[lb.i];
+    const tx = el('text', {
+      x: X(lb.i), y: Y(v) + (lb.pos === 'above' ? -12 : 24),
+      class: 'dlabel', 'text-anchor': lb.anchor || 'middle'
+    }, svg);
+    tx.textContent = lb.text;
+  });
+}
+
+const swatch = (color, dash) =>
+  `<svg viewBox="0 0 30 10" aria-hidden="true"><line x1="1" y1="5" x2="29" y2="5" stroke="${color}" stroke-width="3" stroke-linecap="round"${dash ? ` stroke-dasharray="${dash}"` : ''}/></svg>`;
+
+function drawCharts() {
+  const cv = DATA.coverage;
+  lineChart($('#chart-coverage'), {
+    label: `Skills coverage rose from ${cv.values[0]}% to ${cv.values[cv.values.length - 1]}% over two years`,
+    xLabels: cv.labels, yMin: 0, yMax: 100, yTicks: [0, 25, 50, 75, 100], area: true, height: 300,
+    series: [{ name: 'Coverage', values: cv.values, color: '#00D9C0' }],
+    labels: [
+      { s: 0, i: 0, text: cv.values[0] + '%', pos: 'below', anchor: 'start' },
+      { s: 0, i: cv.values.length - 1, text: cv.values[cv.values.length - 1] + '%', pos: 'above', anchor: 'end' }
+    ]
+  });
+
+  const cr = DATA.cross;
+  const styles = [
+    { color: '#00D9C0', dash: null },
+    { color: '#FFB800', dash: '8 5' },
+    { color: '#F1F5F9', dash: '2 5' }
+  ];
+  const series = cr.roles.map((r, i) => Object.assign({ name: r.name, values: r.values }, styles[i]));
+  const low = series.reduce((a, s, i) => (s.values[0] < series[a].values[0] ? i : a), 0);
+  lineChart($('#chart-cross'), {
+    label: 'Competency in three job roles rose from about 70% to 100% over five months',
+    xLabels: cr.labels, yMin: 60, yMax: 100, yTicks: [60, 70, 80, 90, 100], height: 300,
+    series,
+    labels: [
+      { s: low, i: 0, text: 'about 70%', pos: 'below', anchor: 'start' },
+      { s: 0, i: cr.labels.length - 1, text: '100%', pos: 'above', anchor: 'end' }
+    ]
+  });
+  $('#cross-key').innerHTML = series.map(s => `<li>${swatch(s.color, s.dash)}${s.name}</li>`).join('');
+}
+
+renderAll();
+setView('radar');
+drawCharts();
+let raf = 0;
+const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(drawCharts); });
+ro.observe($('#chart-coverage'));
+ro.observe($('#chart-cross'));
+</script>
+</body>
+</html>
