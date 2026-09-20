@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>SIPOC and Value Stream Map tool</title>
+<style>
+:root{
+  --bg:#0B1220; --card:#11192B; --line:#2A3A52;
+  --teal:#00D9C0; --gold:#FFB800; --green:#00E68A; --red:#FF3B5C;
+  --text:#F1F5F9; --muted:#8B9CB5;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:60px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}
+a{color:var(--teal)}
+.wrap{max-width:1240px;margin:0 auto;padding:16px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:8px}
+h1{font-size:1.6rem;margin:6px 0 0;font-weight:650;line-height:1.2}
+.sub{color:var(--muted);margin:4px 0 0;font-size:.92rem;max-width:70ch}
+.back{font-size:.9rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar .grp{display:flex;gap:8px;align-items:center}
+.toolbar select{width:auto;max-width:100%}
+button{font:inherit;cursor:pointer;border-radius:6px;padding:8px 12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+button:hover{border-color:var(--teal)}
+button.primary{background:var(--teal);color:var(--bg);border-color:var(--teal);font-weight:600}
+button.primary:hover{filter:brightness(1.08)}
+button:disabled{opacity:.4;cursor:default}
+button:disabled:hover{border-color:var(--line)}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.status{min-height:1.4em;margin:6px 0 12px;color:var(--muted);font-size:.85rem}
+
+/* summary tiles */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--teal);border-radius:8px;padding:12px 14px;min-width:0}
+.kpi.warn{border-top-color:var(--gold)}
+.kpi.bad{border-top-color:var(--red)}
+.kpi.good{border-top-color:var(--green)}
+.kpi .label{color:var(--muted);font-size:.85rem}
+.kpi .value{font-size:1.8rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2;overflow-wrap:anywhere}
+.kpi .note{color:var(--muted);font-size:.8rem;min-height:1.2em}
+
+/* tiles */
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.tile h2{margin:0;font-size:1.25rem;font-weight:650}
+.tile .lead{color:var(--muted);margin:4px 0 0;font-size:.9rem;max-width:72ch}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:14px 0 0}
+.tile .meta:last-child{margin-bottom:0}
+label.f,.f{display:block;font-size:.82rem;color:var(--muted);margin-bottom:3px}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font:inherit;color-scheme:dark}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+input:focus,select:focus,textarea:focus{border-color:var(--teal);outline:none}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+.takt{display:block;font-size:1.15rem;font-weight:700;padding:5px 0;font-variant-numeric:tabular-nums}
+
+/* SIPOC */
+.sipoc{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+@media (min-width:1000px){.sipoc{grid-template-columns:1fr 1fr 1.6fr 1fr 1fr}}
+.col{background:var(--bg);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.col.proc{border-top-color:var(--teal);border-color:var(--teal)}
+.col h3{margin:0;font-size:1rem;font-weight:650}
+.colnote{color:var(--muted);font-size:.8rem;margin:2px 0 8px}
+.item{display:flex;gap:6px;align-items:flex-start;margin-bottom:6px}
+.item textarea{flex:1;min-width:0;resize:none;overflow:hidden;line-height:1.3;min-height:34px}
+.num{flex:none;width:20px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--teal);font-weight:700;font-variant-numeric:tabular-nums}
+.mini{flex:none;width:30px;height:34px;padding:0;text-align:center;color:var(--muted)}
+.mini:hover:not(:disabled){color:var(--text)}
+button.add{width:100%;border-style:dashed;color:var(--teal);margin-top:2px}
+.hint{font-size:.82rem;color:var(--muted);margin:8px 0 0}
+.hint.warn{color:var(--gold)}
+
+/* VSM */
+.vsm-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.step{background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:8px;padding:10px;margin-bottom:10px}
+.step.over{border-left-color:var(--red)}
+.step-h{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.badge{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85rem}
+.step.over .badge{background:var(--red);color:var(--bg)}
+.step-h input{flex:1;min-width:0;font-weight:600}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.help{color:var(--muted);font-size:.82rem;margin:4px 0 12px;max-width:80ch}
+.mapbox{border:1px solid var(--line);border-radius:8px;background:var(--card);overflow-x:auto;margin-top:8px}
+.mapbox svg{display:block}
+.empty{padding:24px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:.82rem;margin:8px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:12px;height:12px;border:2px solid var(--teal);border-radius:2px}
+.sw.red{border-color:var(--red)}
+.sw.gold{border-color:var(--gold);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--gold)}
+label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:.85rem;margin:0}
+label.chk input{width:auto}
+.map-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.map-tools select{width:auto}
+footer{color:var(--muted);font-size:.8rem;padding:8px 0 24px}
+
+/* print report (hidden on screen) */
+#report{display:none;background:#fff;color:#0F172A;font-family:"Segoe UI",system-ui,Arial,sans-serif;font-size:10pt;line-height:1.35}
+#report h1{font-size:20pt;margin:0 0 2px}
+#report .rsub{color:#475569;margin:0 0 8px}
+#report h2{font-size:13pt;margin:14px 0 6px;padding-bottom:2px;border-bottom:2px solid #00796B;break-after:avoid}
+#report table{border-collapse:collapse;width:100%;font-size:9.5pt}
+#report th,#report td{border:1px solid #94A3B8;padding:4px 6px;text-align:left;vertical-align:top}
+#report th{background:#E2E8F0;font-weight:600}
+#report td.n{text-align:right;font-variant-numeric:tabular-nums}
+#report .kp{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+#report .kp div{border:1px solid #94A3B8;border-top:3px solid #00796B;padding:6px 10px;min-width:120px}
+#report .kp b{display:block;font-size:14pt}
+#report .kp span{color:#475569;font-size:9pt}
+#report svg{width:100%;height:auto;display:block;border:1px solid #94A3B8}
+#report table,#report svg,#report .kp{break-inside:avoid}
+#report .rfoot{color:#475569;font-size:8.5pt;margin-top:10px}
+@page{size:A4 landscape;margin:12mm}
+@media print{
+  html,body{background:#fff!important}
+  .wrap{display:none!important}
+  #report{display:block}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+[hidden]{display:none!important}
+.jump{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:4px 10px;background:var(--bg);padding:8px 0;margin:0 0 12px;border-bottom:1px solid var(--line)}
+.jump a{text-decoration:none;font-size:.9rem;padding:4px 8px;border-radius:6px}
+.jump a:hover{background:var(--card)}
+.tile{scroll-margin-top:0}
+.welcome{border-left:4px solid var(--teal)}
+.welcome ol{margin:8px 0 12px;padding-left:22px;max-width:75ch}
+.welcome li{margin:4px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.guide{margin:12px 0 0;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.guide summary{cursor:pointer;padding:9px 12px;color:var(--teal)}
+.guide .gbody{padding:0 12px 12px}
+.guide dl{margin:0;display:grid;grid-template-columns:minmax(120px,max-content) 1fr;gap:6px 16px}
+.guide dt{font-weight:600}
+.guide dd{margin:0;color:var(--muted)}
+.guide ul{margin:0;padding-left:20px}
+.guide li{margin:4px 0}
+@media (max-width:560px){.guide dl{grid-template-columns:1fr}.guide dd{margin-bottom:6px}}
+.fh{display:block;color:var(--muted);font-size:.78rem;margin-top:3px;line-height:1.3}
+input.bad{border-color:var(--red)}
+.linklike{background:none;border:none;color:var(--teal);text-decoration:underline;padding:0 4px;cursor:pointer}
+.statusrow{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;min-height:1.4em;margin:6px 0 10px;color:var(--muted);font-size:.85rem}
+.insights{margin:10px 0 4px;padding-left:20px;max-width:80ch}
+.insights li{margin:6px 0}
+.results-h{margin:16px 0 4px;font-size:1.05rem;font-weight:650}
+.menu{position:relative}
+.menu summary{list-style:none;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:8px 12px;background:var(--card);display:inline-block}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary:hover{border-color:var(--teal)}
+.menu[open]{flex:1 1 100%}
+.menu-pop{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;display:flex;flex-direction:column;gap:10px;max-width:440px}
+.menu-pop .grp{display:flex;gap:8px;align-items:center}
+.menu-pop select{flex:1;min-width:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div>
+    <a class="back" id="hubLink" href="https://rmilburn1980.github.io/" hidden>Back to portfolio hub</a>
+    <h1>SIPOC and Value Stream Map</h1>
+    <p class="sub">Scope any process with a SIPOC, then map the current state and see where time is lost. Works for manufacturing and for office or service processes.</p>
+  </div>
+  <div class="toolbar" role="group" aria-label="File actions">
+    <button id="btnSave" type="button">Save file</button>
+    <button id="btnOpen" type="button">Open file</button>
+    <button id="btnPrint" type="button" class="primary">Print or save as PDF</button>
+    <details class="menu" id="moreMenu">
+      <summary>More options</summary>
+      <div class="menu-pop">
+        <div>
+          <label class="f" for="exampleSel">Load an example</label>
+          <div class="grp">
+            <select id="exampleSel">
+              <option value="mfg">Manufacturing line</option>
+              <option value="inv">Invoice to payment</option>
+              <option value="tkt">Support ticket</option>
+            </select>
+            <button id="btnExample" type="button">Load</button>
+          </div>
+        </div>
+        <button id="btnGuide" type="button">Show the start guide</button>
+        <button id="btnClear" type="button">Clear all entries</button>
+      </div>
+    </details>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  </div>
+</header>
+
+<div class="statusrow">
+  <p id="status" role="status" aria-live="polite" style="margin:0"><span id="statusText"></span><button type="button" id="btnUndo" class="linklike" hidden>Undo</button></p>
+  <span id="saveState"></span>
+</div>
+
+<nav class="jump" aria-label="Jump to a section">
+  <a href="#projTile">1 Project</a>
+  <a href="#sipocTile">2 SIPOC</a>
+  <a href="#vsmTile">3 Steps</a>
+  <a href="#resultsTile">4 Results</a>
+</nav>
+
+<section class="tile welcome" id="welcome" aria-labelledby="welTitle">
+  <h2 id="welTitle">Start here</h2>
+  <p class="lead">You do not need any experience with Lean. Work through the sections in order, and the results appear at the end as you type.</p>
+  <ol>
+    <li><b>Scope the process</b> with a SIPOC. It lists who supplies the process, what goes in, the main steps, what comes out and who receives it.</li>
+    <li><b>Record each step</b>: how long it takes and how long items wait before it.</li>
+    <li><b>Read the results</b>, then print the report or save it as a PDF.</li>
+  </ol>
+  <div class="row">
+    <button type="button" class="primary" data-ex="mfg">Try a manufacturing example</button>
+    <button type="button" data-ex="inv">Try an office example</button>
+    <button type="button" data-ex="tkt">Try a service example</button>
+    <button type="button" id="btnStartBlank">Start with my own process</button>
+  </div>
+</section>
+
+<section class="tile" id="projTile" aria-labelledby="projTitle">
+  <h2 id="projTitle">1 Project details</h2>
+  <p class="lead">These appear at the top of your printed report. All fields are optional.</p>
+  <div class="meta">
+    <div><label class="f" for="p-org">Organisation or site</label><input type="text" id="p-org" data-proj="org" placeholder="Your organisation"></div>
+    <div><label class="f" for="p-name">Improvement project</label><input type="text" id="p-name" data-proj="name" placeholder="Project name"></div>
+    <div><label class="f" for="p-by">Prepared by</label><input type="text" id="p-by" data-proj="by" placeholder="Your name"></div>
+    <div><label class="f" for="p-date">Date</label><input type="date" id="p-date" data-proj="date"></div>
+  </div>
+</section>
+
+<!-- SIPOC tile -->
+<section class="tile" id="sipocTile" aria-labelledby="sipocTitle">
+  <h2 id="sipocTitle">2 SIPOC</h2>
+  <p class="lead">A one-page picture of the process before you map any detail. Agree the start and end points with the people involved.</p>
+  <details class="guide">
+    <summary>How do I fill this in?</summary>
+    <div class="gbody"><ul>
+      <li>Give the process a name, and say what starts it and where it ends.</li>
+      <li>Fill in <b>Process</b> first: 4 to 7 main steps, in order.</li>
+      <li>Then <b>Outputs</b> and <b>Customers</b>: what the process produces and who gets it.</li>
+      <li>Finally <b>Inputs</b> and <b>Suppliers</b>: what the process needs and who provides it.</li>
+      <li>Tip: press Enter to add the next item, and Backspace on an empty item to remove it.</li>
+    </ul></div>
+  </details>
+  <div class="meta">
+    <div><label class="f" for="m-process">Process name</label><input type="text" id="m-process" data-meta="process" placeholder="e.g. Order to dispatch"></div>
+    <div><label class="f" for="m-start">Start point</label><input type="text" id="m-start" data-meta="start" placeholder="What triggers the process"></div>
+    <div><label class="f" for="m-end">End point</label><input type="text" id="m-end" data-meta="end" placeholder="Where the process stops"></div>
+    <div><label class="f" for="m-owner">Process owner</label><input type="text" id="m-owner" data-meta="owner" placeholder="Who owns the process"></div>
+  </div>
+  <div class="sipoc" id="sipocCols"></div>
+</section>
+
+<!-- VSM inputs tile -->
+<section class="tile" id="vsmTile" aria-labelledby="vsmTitle">
+  <h2 id="vsmTitle">3 Process steps and times</h2>
+  <p class="lead">Walk the process and record what you see, step by step. Rough numbers are fine to start with, and you can refine them later.</p>
+  <details class="guide">
+    <summary>What do these terms mean?</summary>
+    <div class="gbody"><dl>
+      <dt>Cycle time</dt><dd>How often one finished item leaves a step. If 6 items leave every hour, the cycle time is 10 minutes.</dd>
+      <dt>Wait before step</dt><dd>How long an item sits waiting before the step starts.</dd>
+      <dt>Queue before step</dt><dd>How many items are waiting there.</dd>
+      <dt>Takt time</dt><dd>The pace the customer needs. Available time divided by demand. A step with a longer cycle time than takt cannot keep up.</dd>
+      <dt>Changeover or setup</dt><dd>Time lost switching between products or jobs.</dd>
+      <dt>Uptime or availability</dt><dd>The share of time the step is ready to work, as a percentage.</dd>
+      <dt>First pass yield</dt><dd>The percentage of items done right first time, with no rework.</dd>
+      <dt>Value-added time</dt><dd>The part of the cycle time the customer would pay for. Leave it blank to count the whole cycle time.</dd>
+    </dl></div>
+  </details>
+  <div class="meta" id="vsmSettings">
+    <div><label class="f" for="v-family">Product or service family</label><input type="text" id="v-family" data-v="family" placeholder="e.g. Standard orders"></div>
+    <div><label class="f" for="v-item">What flows through (plural)</label><input type="text" id="v-item" data-v="item" placeholder="e.g. orders, invoices, patients"></div>
+    <div><label class="f" for="v-unit">Time unit</label>
+      <select id="v-unit" data-v="unit">
+        <option value="s">Seconds</option><option value="min">Minutes</option><option value="h">Hours</option><option value="d">Days</option>
+      </select><small class="fh">Used for every time on the map.</small></div>
+    <div><label class="f" for="v-available" id="l-available">Available time per day</label><input type="number" id="v-available" data-v="available" inputmode="decimal" min="0" step="any" placeholder="e.g. 450"><small class="fh">Working time available each day.</small></div>
+    <div><label class="f" for="v-demand" id="l-demand">Customer demand per day</label><input type="number" id="v-demand" data-v="demand" inputmode="decimal" min="0" step="any" placeholder="e.g. 90"><small class="fh">How many the customer needs each day.</small></div>
+    <div><label class="f" for="v-supplier">Supplier name</label><input type="text" id="v-supplier" data-v="supplier" placeholder="Who supplies the process"></div>
+    <div><label class="f" for="v-customer">Customer name</label><input type="text" id="v-customer" data-v="customer" placeholder="Who receives the output"></div>
+    <div><span class="f">Takt time</span><output id="taktOut" class="takt">not set</output><small class="fh">Worked out from available time and demand.</small></div>
+  </div>
+
+  <div class="vsm-actions">
+    <button type="button" id="btnAddStep" class="primary">Add process step</button>
+    <button type="button" id="btnFillWait">Fill waits from queue size</button>
+    <label class="chk"><input type="checkbox" id="detailChk"> Show detailed fields</label>
+  </div>
+  <div id="steps"></div>
+  <div class="vsm-actions"><a href="#resultsTile">Jump to results</a></div>
+</section>
+
+<!-- Results tile -->
+<section class="tile" id="resultsTile" aria-labelledby="resTitle">
+  <h2 id="resTitle">4 Results</h2>
+  <p class="lead">These update as you type. Print the report when you are happy with them.</p>
+  <div class="kpis" id="kpis" aria-label="Value stream summary" style="margin-top:14px"></div>
+  <h3 class="results-h">What this shows</h3>
+  <ul class="insights" id="insights"></ul>
+
+  <div class="vsm-actions">
+    <h3 style="margin:0;font-size:1.05rem;font-weight:650;flex:1 1 120px">Value stream map</h3>
+    <div class="map-tools">
+      <label class="chk"><input type="checkbox" id="fitW"> Fit to width</label>
+      <label class="chk" for="exportStyle">Download style
+        <select id="exportStyle"><option value="light">Light, for documents</option><option value="dark">Dark, as on screen</option></select>
+      </label>
+      <button type="button" id="btnSvg">Download map as SVG</button>
+    </div>
+  </div>
+  <div class="mapbox" id="mapBox" tabindex="0" aria-label="Value stream map, scrolls sideways when wide"></div>
+  <div class="legend">
+    <span><i class="sw"></i>Process step</span>
+    <span><i class="sw red"></i>Cycle time is above takt</span>
+    <span><i class="sw gold"></i>Queue between steps</span>
+  </div>
+</section>
+
+<footer>Nothing leaves your device. Entries stay in this browser, and Save file keeps a copy you can open again later. Built by <a href="https://rmilburn1980.github.io/">Richard Milburn</a>.</footer>
+</div>
+
+<div id="report" aria-hidden="true"></div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var KEY='sipoc_vsm_tiles_v1';
+var DARK={bg:'#0B1220',card:'#11192B',line:'#2A3A52',teal:'#00D9C0',gold:'#FFB800',green:'#00E68A',red:'#FF3B5C',text:'#F1F5F9',muted:'#8B9CB5'};
+var LIGHT={bg:'#FFFFFF',card:'#F8FAFC',line:'#94A3B8',teal:'#00796B',gold:'#8A5A00',green:'#00794A',red:'#C8102E',text:'#0F172A',muted:'#475569'};
+var C=DARK;
+var FF='Segoe UI, system-ui, Arial, sans-serif';
+var UNIT={s:{short:'s'},min:{short:'min'},h:{short:'h'},d:{short:'d'}};
+
+/* show the hub link only when hosted on the portfolio hub */
+if(location.hostname==='rmilburn1980.github.io'){$('#hubLink').hidden=false}
+
+function newStep(){return {name:'',ops:'',ct:'',co:'',up:'',fpy:'',va:'',wait:'',qty:''}}
+function blank(){return {
+  project:{org:'',name:'',by:'',date:''},
+  detail:false,hideWelcome:false,
+  sipoc:{meta:{process:'',start:'',end:'',owner:''},S:[''],I:[''],P:['','','',''],O:[''],C:['']},
+  vsm:{family:'',item:'units',unit:'min',available:'',demand:'',supplier:'',customer:'',steps:[newStep(),newStep(),newStep()]}
+}}
+function st(name,ops,ct,co,up,fpy,va,wait,qty){return {name:name,ops:ops,ct:ct,co:co,up:up,fpy:fpy,va:va,wait:wait,qty:qty}}
+var EXAMPLES={
+  mfg:function(){return {
+    sipoc:{
+      meta:{process:'Order to dispatch (example)',start:'Customer order released to the line',end:'Finished product handed to the carrier',owner:''},
+      S:['Raw material suppliers','Component suppliers','Production planning','Tooling and maintenance'],
+      I:['Raw materials','Purchased components','Production schedule','Work instructions','Tooling and equipment'],
+      P:['Cut and prepare','Sub-assembly','Final assembly','Test and inspect','Pack and dispatch'],
+      O:['Finished product','Test and inspection records','Scrap and rework','Shipping documents'],
+      C:['Retail customers','Distribution centre','Quality and warranty team']
+    },
+    vsm:{family:'Example product family (illustrative figures)',item:'units',unit:'min',available:'450',demand:'90',supplier:'Component suppliers',customer:'Retail customers',steps:[
+      st('Cut and prepare','2','4.2','12','96','99','3.8','150','30'),
+      st('Sub-assembly','4','4.8','8','94','97','4.5','225','45'),
+      st('Final assembly','6','5.6','5','92','94','5','125','25'),
+      st('Test and inspect','3','5.1','0','97','90','2','300','60'),
+      st('Pack and dispatch','2','3.5','3','99','99','2.5','100','20')
+    ]}
+  }},
+  inv:function(){return {
+    sipoc:{
+      meta:{process:'Supplier invoice to payment (example)',start:'Supplier invoice received',end:'Supplier payment confirmed',owner:''},
+      S:['Suppliers','Purchasing team','Procurement system','Budget holders'],
+      I:['Supplier invoice','Purchase order','Goods receipt note','Approval rules'],
+      P:['Receive and sort','Enter invoice data','Match to order and receipt','Approve','Pay'],
+      O:['Paid invoice','Payment confirmation','Ledger entries','Query log'],
+      C:['Supplier','Finance team','Budget holder','Auditors']
+    },
+    vsm:{family:'Standard supplier invoices (illustrative figures)',item:'invoices',unit:'min',available:'450',demand:'60',supplier:'Suppliers',customer:'Finance team',steps:[
+      st('Receive and sort','1','2','0','100','97','0.5','112.5','15'),
+      st('Enter invoice data','2','6','0','98','92','','450','60'),
+      st('Match to order and receipt','2','8','0','95','85','3','225','30'),
+      st('Approve','1','4','0','90','90','1','900','120'),
+      st('Pay','1','3','0','99','99','','300','40')
+    ]}
+  }},
+  tkt:function(){return {
+    sipoc:{
+      meta:{process:'Support ticket to resolution (example)',start:'Customer raises a ticket',end:'Ticket closed and customer confirms',owner:''},
+      S:['Customers','Product team','Knowledge base owners'],
+      I:['Customer request','Account details','Product documentation','Service level targets'],
+      P:['Log and triage','First response','Investigate and fix','Confirm with customer','Close and record'],
+      O:['Resolved ticket','Customer update','Root cause note','Satisfaction score'],
+      C:['Customer','Product team','Account manager']
+    },
+    vsm:{family:'Standard support tickets (illustrative figures)',item:'tickets',unit:'min',available:'480',demand:'96',supplier:'Customers',customer:'Customers',steps:[
+      st('Log and triage','2','3','0','99','98','1','40','8'),
+      st('First response','3','4','0','97','95','2','100','20'),
+      st('Investigate and fix','5','6','0','95','80','5','175','35'),
+      st('Confirm with customer','1','2','0','99','92','1','50','10'),
+      st('Close and record','1','1','0','100','99','0.5','25','5')
+    ]}
+  }}
+};
+function normalise(o){
+  var out=blank();
+  if(!o||typeof o!=='object')return out;
+  var pj=o.project||{}, s=o.sipoc||{}, v=o.vsm||{};
+  ['org','name','by','date'].forEach(function(k){if(typeof pj[k]==='string')out.project[k]=pj[k]});
+  ['process','start','end','owner'].forEach(function(k){if(s.meta&&typeof s.meta[k]==='string')out.sipoc.meta[k]=s.meta[k]});
+  ['S','I','P','O','C'].forEach(function(k){if(Array.isArray(s[k]))out.sipoc[k]=s[k].map(function(x){return String(x)})});
+  ['family','item','unit','available','demand','supplier','customer'].forEach(function(k){if(v[k]!=null)out.vsm[k]=String(v[k])});
+  if(!UNIT[out.vsm.unit])out.vsm.unit='min';
+  if(Array.isArray(v.steps)){
+    out.vsm.steps=v.steps.map(function(x){var n=newStep();Object.keys(n).forEach(function(k){if(x&&x[k]!=null)n[k]=String(x[k])});return n});
+  }
+  out.detail=typeof o.detail==='boolean'?o.detail:out.vsm.steps.some(function(s){return s.co!==''||s.up!==''||s.fpy!==''||s.va!==''});
+  out.hideWelcome=!!o.hideWelcome;
+  return out;
+}
+
+var state;
+try{var saved=localStorage.getItem(KEY);state=saved?normalise(JSON.parse(saved)):blank()}catch(e){state=blank()}
+
+/* helpers */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function num(v){if(v===''||v==null)return NaN;var n=parseFloat(v);return isNaN(n)?NaN:n}
+function fmt(n){if(n==null||isNaN(n))return 'n/a';return String(Math.round(n*100)/100)}
+function fmt1(n){if(n==null||isNaN(n))return 'n/a';return String(Math.round(n*10)/10)}
+function fmtDate(iso){if(!iso)return '';var d=new Date(iso+'T00:00:00');return isNaN(d)?iso:d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+var undoState=null;
+function snapshot(){undoState=JSON.stringify(state)}
+function setStatus(m,canUndo){$('#statusText').textContent=m;$('#btnUndo').hidden=!canUndo}
+function doUndo(){
+  if(!undoState)return;
+  state=normalise(JSON.parse(undoState));undoState=null;
+  renderAll();persist();setStatus('Undone.',false);
+}
+var saveT;
+function persist(){
+  clearTimeout(saveT);
+  saveT=setTimeout(function(){
+    try{localStorage.setItem(KEY,JSON.stringify(state));$('#saveState').textContent='Saved in this browser'}
+    catch(e){$('#saveState').textContent='Not saved. Use Save file to keep a copy.'}
+  },300);
+}
+function download(name,text,type){
+  var b=new Blob([text],{type:type});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},600);
+}
+function slug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)}
+function itemPlural(){return (state.vsm.item||'').trim()||'units'}
+function itemSingular(w){
+  if(/ies$/i.test(w))return w.replace(/ies$/i,'y');
+  if(/[^s]s$/i.test(w))return w.slice(0,-1);
+  return w;
+}
+function itemLabel(q){return q===1?itemSingular(itemPlural()):itemPlural()}
+function unitShort(){return UNIT[state.vsm.unit].short}
+function nm(s,i){return (s.name||'').trim()||('step '+(i+1))}
+function joinNames(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1]}
+function reducedMotion(){return window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+
+/* calculations */
+function calc(){
+  var v=state.vsm, takt=NaN;
+  if(num(v.available)>0&&num(v.demand)>0)takt=num(v.available)/num(v.demand);
+  var wait=0,ct=0,va=0,rty=1,rtyN=0,over=0;
+  v.steps.forEach(function(s){
+    var c=num(s.ct), w=num(s.wait), a=isNaN(num(s.va))?c:num(s.va), f=num(s.fpy);
+    if(!isNaN(w))wait+=w;
+    if(!isNaN(c))ct+=c;
+    if(!isNaN(a))va+=a;
+    if(!isNaN(f)){rty*=f/100;rtyN++}
+    if(!isNaN(takt)&&!isNaN(c)&&c>takt)over++;
+  });
+  var lead=wait+ct;
+  return {takt:takt,wait:wait,ct:ct,va:va,lead:lead,pce:lead>0?va/lead*100:NaN,rty:rtyN?rty*100:NaN,rtyN:rtyN,over:over};
+}
+/* plain-English reading of the numbers */
+function insights(k){
+  var v=state.vsm,u=unitShort(),steps=v.steps,out=[];
+  if(!steps.length)return ['Add your first process step to get started.'];
+  var withCt=steps.filter(function(s){return !isNaN(num(s.ct))}).length, missing=steps.length-withCt;
+  if(withCt===0)return ['Add a cycle time to each step, then the results will appear here.'];
+  if(missing>0)out.push(missing+(missing===1?' step has':' steps have')+' no cycle time yet. Add '+(missing===1?'it':'them')+' for the full picture.');
+  if(k.wait>0){
+    out.push('Items spend '+fmt1(k.wait/k.lead*100)+'% of the lead time waiting ('+fmt(k.wait)+' of '+fmt(k.lead)+' '+u+'). Only '+fmt1(k.pce)+'% of the lead time adds value.');
+    var mi=-1,mv=0;
+    steps.forEach(function(s,i){var w=num(s.wait);if(!isNaN(w)&&w>mv){mv=w;mi=i}});
+    if(mi>=0)out.push('The longest wait is before '+nm(steps[mi],mi)+', at '+fmt(mv)+' '+u+'. Queues like this are often the biggest place to save time.');
+  }else{
+    out.push('Lead time is '+fmt(k.lead)+' '+u+'. Add wait times to see how much of it is queuing.');
+  }
+  if(!isNaN(k.takt)){
+    var over=[];
+    steps.forEach(function(s,i){var c=num(s.ct);if(!isNaN(c)&&c>k.takt)over.push({n:nm(s,i),c:c})});
+    over.sort(function(a,b){return b.c-a.c});
+    if(over.length===1)out.push(over[0].n+' is slower than takt ('+fmt(over[0].c)+' against '+fmt(k.takt)+' '+u+'), so it holds back the whole process.');
+    else if(over.length>1)out.push(over.length+' steps are slower than takt of '+fmt(k.takt)+' '+u+': '+joinNames(over.slice(0,4).map(function(o){return o.n}))+'. The slowest is '+over[0].n+'.');
+    else out.push('Every step keeps pace with takt of '+fmt(k.takt)+' '+u+'.');
+  }else{
+    out.push('Set the available time and demand in section 3 to see takt time and which steps are too slow.');
+  }
+  var lo=-1,lv=101;
+  steps.forEach(function(s,i){var f=num(s.fpy);if(!isNaN(f)&&f<lv){lv=f;lo=i}});
+  if(lo>=0&&lv<100)out.push('The most rework is at '+nm(steps[lo],lo)+' (first pass yield '+fmt1(lv)+'%).'+(k.rtyN>1?' Across all steps, '+fmt1(k.rty)+'% of items are right first time.':''));
+  return out;
+}
+
+/* SIPOC */
+var COLS=[
+  {k:'S',title:'Suppliers',note:'Who provides the inputs',add:'Add supplier',one:'Supplier',ph:'e.g. Parts supplier'},
+  {k:'I',title:'Inputs',note:'What the process needs',add:'Add input',one:'Input',ph:'e.g. Customer order'},
+  {k:'P',title:'Process',note:'4 to 7 main steps, in order',add:'Add step',one:'Step',ph:'e.g. Inspect and test'},
+  {k:'O',title:'Outputs',note:'What the process produces',add:'Add output',one:'Output',ph:'e.g. Finished product'},
+  {k:'C',title:'Customers',note:'Who receives the outputs',add:'Add customer',one:'Customer',ph:'e.g. Retail customer'}
+];
+function itemHtml(c,text,i,len){
+  var isP=c.k==='P', lab=c.one+' '+(i+1);
+  return '<div class="item">'+
+    (isP?'<span class="num" aria-hidden="true">'+(i+1)+'</span>':'')+
+    '<textarea rows="1" data-k="'+c.k+'" data-i="'+i+'" aria-label="'+lab+'" placeholder="'+esc(c.ph)+'">'+esc(text)+'</textarea>'+
+    (isP?'<button type="button" class="mini" data-act="up" data-k="P" data-i="'+i+'" aria-label="Move step '+(i+1)+' up"'+(i===0?' disabled':'')+'>&#8593;</button>'+
+         '<button type="button" class="mini" data-act="dn" data-k="P" data-i="'+i+'" aria-label="Move step '+(i+1)+' down"'+(i===len-1?' disabled':'')+'>&#8595;</button>':'')+
+    '<button type="button" class="mini" data-act="del" data-k="'+c.k+'" data-i="'+i+'" aria-label="Remove '+lab.toLowerCase()+'">&#215;</button>'+
+  '</div>';
+}
+function renderProject(){
+  document.querySelectorAll('[data-proj]').forEach(function(inp){inp.value=state.project[inp.dataset.proj]||''});
+}
+function renderSipoc(){
+  var m=state.sipoc.meta;
+  document.querySelectorAll('[data-meta]').forEach(function(inp){inp.value=m[inp.dataset.meta]||''});
+  $('#sipocCols').innerHTML=COLS.map(function(c){
+    var items=state.sipoc[c.k];
+    return '<section class="col'+(c.k==='P'?' proc':'')+'" aria-labelledby="h-'+c.k+'">'+
+      '<h3 id="h-'+c.k+'">'+c.title+'</h3><p class="colnote">'+c.note+'</p>'+
+      '<div>'+items.map(function(t,i){return itemHtml(c,t,i,items.length)}).join('')+'</div>'+
+      '<button type="button" class="add" data-act="add" data-k="'+c.k+'">'+c.add+'</button>'+
+      (c.k==='P'?'<p class="hint" id="procHint"></p>':'')+
+    '</section>';
+  }).join('');
+  autosizeAll();updateProcHint();
+}
+function autosize(t){t.style.height='auto';t.style.height=Math.max(34,t.scrollHeight+2)+'px'}
+function autosizeAll(){document.querySelectorAll('#sipocCols textarea').forEach(autosize)}
+function focusItem(k,i){var ta=document.querySelector('#sipocCols textarea[data-k="'+k+'"][data-i="'+i+'"]');if(ta){ta.focus();var l=ta.value.length;ta.setSelectionRange(l,l)}}
+function updateProcHint(){
+  var h=$('#procHint');if(!h)return;
+  var n=state.sipoc.P.filter(function(x){return x.trim()}).length;
+  var ok=n>=4&&n<=7;
+  h.className='hint'+(ok?'':' warn');
+  h.textContent=ok?n+' steps. Good level of detail.':'Aim for 4 to 7 main steps. You have '+n+'.';
+}
+
+/* VSM form */
+var FIELDS=[
+  {k:'ops',l:'People on this step',u:'',basic:true,hint:'How many people work on it at once'},
+  {k:'ct',l:'Cycle time',u:'t',basic:true,hint:'How often one finished item leaves this step'},
+  {k:'wait',l:'Wait before step',u:'t',basic:true,hint:'How long an item waits before this step starts'},
+  {k:'qty',l:'Queue before step',u:'i',basic:true,hint:'How many items are waiting'},
+  {k:'co',l:'Changeover or setup',u:'t',hint:'Time lost switching between products or jobs'},
+  {k:'up',l:'Uptime or availability',u:'%',max:100,hint:'Share of time the step is ready to work'},
+  {k:'fpy',l:'First pass yield',u:'%',max:100,hint:'Done right first time, with no rework'},
+  {k:'va',l:'Value-added time',u:'t',hint:'The part of cycle time the customer would pay for'}
+];
+function fieldLabel(f){
+  var suffix=f.u==='t'?unitShort():(f.u==='i'?itemPlural():f.u);
+  return f.l+(suffix?' ('+suffix+')':'');
+}
+function badMsg(f,val){
+  var n=num(val);if(isNaN(n))return '';
+  if(n<0)return f.l+' cannot be negative.';
+  if(f.max&&n>f.max)return f.l+' cannot be above '+f.max+'%.';
+  return '';
+}
+function updateLabels(){
+  $('#l-available').textContent='Available time per day ('+unitShort()+')';
+  $('#l-demand').textContent='Customer demand per day ('+itemPlural()+')';
+  document.querySelectorAll('#steps label[data-lab]').forEach(function(l){
+    var f=FIELDS.filter(function(x){return x.k===l.dataset.lab})[0];
+    if(f)l.textContent=fieldLabel(f);
+  });
+}
+function stepHtml(s,i,len){
+  var list=FIELDS.filter(function(f){return f.basic||state.detail});
+  var fields=list.map(function(f){
+    var id='s'+i+'-'+f.k, bad=badMsg(f,s[f.k]);
+    return '<div><label class="f" for="'+id+'" data-lab="'+f.k+'">'+esc(fieldLabel(f))+'</label>'+
+      '<input type="number" id="'+id+'" data-i="'+i+'" data-f="'+f.k+'" inputmode="decimal" min="0" step="any"'+(f.max?' max="'+f.max+'"':'')+' value="'+esc(s[f.k])+'"'+(bad?' class="bad" aria-invalid="true"':'')+' title="'+esc(f.hint)+'">'+
+      (i===0?'<small class="fh">'+esc(f.hint)+'</small>':'')+'</div>';
+  }).join('');
+  return '<div class="step" data-step="'+i+'">'+
+    '<div class="step-h"><span class="badge" aria-hidden="true">'+(i+1)+'</span>'+
+    '<input type="text" data-i="'+i+'" data-f="name" aria-label="Name of step '+(i+1)+'" placeholder="Step name" value="'+esc(s.name)+'">'+
+    '<button type="button" class="mini" data-act="sup" data-i="'+i+'" aria-label="Move step '+(i+1)+' up"'+(i===0?' disabled':'')+'>&#8593;</button>'+
+    '<button type="button" class="mini" data-act="sdn" data-i="'+i+'" aria-label="Move step '+(i+1)+' down"'+(i===len-1?' disabled':'')+'>&#8595;</button>'+
+    '<button type="button" class="mini" data-act="sdel" data-i="'+i+'" aria-label="Remove step '+(i+1)+'">&#215;</button></div>'+
+    '<div class="fields">'+fields+'</div></div>';
+}
+function renderVsmForm(){
+  var v=state.vsm;
+  document.querySelectorAll('[data-v]').forEach(function(inp){inp.value=v[inp.dataset.v]});
+  $('#detailChk').checked=!!state.detail;
+  $('#steps').innerHTML=v.steps.length?v.steps.map(function(s,i){return stepHtml(s,i,v.steps.length)}).join(''):'<p class="help">No steps yet. Choose Add process step to begin.</p>';
+  updateLabels();
+}
+function renderWelcome(){$('#welcome').hidden=!!state.hideWelcome}
+
+/* results */
+function renderKpis(k){
+  var u=unitShort(), n=state.vsm.steps.length;
+  var overCls=isNaN(k.takt)?'':(k.over>0?'bad':'good');
+  var tiles=[
+    {c:'',l:'Lead time',v:k.lead>0?fmt(k.lead)+' '+u:'n/a',n:k.lead>0?'Start to finish, waiting included':'Enter cycle times and waits'},
+    {c:'',l:'Value-added time',v:k.va>0?fmt(k.va)+' '+u:'n/a',n:'Work the customer values'},
+    {c:'warn',l:'Process cycle efficiency',v:isNaN(k.pce)?'n/a':fmt1(k.pce)+'%',n:'Share of lead time that adds value'},
+    {c:'',l:'Rolled throughput yield',v:k.rtyN?fmt1(k.rty)+'%':'n/a',n:k.rtyN?'Right first time through every step':'Turn on detailed fields to enter yield'},
+    {c:overCls,l:'Steps over takt',v:isNaN(k.takt)?'n/a':k.over+' of '+n,n:isNaN(k.takt)?'Set available time and demand':'Slower than takt of '+fmt(k.takt)+' '+u}
+  ];
+  $('#kpis').innerHTML=tiles.map(function(t){
+    return '<div class="kpi '+t.c+'"><div class="label">'+t.l+'</div><div class="value">'+esc(t.v)+'</div><div class="note">'+esc(t.n)+'</div></div>';
+  }).join('');
+  $('#insights').innerHTML=insights(k).map(function(x){return '<li>'+esc(x)+'</li>'}).join('');
+  $('#taktOut').textContent=isNaN(k.takt)?'not set':fmt(k.takt)+' '+u;
+  document.querySelectorAll('#steps .step').forEach(function(el,i){
+    var s=state.vsm.steps[i];
+    el.classList.toggle('over',!isNaN(k.takt)&&num(s.ct)>k.takt);
+  });
+}
+
+/* SVG map */
+function tx(x,y,s,o){
+  o=o||{};
+  var size=o.size||12, weight=o.weight||400, fill=o.fill||C.text, anchor=o.anchor||'start', bg=o.bg||C.card;
+  return '<text x="'+x+'" y="'+y+'" font-family="'+FF+'" font-size="'+size+'" font-weight="'+weight+'" fill="'+fill+'" text-anchor="'+anchor+'"'+
+    (o.maxw?' data-maxw="'+o.maxw+'"':'')+' data-bg="'+bg+'"'+(o.box?' data-box="'+o.box+'"':'')+'>'+esc(s)+'</text>';
+}
+function wrapLines(s,max,maxLines){
+  var words=String(s).trim().split(/\s+/).filter(Boolean), out=[], cur='';
+  words.forEach(function(w){
+    while(w.length>max){if(cur){out.push(cur);cur=''}out.push(w.slice(0,max));w=w.slice(max)}
+    if(!cur)cur=w;else if((cur+' '+w).length<=max)cur+=' '+w;else{out.push(cur);cur=w}
+  });
+  if(cur)out.push(cur);
+  if(out.length>maxLines){var k=out.slice(0,maxLines);k[maxLines-1]=k[maxLines-1].slice(0,Math.max(0,max-3))+'...';return k}
+  return out.length?out:[''];
+}
+function fitTexts(svg){
+  svg.querySelectorAll('text[data-maxw]').forEach(function(t){
+    var mw=+t.getAttribute('data-maxw'), fs=parseFloat(t.getAttribute('font-size')), g=0;
+    while(t.getComputedTextLength()>mw&&fs>9&&g++<40){fs-=0.5;t.setAttribute('font-size',fs)}
+    if(t.getComputedTextLength()>mw){
+      var s=t.textContent;
+      while(s.length>1&&t.getComputedTextLength()>mw){s=s.slice(0,-1);t.textContent=s.replace(/\s+$/,'')+'...'}
+    }
+  });
+}
+function buildMapString(pal){
+  var prev=C;C=pal;
+  try{
+    var v=state.vsm, st2=v.steps, n=st2.length, k=calc(), u=unitShort();
+    if(!n)return '';
+    var BW=170,GAP=96,LM=20,TAIL=100;
+    var W=Math.max(1040,LM+n*(GAP+BW)+TAIL+LM), H=396, p=[];
+    p.push('<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="'+C.card+'"/>');
+
+    var sy=16,bh=58,bw=150,supX=LM,cusX=W-LM-bw,ctlW=190,ctlX=Math.round(W/2-ctlW/2),ctlR=ctlX+ctlW,supR=supX+bw;
+    var topBox=function(x,w,label,name,stroke){
+      p.push('<rect x="'+x+'" y="'+sy+'" width="'+w+'" height="'+bh+'" rx="4" fill="'+C.bg+'" stroke="'+stroke+'" stroke-width="2"/>');
+      p.push(tx(x+w/2,sy+22,label,{size:11,fill:C.muted,anchor:'middle',bg:C.bg,maxw:w-16,box:[x,sy,w,bh].join(',')}));
+      p.push(tx(x+w/2,sy+44,name,{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:w-16,box:[x,sy,w,bh].join(',')}));
+    };
+    topBox(supX,bw,'Supplier',v.supplier||'Not set',C.line);
+    topBox(cusX,bw,'Customer',v.customer||'Not set',C.line);
+    topBox(ctlX,ctlW,'Planning and control',isNaN(k.takt)?'Takt not set':'Takt '+fmt(k.takt)+' '+u,C.teal);
+    var ly=45;
+    p.push('<line x1="'+(cusX-2)+'" y1="'+ly+'" x2="'+(ctlR+8)+'" y2="'+ly+'" stroke="'+C.muted+'" stroke-width="1.5"/>');
+    p.push('<polygon points="'+(ctlR+8)+','+(ly-4)+' '+(ctlR+8)+','+(ly+4)+' '+ctlR+','+ly+'" fill="'+C.muted+'"/>');
+    p.push(tx((cusX+ctlR)/2,ly-8,'Orders',{size:11,fill:C.muted,anchor:'middle',maxw:140}));
+    if(num(v.demand)>0)p.push(tx((cusX+ctlR)/2,ly+17,fmt(num(v.demand))+' '+itemLabel(num(v.demand))+' per day',{size:11,fill:C.muted,anchor:'middle',maxw:140}));
+    p.push('<line x1="'+(ctlX-2)+'" y1="'+ly+'" x2="'+(supR+8)+'" y2="'+ly+'" stroke="'+C.muted+'" stroke-width="1.5"/>');
+    p.push('<polygon points="'+(supR+8)+','+(ly-4)+' '+(supR+8)+','+(ly+4)+' '+supR+','+ly+'" fill="'+C.muted+'"/>');
+    p.push(tx((ctlX+supR)/2,ly-8,'Schedule',{size:11,fill:C.muted,anchor:'middle',maxw:140}));
+    var cx0=LM+GAP/2;
+    p.push('<line x1="'+cx0+'" y1="'+(sy+bh+2)+'" x2="'+cx0+'" y2="112" stroke="'+C.muted+'" stroke-width="1.5"/>');
+    p.push('<polygon points="'+(cx0-4)+',112 '+(cx0+4)+',112 '+cx0+',120" fill="'+C.muted+'"/>');
+
+    /* only show data-box rows that have data somewhere, so a simple map stays simple */
+    var has=function(key){return st2.some(function(s){return !isNaN(num(s[key]))})};
+    var metrics=[{l:'CT',get:function(s){return num(s.ct)},unit:' '+u}];
+    if(has('co'))metrics.push({l:'CO',get:function(s){return num(s.co)},unit:' '+u});
+    if(has('up'))metrics.push({l:'Uptime',get:function(s){return num(s.up)},unit:'%'});
+    if(has('fpy'))metrics.push({l:'FPY',get:function(s){return num(s.fpy)},unit:'%'});
+    if(has('ops'))metrics.push({l:'Staff',get:function(s){return num(s.ops)},unit:''});
+    if(has('va'))metrics.push({l:'VA',get:function(s){return isNaN(num(s.va))?num(s.ct):num(s.va)},unit:' '+u});
+    var rows=Math.ceil(metrics.length/2);
+
+    var py=112,ph=50,dy=py+ph,dh=28+(rows-1)*19,hi=264,lo=294;
+    var d='M'+LM+','+hi;
+    st2.forEach(function(s,i){
+      var gs=LM+i*(GAP+BW), bs=gs+GAP, be=bs+BW, cx=gs+GAP/2;
+      var c=num(s.ct), over=!isNaN(k.takt)&&!isNaN(c)&&c>k.takt, col=over?C.red:C.teal;
+      p.push('<polygon points="'+(cx-17)+',152 '+(cx+17)+',152 '+cx+',122" fill="'+C.card+'" stroke="'+C.gold+'" stroke-width="2"/>');
+      p.push(tx(cx,148,'I',{size:12,weight:700,fill:C.gold,anchor:'middle'}));
+      p.push('<line x1="'+(gs+2)+'" y1="158" x2="'+(bs-8)+'" y2="158" stroke="'+C.muted+'" stroke-width="1.5"/>');
+      p.push('<polygon points="'+(bs-8)+',154 '+(bs-8)+',162 '+bs+',158" fill="'+C.muted+'"/>');
+      var q=num(s.qty), w=num(s.wait);
+      if(!isNaN(q))p.push(tx(cx,180,fmt(q)+' '+itemLabel(q),{size:11,anchor:'middle',maxw:GAP-8}));
+      if(!isNaN(w))p.push(tx(cx,198,'Wait '+fmt(w)+' '+u,{size:11,anchor:'middle',maxw:GAP-8}));
+      p.push('<rect x="'+bs+'" y="'+py+'" width="'+BW+'" height="'+ph+'" rx="4" fill="'+C.bg+'" stroke="'+col+'" stroke-width="2"/>');
+      var lines=wrapLines((i+1)+'. '+(s.name.trim()||'Unnamed step'),21,2), box=[bs,py,BW,ph].join(',');
+      if(lines.length===1)p.push(tx(bs+BW/2,py+30,lines[0],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}));
+      else{p.push(tx(bs+BW/2,py+21,lines[0],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}));
+           p.push(tx(bs+BW/2,py+38,lines[1],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}))}
+      p.push('<rect x="'+bs+'" y="'+dy+'" width="'+BW+'" height="'+dh+'" fill="'+C.card+'" stroke="'+col+'" stroke-width="2"/>');
+      if(metrics.length>1)p.push('<line x1="'+(bs+85)+'" y1="'+(dy+6)+'" x2="'+(bs+85)+'" y2="'+(dy+dh-6)+'" stroke="'+C.line+'" stroke-width="1"/>');
+      var dbox=[bs,dy,BW,dh].join(',');
+      metrics.forEach(function(m,j){
+        var col2=j%2, row=(j-col2)/2, val=m.get(s);
+        var t=isNaN(val)?m.l+' n/a':m.l+' '+fmt(val)+m.unit;
+        p.push(tx(bs+8+col2*85,dy+20+row*19,t,{size:11,maxw:69,box:dbox}));
+      });
+      d+=' H'+bs+' V'+lo+' H'+be;
+      if(i<n-1)d+=' V'+hi;
+      if(!isNaN(w)&&w>0)p.push(tx(cx,hi-7,fmt(w)+' '+u,{size:11,weight:600,fill:C.gold,anchor:'middle',maxw:GAP-8}));
+      if(!isNaN(c))p.push(tx(bs+BW/2,lo+17,fmt(c)+' '+u,{size:11,weight:600,fill:C.teal,anchor:'middle',maxw:BW-16}));
+    });
+    p.push('<path d="'+d+'" fill="none" stroke="'+C.teal+'" stroke-width="2"/>');
+
+    var endX=LM+n*(GAP+BW), tx2=W-LM-bw/2;
+    p.push('<path d="M'+(endX+2)+',158 H'+tx2+' V86" fill="none" stroke="'+C.muted+'" stroke-width="1.5"/>');
+    p.push('<polygon points="'+(tx2-5)+',86 '+(tx2+5)+',86 '+tx2+',76" fill="'+C.muted+'"/>');
+    p.push(tx(endX+GAP/2+2,180,'To customer',{size:11,fill:C.muted,anchor:'middle',maxw:GAP-8}));
+
+    var TB=330,TH=54;
+    p.push('<rect x="'+LM+'" y="'+TB+'" width="'+(W-2*LM)+'" height="'+TH+'" rx="4" fill="'+C.bg+'" stroke="'+C.line+'" stroke-width="1"/>');
+    var stats=[
+      ['Lead time',k.lead>0?fmt(k.lead)+' '+u:'n/a'],
+      ['Value-added time',k.va>0?fmt(k.va)+' '+u:'n/a'],
+      ['Process cycle efficiency',isNaN(k.pce)?'n/a':fmt1(k.pce)+'%'],
+      ['Rolled throughput yield',k.rtyN?fmt1(k.rty)+'%':'n/a']
+    ];
+    var tbox=[LM,TB,W-2*LM,TH].join(',');
+    stats.forEach(function(s,j){
+      var x=LM+16+j*240;
+      p.push(tx(x,TB+20,s[0],{size:11,fill:C.muted,bg:C.bg,maxw:215,box:tbox}));
+      p.push(tx(x,TB+43,s[1],{size:18,weight:700,bg:C.bg,maxw:215,box:tbox}));
+    });
+
+    var label='Value stream map with '+n+' process steps. Lead time '+(k.lead>0?fmt(k.lead)+' '+u:'not set')+'.';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="'+esc(label)+'"><title>'+esc(label)+'</title>'+p.join('')+'</svg>';
+  }finally{C=prev}
+}
+function measured(str){
+  if(!str)return '';
+  var off=document.createElement('div');
+  off.style.cssText='position:absolute;left:-99999px;top:0;visibility:hidden;width:2400px';
+  off.innerHTML=str;document.body.appendChild(off);
+  var svg=off.firstElementChild;fitTexts(svg);
+  var out=new XMLSerializer().serializeToString(svg);
+  off.remove();return out;
+}
+function drawVSM(){
+  var host=$('#mapBox'), str=buildMapString(DARK);
+  if(!str){host.innerHTML='<div class="empty">Add a process step in section 3 to draw the map.</div>';return}
+  host.innerHTML=str;
+  fitTexts(host.firstElementChild);
+  applyFit();
+}
+function applyFit(){
+  var svg=$('#mapBox svg');if(!svg)return;
+  var vb=svg.viewBox.baseVal;
+  if($('#fitW').checked){svg.style.width='100%';svg.style.height='auto'}
+  else{svg.style.width=vb.width+'px';svg.style.height=vb.height+'px'}
+}
+
+/* print report */
+function buildReport(){
+  var v=state.vsm,k=calc(),u=unitShort(),pj=state.project,m=state.sipoc.meta;
+  var kv=[['Organisation',pj.org],['Improvement project',pj.name],['Prepared by',pj.by],['Date',fmtDate(pj.date)],
+          ['Process',m.process],['Process owner',m.owner],['Start point',m.start],['End point',m.end],['Product or service family',v.family]]
+          .filter(function(x){return x[1]});
+  var kvRows='';
+  for(var i=0;i<kv.length;i+=2){
+    kvRows+='<tr><th>'+esc(kv[i][0])+'</th><td>'+esc(kv[i][1])+'</td>'+
+      (kv[i+1]?'<th>'+esc(kv[i+1][0])+'</th><td>'+esc(kv[i+1][1])+'</td>':'<th></th><td></td>')+'</tr>';
+  }
+  var title=pj.name||m.process||'Process';
+  var kp=[
+    ['Lead time',k.lead>0?fmt(k.lead)+' '+u:'n/a'],
+    ['Value-added time',k.va>0?fmt(k.va)+' '+u:'n/a'],
+    ['Process cycle efficiency',isNaN(k.pce)?'n/a':fmt1(k.pce)+'%'],
+    ['Rolled throughput yield',k.rtyN?fmt1(k.rty)+'%':'n/a'],
+    ['Takt time',isNaN(k.takt)?'not set':fmt(k.takt)+' '+u],
+    ['Steps over takt',isNaN(k.takt)?'n/a':k.over+' of '+v.steps.length]
+  ].map(function(x){return '<div><b>'+esc(x[1])+'</b><span>'+esc(x[0])+'</span></div>'}).join('');
+  var notes=insights(k).map(function(x){return '<li>'+esc(x)+'</li>'}).join('');
+  var lists={};
+  ['S','I','P','O','C'].forEach(function(key){lists[key]=state.sipoc[key].filter(function(x){return x.trim()})});
+  var rows=Math.max(1,lists.S.length,lists.I.length,lists.P.length,lists.O.length,lists.C.length), sip='';
+  for(var r=0;r<rows;r++){
+    sip+='<tr>'+['S','I','P','O','C'].map(function(key){
+      var t=lists[key][r];return '<td>'+(t?(key==='P'?(r+1)+'. ':'')+esc(t):'')+'</td>';
+    }).join('')+'</tr>';
+  }
+  var steps=v.steps.map(function(s,i){
+    var c=num(s.ct), over=!isNaN(k.takt)&&!isNaN(c)&&c>k.takt;
+    var nn=function(x){return '<td class="n">'+(isNaN(num(x))?'':esc(fmt(num(x))))+'</td>'};
+    return '<tr><td>'+(i+1)+'. '+esc(s.name||'Unnamed step')+(over?' (over takt)':'')+'</td>'+nn(s.ops)+nn(s.ct)+nn(s.co)+nn(s.up)+nn(s.fpy)+nn(s.va)+nn(s.wait)+nn(s.qty)+'</tr>';
+  }).join('');
+  var map=measured(buildMapString(LIGHT));
+  $('#report').innerHTML=
+    '<h1>'+esc(title)+'</h1><p class="rsub">SIPOC and current-state value stream map'+(pj.org?' for '+esc(pj.org):'')+'</p>'+
+    (kvRows?'<table>'+kvRows+'</table>':'')+
+    '<h2>Summary</h2><div class="kp">'+kp+'</div><ul>'+notes+'</ul>'+
+    '<h2>SIPOC</h2><table><thead><tr><th>Suppliers</th><th>Inputs</th><th>Process</th><th>Outputs</th><th>Customers</th></tr></thead><tbody>'+sip+'</tbody></table>'+
+    '<h2>Value stream map</h2>'+(map||'<p>No process steps entered.</p>')+
+    '<h2>Step data</h2><table><thead><tr><th>Step</th><th>People</th><th>Cycle time ('+u+')</th><th>Changeover ('+u+')</th><th>Uptime (%)</th><th>First pass yield (%)</th><th>Value-added time ('+u+')</th><th>Wait before ('+u+')</th><th>Queue ('+esc(itemPlural())+')</th></tr></thead><tbody>'+(steps||'<tr><td colspan="9">No steps entered.</td></tr>')+'</tbody></table>'+
+    '<p class="rfoot">Generated '+esc(new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}))+' with the SIPOC and Value Stream Map tool.</p>';
+}
+
+function refresh(){renderKpis(calc());drawVSM()}
+function renderAll(){renderWelcome();renderProject();renderSipoc();renderVsmForm();refresh()}
+
+/* actions */
+function loadExample(key,fromWelcome){
+  snapshot();
+  var pj=state.project;
+  state=normalise(EXAMPLES[key]());
+  state.project=pj;state.hideWelcome=true;
+  renderAll();persist();
+  setStatus('Example loaded. The figures are illustrative, so replace them with your own.',true);
+  $('#moreMenu').open=false;
+  if(fromWelcome)$('#sipocTile').scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});
+}
+
+/* events: project and SIPOC */
+document.querySelectorAll('[data-proj]').forEach(function(inp){
+  inp.addEventListener('input',function(){state.project[inp.dataset.proj]=inp.value;persist()});
+});
+$('#sipocCols').addEventListener('input',function(e){
+  var t=e.target;if(t.tagName!=='TEXTAREA')return;
+  state.sipoc[t.dataset.k][+t.dataset.i]=t.value;
+  autosize(t);
+  if(t.dataset.k==='P')updateProcHint();
+  persist();
+});
+$('#sipocCols').addEventListener('keydown',function(e){
+  var t=e.target;if(t.tagName!=='TEXTAREA'||e.isComposing)return;
+  var k=t.dataset.k,i=+t.dataset.i,arr=state.sipoc[k];
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    if(!t.value.trim())return;
+    arr.splice(i+1,0,'');renderSipoc();focusItem(k,i+1);persist();
+  }else if(e.key==='Backspace'&&t.value===''&&arr.length>1){
+    e.preventDefault();
+    arr.splice(i,1);renderSipoc();focusItem(k,Math.max(0,i-1));persist();
+  }
+});
+$('#sipocCols').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b||b.disabled)return;
+  var k=b.dataset.k,i=+b.dataset.i,act=b.dataset.act,arr=state.sipoc[k];
+  if(act==='add'){arr.push('');renderSipoc();focusItem(k,arr.length-1)}
+  else if(act==='del'){snapshot();arr.splice(i,1);renderSipoc();setStatus('Item removed.',true)}
+  else if(act==='up'||act==='dn'){var j=act==='up'?i-1:i+1;if(j<0||j>=arr.length)return;var tmp=arr[i];arr[i]=arr[j];arr[j]=tmp;renderSipoc()}
+  else return;
+  persist();
+});
+document.querySelectorAll('[data-meta]').forEach(function(inp){
+  inp.addEventListener('input',function(){state.sipoc.meta[inp.dataset.meta]=inp.value;persist()});
+});
+
+/* events: VSM */
+document.querySelectorAll('[data-v]').forEach(function(inp){
+  inp.addEventListener('input',function(){
+    state.vsm[inp.dataset.v]=inp.value;
+    if(inp.dataset.v==='unit'||inp.dataset.v==='item')updateLabels();
+    refresh();persist();
+  });
+});
+$('#steps').addEventListener('input',function(e){
+  var t=e.target;if(!t.dataset.f)return;
+  state.vsm.steps[+t.dataset.i][t.dataset.f]=t.value;
+  var def=FIELDS.filter(function(x){return x.k===t.dataset.f})[0], msg=def?badMsg(def,t.value):'';
+  t.classList.toggle('bad',!!msg);
+  if(msg){t.setAttribute('aria-invalid','true');setStatus(msg,false)}else t.removeAttribute('aria-invalid');
+  refresh();persist();
+});
+$('#steps').addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b||b.disabled)return;
+  var i=+b.dataset.i,arr=state.vsm.steps,act=b.dataset.act;
+  if(act==='sdel'){snapshot();arr.splice(i,1);renderVsmForm();refresh();persist();setStatus('Step removed.',true);return}
+  else if(act==='sup'||act==='sdn'){var j=act==='sup'?i-1:i+1;if(j<0||j>=arr.length)return;var tmp=arr[i];arr[i]=arr[j];arr[j]=tmp}
+  else return;
+  renderVsmForm();refresh();persist();
+});
+$('#detailChk').addEventListener('change',function(){state.detail=this.checked;renderVsmForm();refresh();persist()});
+$('#btnAddStep').addEventListener('click',function(){
+  state.vsm.steps.push(newStep());renderVsmForm();refresh();persist();
+  var inp=document.querySelector('#steps input[data-f="name"][data-i="'+(state.vsm.steps.length-1)+'"]');if(inp)inp.focus();
+});
+$('#btnFillWait').addEventListener('click',function(){
+  var k=calc();
+  if(isNaN(k.takt)){setStatus('Set the available time and demand first, so takt time can be worked out.',false);return}
+  var n=0;snapshot();
+  state.vsm.steps.forEach(function(s){var q=num(s.qty);if(!isNaN(q)){s.wait=String(Math.round(q*k.takt*100)/100);n++}});
+  if(!n){setStatus('Enter a queue size on at least one step first.',false);return}
+  renderVsmForm();refresh();persist();
+  setStatus('Waits filled for '+n+' step'+(n===1?'':'s')+' from queue size times takt.',true);
+});
+$('#fitW').checked=window.innerWidth>=900;
+$('#fitW').addEventListener('change',applyFit);
+$('#btnSvg').addEventListener('click',function(){
+  var style=$('#exportStyle').value==='dark'?DARK:LIGHT;
+  var str=measured(buildMapString(style));
+  if(!str){setStatus('Add a process step first.',false);return}
+  download('vsm-'+(slug(state.vsm.family||state.sipoc.meta.process)||'map')+'.svg','<?xml version="1.0" encoding="UTF-8"?>\n'+str,'image/svg+xml');
+  setStatus('Map downloaded as SVG.',false);
+});
+
+/* events: welcome, files, print, menu */
+document.querySelectorAll('[data-ex]').forEach(function(b){b.addEventListener('click',function(){loadExample(b.dataset.ex,true)})});
+$('#btnStartBlank').addEventListener('click',function(){
+  state.hideWelcome=true;renderWelcome();persist();
+  $('#projTile').scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});
+  $('#p-org').focus({preventScroll:true});
+});
+$('#btnGuide').addEventListener('click',function(){
+  state.hideWelcome=false;renderWelcome();persist();$('#moreMenu').open=false;
+  $('#welcome').scrollIntoView({behavior:reducedMotion()?'auto':'smooth',block:'start'});
+});
+$('#btnUndo').addEventListener('click',doUndo);
+$('#btnSave').addEventListener('click',function(){
+  download('sipoc-vsm-'+(slug(state.vsm.family||state.sipoc.meta.process)||'data')+'.json',JSON.stringify(state,null,2),'application/json');
+  setStatus('File saved. Use Open file to load it again.',false);
+});
+$('#btnOpen').addEventListener('click',function(){$('#fileIn').click()});
+$('#fileIn').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var next=normalise(JSON.parse(r.result));snapshot();state=next;state.hideWelcome=true;renderAll();persist();setStatus('File opened.',true)}
+    catch(err){setStatus('That file could not be read. Choose a file saved from this page.',false)}
+    $('#fileIn').value='';
+  };
+  r.readAsText(f);
+});
+$('#btnExample').addEventListener('click',function(){loadExample($('#exampleSel').value,false)});
+$('#btnClear').addEventListener('click',function(){
+  snapshot();
+  var hw=state.hideWelcome;state=blank();state.hideWelcome=hw;
+  renderAll();persist();setStatus('All entries cleared.',true);$('#moreMenu').open=false;
+});
+$('#btnPrint').addEventListener('click',function(){buildReport();window.print()});
+window.addEventListener('beforeprint',buildReport);
+document.addEventListener('click',function(e){var m=$('#moreMenu');if(m.open&&!m.contains(e.target))m.open=false});
+window.addEventListener('resize',function(){autosizeAll()});
+
+renderAll();
+})();
+</script>
+</body>
+</html>
