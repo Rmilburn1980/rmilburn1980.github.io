@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cycle Time &amp; Waste Analysis Tool</title>
+<style>
+  :root{
+    --bg:#0B1220;
+    --card:#11192B;
+    --border:#2A3A52;
+    --teal:#00D9C0;
+    --gold:#FFB800;
+    --green:#00E68A;
+    --red:#FF3B5C;
+    --text:#F1F5F9;
+    --muted:#8B9CB5;
+    --dim:#5A6B85;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:24px;
+  }
+  .wrap{max-width:1200px;margin:0 auto;}
+  header{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:24px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--border);
+  }
+  h1{
+    font-size:1.6rem;
+    margin:0 0 4px 0;
+    letter-spacing:.2px;
+  }
+  .subtitle{color:var(--muted);font-size:.9rem;margin:0;}
+  .hub-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    color:var(--teal);
+    text-decoration:none;
+    font-size:.85rem;
+    border:1px solid var(--border);
+    padding:8px 14px;
+    border-radius:8px;
+    background:var(--card);
+    white-space:nowrap;
+  }
+  .hub-link:hover{border-color:var(--teal);}
+
+  /* Reference / help */
+  details.help{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 20px;
+    margin-bottom:20px;
+  }
+  details.help summary{
+    cursor:pointer;
+    font-size:.85rem;
+    font-weight:600;
+    color:var(--teal);
+    list-style:none;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  details.help summary::-webkit-details-marker{display:none;}
+  details.help summary::before{
+    content:"?";
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:1px solid var(--teal);
+    font-size:.7rem;
+  }
+  details.help[open] summary{margin-bottom:14px;}
+  .help-body{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:16px;
+    font-size:.82rem;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  .help-body h3{
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--text);
+    margin:0 0 8px 0;
+  }
+  .help-body ul{margin:0;padding-left:18px;}
+  .help-body li{margin-bottom:4px;}
+  .help-body b{color:var(--text);}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:18px 20px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    font-size:.75rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--muted);
+    margin:0 0 14px 0;
+  }
+
+  /* Setup inputs */
+  .setup-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:14px;
+  }
+  .field label{
+    display:block;
+    font-size:.75rem;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input, select{
+    width:100%;
+    background:#0E1728;
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:.9rem;
+    font-family:inherit;
+  }
+  input:focus, select:focus{
+    outline:none;
+    border-color:var(--teal);
+  }
+  input.key{border-color:var(--gold);}
+
+  /* Summary tiles */
+  .tiles{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:14px;
+    margin-bottom:20px;
+  }
+  .tile{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:16px 18px;
+  }
+  .tile .label{
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .tile .value{
+    font-size:1.6rem;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .tile .value.teal{color:var(--teal);}
+  .tile .value.green{color:var(--green);}
+  .tile .value.red{color:var(--red);}
+  .tile .value.gold{color:var(--gold);}
+  .tile .sub{font-size:.75rem;color:var(--dim);margin-top:4px;}
+
+  /* Table */
+  .table-scroll{overflow-x:auto;}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:920px;
+  }
+  th{
+    text-align:left;
+    font-size:.7rem;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:var(--muted);
+    padding:8px 8px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  td{
+    padding:6px 8px;
+    border-bottom:1px solid var(--border);
+    vertical-align:middle;
+  }
+  td input, td select{padding:6px 8px;font-size:.85rem;}
+  td.avg{
+    font-variant-numeric:tabular-nums;
+    color:var(--text);
+    font-weight:600;
+    text-align:center;
+  }
+  td.num{width:64px;}
+  tr.va td.avg{color:var(--green);}
+  tr.nva td.avg{color:var(--red);}
+  .row-badge{
+    display:inline-block;
+    font-size:.7rem;
+    padding:2px 8px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .row-badge.va{background:rgba(0,230,138,.15);color:var(--green);}
+  .row-badge.nva{background:rgba(255,59,92,.15);color:var(--red);}
+  .del-btn{
+    background:none;
+    border:1px solid var(--border);
+    color:var(--dim);
+    border-radius:6px;
+    width:28px;
+    height:28px;
+    cursor:pointer;
+    font-size:.9rem;
+    line-height:1;
+  }
+  .del-btn:hover{border-color:var(--red);color:var(--red);}
+
+  .empty-row td{
+    text-align:center;
+    color:var(--muted);
+    padding:28px 12px;
+    font-size:.85rem;
+  }
+  .field-error{border-color:var(--red) !important;}
+  .field-hint{
+    font-size:.72rem;
+    color:var(--red);
+    margin-top:6px;
+  }
+
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  button{
+    font-family:inherit;
+    font-size:.85rem;
+    border-radius:8px;
+    padding:9px 16px;
+    cursor:pointer;
+    border:1px solid var(--border);
+    background:transparent;
+    color:var(--text);
+  }
+  button.primary{background:var(--teal);color:#062621;border-color:var(--teal);font-weight:600;}
+  button:hover{border-color:var(--teal);}
+  button.primary:hover{opacity:.9;}
+  button.danger:hover{border-color:var(--red);color:var(--red);}
+
+  /* Waste breakdown */
+  .waste-breakdown-layout{
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:28px;
+    align-items:start;
+  }
+  .waste-grid{
+    display:grid;
+    grid-template-columns:140px 1fr 70px;
+    row-gap:10px;
+    column-gap:14px;
+    align-items:center;
+  }
+  .waste-grid .wname{font-size:.85rem;color:var(--muted);}
+  .bar-track{
+    background:#0E1728;
+    border:1px solid var(--border);
+    border-radius:6px;
+    height:16px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--teal);
+    border-radius:6px 0 0 6px;
+    transition:width .3s ease;
+  }
+  .waste-grid .wpct{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    font-size:.85rem;
+    color:var(--text);
+  }
+
+  /* Radar chart */
+  .radar-panel{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  #radarChart{
+    width:100%;
+    max-width:340px;
+    height:auto;
+  }
+  .radar-panel .radar-caption{
+    font-size:.72rem;
+    color:var(--dim);
+    text-align:center;
+    margin-top:6px;
+  }
+  #radarChart .radar-grid-line{
+    fill:none;
+    stroke:var(--border);
+    stroke-width:1;
+  }
+  #radarChart .radar-axis-line{
+    stroke:var(--border);
+    stroke-width:1;
+  }
+  #radarChart .radar-shape{
+    fill:var(--teal);
+    fill-opacity:0.12;
+    stroke:var(--teal);
+    stroke-width:2;
+    stroke-linejoin:round;
+  }
+  #radarChart .radar-point{
+    fill:var(--teal);
+    stroke:var(--card);
+    stroke-width:2;
+  }
+  #radarChart .radar-axis-label{
+    fill:var(--muted);
+    font-size:9.5px;
+  }
+  #radarChart .radar-value-label{
+    fill:var(--text);
+    font-size:9px;
+    font-weight:600;
+  }
+
+  @media (max-width:900px){
+    .waste-breakdown-layout{grid-template-columns:1fr;}
+    .radar-panel{margin-top:6px;}
+  }
+
+  footer{
+    color:var(--dim);
+    font-size:.75rem;
+    text-align:center;
+    margin-top:30px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+  }
+
+  /* Confirm overlay (replaces native confirm(), which some viewers block) */
+  .confirm-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(4,8,16,.65);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:16px;
+  }
+  .confirm-overlay[hidden]{display:none;}
+  .confirm-box{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px 24px;
+    max-width:360px;
+    width:100%;
+  }
+  .confirm-box p{
+    margin:0 0 18px 0;
+    font-size:.9rem;
+    color:var(--text);
+    line-height:1.4;
+  }
+  .confirm-box .confirm-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+  }
+
+  @media (max-width:640px){
+    body{padding:14px;}
+    h1{font-size:1.3rem;}
+  }
+
+  /* Stacked "card" table below 760px, instead of a horizontal-scroll table */
+  @media (max-width:760px){
+    .table-scroll{overflow-x:visible;}
+    table{min-width:0;}
+    thead{
+      position:absolute;
+      width:1px;height:1px;
+      overflow:hidden;
+      clip:rect(0 0 0 0);
+      white-space:nowrap;
+    }
+    table, tbody, tr, td{display:block;width:100%;}
+    tr{
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px 12px;
+      margin-bottom:12px;
+      background:#0E1728;
+    }
+    td{
+      border:none;
+      padding:6px 0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    td::before{
+      content:attr(data-label);
+      flex:0 0 100px;
+      font-size:.68rem;
+      text-transform:uppercase;
+      letter-spacing:.4px;
+      color:var(--muted);
+    }
+    td.num{width:auto;}
+    td input, td select{flex:1;}
+    .empty-row{border:none;background:none;}
+    .empty-row td{display:block;padding:24px 4px;}
+    .empty-row td::before{content:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Cycle Time &amp; Waste Analysis Tool</h1>
+      <p class="subtitle">Time observation, VA/NVA split and TIMWOODS waste breakdown</p>
+    </div>
+    <a class="hub-link" href="../index.html">&larr; Portfolio Hub</a>
+  </header>
+
+  <details class="help">
+    <summary>What do VA/NVA and TIMWOODS mean?</summary>
+    <div class="help-body">
+      <div>
+        <h3>Value-Added vs Non-Value-Added</h3>
+        <ul>
+          <li><b>VA</b> &mdash; the customer would pay for this step if they could see it happening (fitting a part, assembling a component).</li>
+          <li><b>NVA</b> &mdash; the process needs it right now, but the customer gets no value from it (walking, waiting, rework). Tag every NVA step with a waste type below.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The 8 Wastes &mdash; TIMWOODS</h3>
+        <ul>
+          <li><b>Transport</b> &mdash; unnecessary movement of material or product</li>
+          <li><b>Inventory</b> &mdash; more stock or WIP than needed right now</li>
+          <li><b>Motion</b> &mdash; unnecessary movement by people</li>
+          <li><b>Waiting</b> &mdash; idle time for material, info or a machine</li>
+          <li><b>Over-production</b> &mdash; making more/sooner than needed</li>
+          <li><b>Over-processing</b> &mdash; doing more than the spec requires</li>
+          <li><b>Defects</b> &mdash; errors, rework or scrap</li>
+          <li><b>Skills</b> &mdash; not using people's knowledge or ideas</li>
+        </ul>
+      </div>
+      <div>
+        <h3>How to run the study</h3>
+        <ul>
+          <li>Fill in shift length, breaks and demand to get a takt time</li>
+          <li>List each step in order, timing 3&ndash;5 repeat cycles per step</li>
+          <li>Mark VA/NVA, tag the waste type on NVA steps</li>
+          <li>Use the waste breakdown to prioritise what to fix first</li>
+        </ul>
+      </div>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2>Study Setup</h2>
+    <div class="setup-grid">
+      <div class="field">
+        <label for="processName">Process / Line</label>
+        <input type="text" id="processName" placeholder="e.g. Caravan Final Trim Line">
+      </div>
+      <div class="field">
+        <label for="studyDate">Date</label>
+        <input type="date" id="studyDate">
+      </div>
+      <div class="field">
+        <label for="observer">Observer</label>
+        <input type="text" id="observer" placeholder="e.g. R. Milburn">
+      </div>
+      <div class="field">
+        <label for="shiftLength">Shift Length (min)</label>
+        <input type="number" id="shiftLength" class="key" value="460" min="1">
+      </div>
+      <div class="field">
+        <label for="breaks">Breaks (min)</label>
+        <input type="number" id="breaks" class="key" value="40" min="0">
+      </div>
+      <div class="field">
+        <label for="demand">Customer Demand (units/shift)</label>
+        <input type="number" id="demand" class="key" value="6" min="1">
+      </div>
+    </div>
+    <div class="field-hint" id="setupHint" hidden></div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">Total Cycle Time</div>
+      <div class="value teal" id="tileTotal">0.0s</div>
+    </div>
+    <div class="tile">
+      <div class="label">Value-Added %</div>
+      <div class="value green" id="tileVaPct">0.0%</div>
+      <div class="sub" id="tileVaSub">0.0s VA / 0.0s NVA</div>
+    </div>
+    <div class="tile">
+      <div class="label">Takt Time</div>
+      <div class="value gold" id="tileTakt">0.0s</div>
+      <div class="sub">per unit, from demand</div>
+    </div>
+    <div class="tile">
+      <div class="label">vs Takt</div>
+      <div class="value" id="tileVsTakt">-</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Time Observation</h2>
+    <div class="table-scroll">
+      <table id="stepsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Process Step</th>
+            <th>C1 (s)</th>
+            <th>C2 (s)</th>
+            <th>C3 (s)</th>
+            <th>C4 (s)</th>
+            <th>C5 (s)</th>
+            <th>Avg (s)</th>
+            <th>VA/NVA</th>
+            <th>Waste Type</th>
+            <th>Notes / Action</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="stepsBody"></tbody>
+      </table>
+    </div>
+    <div class="toolbar">
+      <button class="primary" id="addRowBtn">+ Add Step</button>
+      <button id="loadExampleBtn">Load Example Data</button>
+      <button id="exportCsvBtn">Export CSV</button>
+      <button id="exportJsonBtn">Export Backup</button>
+      <button id="importJsonBtn">Import Backup</button>
+      <input type="file" id="importJsonInput" accept="application/json" hidden>
+      <button class="danger" id="clearBtn">Clear All</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Waste Breakdown (TIMWOODS)</h2>
+    <div class="waste-breakdown-layout">
+      <div class="waste-grid" id="wasteGrid"></div>
+      <div class="radar-panel">
+        <svg id="radarChart" viewBox="0 0 340 300" role="img" aria-label="Radar chart of waste time by TIMWOODS category"></svg>
+        <div class="radar-caption">Waste profile &mdash; % of total cycle time per category</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Cycle Time &amp; Waste Analysis Tool &middot; Continuous Improvement toolkit<br>
+    Data saves automatically in this browser only &mdash; it will not appear on another device or browser. Use Export Backup / Import Backup to move a study between them.
+  </footer>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay" hidden>
+  <div class="confirm-box">
+    <p id="confirmMessage">Are you sure?</p>
+    <div class="confirm-actions">
+      <button id="confirmCancelBtn">Cancel</button>
+      <button class="primary" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TIMWOODS = ["Transport","Inventory","Motion","Waiting","Over-production","Over-processing","Defects","Skills"];
+  const STORAGE_KEY = "cycleTimeWasteTool_v1";
+
+  const els = {
+    processName: document.getElementById('processName'),
+    studyDate: document.getElementById('studyDate'),
+    observer: document.getElementById('observer'),
+    shiftLength: document.getElementById('shiftLength'),
+    breaks: document.getElementById('breaks'),
+    demand: document.getElementById('demand'),
+    stepsBody: document.getElementById('stepsBody'),
+    tileTotal: document.getElementById('tileTotal'),
+    tileVaPct: document.getElementById('tileVaPct'),
+    tileVaSub: document.getElementById('tileVaSub'),
+    tileTakt: document.getElementById('tileTakt'),
+    tileVsTakt: document.getElementById('tileVsTakt'),
+    wasteGrid: document.getElementById('wasteGrid'),
+    radarChart: document.getElementById('radarChart'),
+    addRowBtn: document.getElementById('addRowBtn'),
+    loadExampleBtn: document.getElementById('loadExampleBtn'),
+    exportCsvBtn: document.getElementById('exportCsvBtn'),
+    exportJsonBtn: document.getElementById('exportJsonBtn'),
+    importJsonBtn: document.getElementById('importJsonBtn'),
+    importJsonInput: document.getElementById('importJsonInput'),
+    clearBtn: document.getElementById('clearBtn'),
+    confirmOverlay: document.getElementById('confirmOverlay'),
+    confirmMessage: document.getElementById('confirmMessage'),
+    confirmOkBtn: document.getElementById('confirmOkBtn'),
+    confirmCancelBtn: document.getElementById('confirmCancelBtn'),
+    setupHint: document.getElementById('setupHint'),
+  };
+
+  function askConfirm(message, onConfirm){
+    els.confirmMessage.textContent = message;
+    els.confirmOverlay.hidden = false;
+    function cleanup(){
+      els.confirmOverlay.hidden = true;
+      els.confirmOkBtn.removeEventListener('click', onOk);
+      els.confirmCancelBtn.removeEventListener('click', onCancel);
+    }
+    function onOk(){ cleanup(); onConfirm(); }
+    function onCancel(){ cleanup(); }
+    els.confirmOkBtn.addEventListener('click', onOk);
+    els.confirmCancelBtn.addEventListener('click', onCancel);
+  }
+
+  let rowId = 0;
+  function newRow(data){
+    data = data || {};
+    rowId += 1;
+    return {
+      id: rowId,
+      desc: data.desc || "",
+      cycles: data.cycles || ["","","","",""],
+      va: data.va || "VA",
+      waste: data.waste || "",
+      notes: data.notes || ""
+    };
+  }
+
+  let state = {
+    meta: { processName:"", studyDate:"", observer:"", shiftLength:460, breaks:40, demand:6 },
+    rows: []
+  };
+
+  function avgOf(cycles){
+    const nums = cycles.map(v=>parseFloat(v)).filter(v=>!isNaN(v) && v>0);
+    if(nums.length===0) return 0;
+    return nums.reduce((a,b)=>a+b,0)/nums.length;
+  }
+
+  function renderWasteOptions(select, current){
+    const blank = document.createElement('option');
+    blank.value=""; blank.textContent="-";
+    select.appendChild(blank);
+    TIMWOODS.forEach(w=>{
+      const o = document.createElement('option');
+      o.value=w; o.textContent=w;
+      if(w===current) o.selected=true;
+      select.appendChild(o);
+    });
+  }
+
+  function renderTable(){
+    els.stepsBody.innerHTML = "";
+
+    if(state.rows.length === 0){
+      const tr = document.createElement('tr');
+      tr.className = 'empty-row';
+      const td = document.createElement('td');
+      td.colSpan = 12;
+      td.textContent = 'No steps yet. Click "+ Add Step" to time your first process step, or "Load Example Data" to see a worked example.';
+      tr.appendChild(td);
+      els.stepsBody.appendChild(tr);
+      return;
+    }
+
+    const cycleLabels = ["Cycle 1 (s)","Cycle 2 (s)","Cycle 3 (s)","Cycle 4 (s)","Cycle 5 (s)"];
+
+    state.rows.forEach((row,idx)=>{
+      const tr = document.createElement('tr');
+      const avg = avgOf(row.cycles);
+      tr.className = row.va === 'VA' ? 'va' : 'nva';
+
+      const tdNum = document.createElement('td');
+      tdNum.dataset.label = 'Step';
+      tdNum.textContent = idx+1;
+      tr.appendChild(tdNum);
+
+      const tdDesc = document.createElement('td');
+      tdDesc.dataset.label = 'Process Step';
+      const descInput = document.createElement('input');
+      descInput.type='text';
+      descInput.value = row.desc;
+      descInput.placeholder = "Step description";
+      descInput.addEventListener('input', e=>{ row.desc = e.target.value; save(); });
+      tdDesc.appendChild(descInput);
+      tr.appendChild(tdDesc);
+
+      row.cycles.forEach((c, ci)=>{
+        const td = document.createElement('td');
+        td.className='num';
+        td.dataset.label = cycleLabels[ci];
+        const inp = document.createElement('input');
+        inp.type='number';
+        inp.min='0';
+        inp.value = c;
+        inp.addEventListener('input', e=>{
+          let v = e.target.value;
+          if(v !== '' && parseFloat(v) < 0){ v = '0'; e.target.value = '0'; }
+          row.cycles[ci] = v;
+          save();
+          renderTable();
+        });
+        td.appendChild(inp);
+        tr.appendChild(td);
+      });
+
+      const tdAvg = document.createElement('td');
+      tdAvg.className='avg';
+      tdAvg.dataset.label = 'Avg (s)';
+      tdAvg.textContent = avg.toFixed(1);
+      tr.appendChild(tdAvg);
+
+      const tdVa = document.createElement('td');
+      tdVa.dataset.label = 'VA / NVA';
+      const vaSelect = document.createElement('select');
+      vaSelect.title = 'VA = customer would pay for this step. NVA = waste - tag the type on the right.';
+      ['VA','NVA'].forEach(v=>{
+        const o = document.createElement('option');
+        o.value=v; o.textContent=v;
+        if(v===row.va) o.selected=true;
+        vaSelect.appendChild(o);
+      });
+      vaSelect.addEventListener('change', e=>{ row.va = e.target.value; save(); renderTable(); renderSummary(); });
+      tdVa.appendChild(vaSelect);
+      tr.appendChild(tdVa);
+
+      const tdWaste = document.createElement('td');
+      tdWaste.dataset.label = 'Waste Type';
+      const wasteSelect = document.createElement('select');
+      wasteSelect.title = 'TIMWOODS: Transport, Inventory, Motion, Waiting, Over-production, Over-processing, Defects, Skills';
+      renderWasteOptions(wasteSelect, row.waste);
+      wasteSelect.addEventListener('change', e=>{ row.waste = e.target.value; save(); renderSummary(); });
+      tdWaste.appendChild(wasteSelect);
+      tr.appendChild(tdWaste);
+
+      const tdNotes = document.createElement('td');
+      tdNotes.dataset.label = 'Notes / Action';
+      const notesInput = document.createElement('input');
+      notesInput.type='text';
+      notesInput.value = row.notes;
+      notesInput.placeholder = "Improvement action";
+      notesInput.addEventListener('input', e=>{ row.notes = e.target.value; save(); });
+      tdNotes.appendChild(notesInput);
+      tr.appendChild(tdNotes);
+
+      const tdDel = document.createElement('td');
+      tdDel.dataset.label = 'Remove';
+      const delBtn = document.createElement('button');
+      delBtn.className='del-btn';
+      delBtn.textContent='×';
+      delBtn.title='Remove step';
+      delBtn.addEventListener('click', ()=>{
+        const label = row.desc ? '"' + row.desc + '"' : 'this step';
+        askConfirm('Remove ' + label + '? This cannot be undone.', ()=>{
+          state.rows = state.rows.filter(r=>r.id!==row.id);
+          save(); renderTable(); renderSummary();
+        });
+      });
+      tdDel.appendChild(delBtn);
+      tr.appendChild(tdDel);
+
+      els.stepsBody.appendChild(tr);
+    });
+  }
+
+  function renderSummary(){
+    const shift = parseFloat(els.shiftLength.value)||0;
+    const brk = parseFloat(els.breaks.value)||0;
+    const demand = parseFloat(els.demand.value)||0;
+
+    // Validation: flag inputs that would make takt time meaningless
+    let hint = '';
+    const badBreaks = brk >= shift && shift > 0;
+    const badDemand = els.demand.value !== '' && demand <= 0;
+    els.shiftLength.classList.toggle('field-error', badBreaks);
+    els.breaks.classList.toggle('field-error', badBreaks);
+    els.demand.classList.toggle('field-error', badDemand);
+    if(badBreaks) hint = 'Breaks must be less than shift length.';
+    else if(badDemand) hint = 'Customer demand must be greater than 0.';
+    els.setupHint.textContent = hint;
+    els.setupHint.hidden = !hint;
+
+    let totalTime = 0, vaTime = 0, nvaTime = 0;
+    const wasteTotals = {};
+    TIMWOODS.forEach(w=>wasteTotals[w]=0);
+
+    state.rows.forEach(row=>{
+      const avg = avgOf(row.cycles);
+      totalTime += avg;
+      if(row.va === 'VA'){ vaTime += avg; }
+      else {
+        nvaTime += avg;
+        if(row.waste && wasteTotals.hasOwnProperty(row.waste)){
+          wasteTotals[row.waste] += avg;
+        }
+      }
+    });
+
+    const vaPct = totalTime > 0 ? (vaTime/totalTime*100) : 0;
+    const taktValid = demand > 0 && shift > brk;
+    const taktTime = taktValid ? ((shift-brk)*60)/demand : 0;
+
+    els.tileTotal.textContent = totalTime.toFixed(1) + 's';
+    els.tileVaPct.textContent = vaPct.toFixed(1) + '%';
+    els.tileVaSub.textContent = vaTime.toFixed(1) + 's VA / ' + nvaTime.toFixed(1) + 's NVA';
+    els.tileTakt.textContent = taktValid ? taktTime.toFixed(1) + 's' : '-';
+
+    if(taktValid && state.rows.length > 0){
+      if(totalTime > taktTime){
+        els.tileVsTakt.textContent = 'Over takt';
+        els.tileVsTakt.className = 'value red';
+      } else {
+        els.tileVsTakt.textContent = 'Within takt';
+        els.tileVsTakt.className = 'value green';
+      }
+    } else {
+      els.tileVsTakt.textContent = state.rows.length === 0 ? 'Add steps' : 'Check setup';
+      els.tileVsTakt.className = 'value';
+    }
+
+    els.wasteGrid.innerHTML = '';
+    const maxWaste = Math.max(1, ...Object.values(wasteTotals));
+    const wastePcts = [];
+    TIMWOODS.forEach(w=>{
+      const t = wasteTotals[w];
+      const pct = totalTime > 0 ? (t/totalTime*100) : 0;
+      const barPct = (t/maxWaste*100);
+      wastePcts.push(pct);
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'wname';
+      nameEl.textContent = w;
+
+      const trackEl = document.createElement('div');
+      trackEl.className = 'bar-track';
+      const fillEl = document.createElement('div');
+      fillEl.className = 'bar-fill';
+      fillEl.style.width = barPct.toFixed(1) + '%';
+      trackEl.appendChild(fillEl);
+
+      const pctEl = document.createElement('div');
+      pctEl.className = 'wpct';
+      pctEl.textContent = t.toFixed(1) + 's (' + pct.toFixed(1) + '%)';
+
+      els.wasteGrid.appendChild(nameEl);
+      els.wasteGrid.appendChild(trackEl);
+      els.wasteGrid.appendChild(pctEl);
+    });
+
+    renderRadar(wastePcts);
+  }
+
+  // Radar / spider chart of the 8 TIMWOODS categories, each axis showing
+  // that category's share of total cycle time. Single series, so one hue
+  // (teal) and no legend box - the caption under the chart names the metric.
+  function niceMax(v){
+    if(v <= 0) return 10;
+    const steps = [5,10,15,20,25,30,40,50,60,75,80,90,100];
+    for(const s of steps){ if(v <= s) return s; }
+    return Math.ceil(v/10)*10;
+  }
+
+  function renderRadar(values){
+    const svg = els.radarChart;
+    svg.innerHTML = '';
+    const cx = 170, cy = 150, maxR = 95;
+    const n = TIMWOODS.length;
+    const scaleMax = niceMax(Math.max(...values));
+    const rings = 4;
+
+    const ns = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs){
+      const e = document.createElementNS(ns, tag);
+      for(const k in attrs) e.setAttribute(k, attrs[k]);
+      return e;
+    }
+    function pointFor(i, r){
+      const angle = (-Math.PI/2) + (i * 2*Math.PI/n);
+      return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
+    }
+
+    // Grid rings (concentric polygons)
+    for(let ring=1; ring<=rings; ring++){
+      const r = maxR * (ring/rings);
+      const pts = [];
+      for(let i=0;i<n;i++){ const p = pointFor(i,r); pts.push(p.x.toFixed(1)+','+p.y.toFixed(1)); }
+      svg.appendChild(el('polygon', {class:'radar-grid-line', points: pts.join(' ')}));
+    }
+
+    // Axis spokes
+    for(let i=0;i<n;i++){
+      const p = pointFor(i, maxR);
+      svg.appendChild(el('line', {class:'radar-axis-line', x1:cx, y1:cy, x2:p.x.toFixed(1), y2:p.y.toFixed(1)}));
+    }
+
+    // Scale label on the top axis ring values
+    for(let ring=1; ring<=rings; ring++){
+      const r = maxR * (ring/rings);
+      const val = scaleMax * (ring/rings);
+      const p = pointFor(0, r);
+      const t = el('text', {class:'radar-axis-label', x:(p.x+4).toFixed(1), y:(p.y-2).toFixed(1), 'text-anchor':'start'});
+      t.textContent = Math.round(val) + '%';
+      svg.appendChild(t);
+    }
+
+    // Data shape
+    const dataPts = values.map((v,i)=>pointFor(i, (Math.min(v,scaleMax)/scaleMax)*maxR));
+    svg.appendChild(el('polygon', {class:'radar-shape', points: dataPts.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}));
+
+    // Vertex markers + value labels
+    dataPts.forEach((p,i)=>{
+      svg.appendChild(el('circle', {class:'radar-point', cx:p.x.toFixed(1), cy:p.y.toFixed(1), r:4}));
+      if(values[i] > 0){
+        const labelP = pointFor(i, Math.min(values[i],scaleMax)/scaleMax*maxR + 13);
+        const t = el('text', {
+          class:'radar-value-label',
+          x:labelP.x.toFixed(1), y:labelP.y.toFixed(1),
+          'text-anchor': labelP.x > cx+2 ? 'start' : (labelP.x < cx-2 ? 'end' : 'middle')
+        });
+        t.textContent = values[i].toFixed(0) + '%';
+        svg.appendChild(t);
+      }
+    });
+
+    // Category labels around the perimeter
+    for(let i=0;i<n;i++){
+      const p = pointFor(i, maxR + 22);
+      const anchor = p.x > cx+2 ? 'start' : (p.x < cx-2 ? 'end' : 'middle');
+      const t = el('text', {
+        class:'radar-axis-label',
+        x:p.x.toFixed(1), y:p.y.toFixed(1),
+        'text-anchor': anchor,
+        'dominant-baseline':'middle'
+      });
+      t.textContent = TIMWOODS[i];
+      svg.appendChild(t);
+    }
+  }
+
+  function save(){
+    state.meta = {
+      processName: els.processName.value,
+      studyDate: els.studyDate.value,
+      observer: els.observer.value,
+      shiftLength: els.shiftLength.value,
+      breaks: els.breaks.value,
+      demand: els.demand.value
+    };
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ /* storage unavailable, continue silently */ }
+  }
+
+  function load(){
+    let saved = null;
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) saved = JSON.parse(raw);
+    }catch(e){ saved = null; }
+
+    if(saved){
+      state = saved;
+      els.processName.value = state.meta.processName || "";
+      els.studyDate.value = state.meta.studyDate || "";
+      els.observer.value = state.meta.observer || "";
+      els.shiftLength.value = state.meta.shiftLength || 460;
+      els.breaks.value = state.meta.breaks || 40;
+      els.demand.value = state.meta.demand || 6;
+      state.rows.forEach(r=>{ if(r.id >= rowId) rowId = r.id + 1; });
+    } else {
+      loadExample();
+      return;
+    }
+    renderTable();
+    renderSummary();
+  }
+
+  function loadExample(){
+    els.processName.value = "Caravan Final Trim Line";
+    els.studyDate.value = new Date().toISOString().slice(0,10);
+    els.observer.value = "";
+    els.shiftLength.value = 460;
+    els.breaks.value = 40;
+    els.demand.value = 6;
+    state.rows = [
+      newRow({desc:"Collect trim panel from rack", cycles:[22,25,21,23,24], va:"NVA", waste:"Motion", notes:"Rack too far from station; relocate 3m closer"}),
+      newRow({desc:"Position panel on bench", cycles:[14,13,15,14,13], va:"VA", waste:"", notes:""}),
+      newRow({desc:"Wait for adhesive to cure", cycles:[60,65,58,61,62], va:"NVA", waste:"Waiting", notes:"Investigate faster-curing adhesive"}),
+      newRow({desc:"Fit trim to body", cycles:[40,42,39,41,40], va:"VA", waste:"", notes:""}),
+      newRow({desc:"Rework misaligned trim", cycles:[30,0,28,0,26], va:"NVA", waste:"Defects", notes:"Root cause: jig wear - link to DMAIC action"}),
+      newRow({desc:"Walk to next station", cycles:[18,17,19,18,17], va:"NVA", waste:"Transport", notes:"Consider re-sequencing layout"})
+    ];
+    save();
+    renderTable();
+    renderSummary();
+  }
+
+  els.addRowBtn.addEventListener('click', ()=>{
+    state.rows.push(newRow());
+    save();
+    renderTable();
+    renderSummary();
+  });
+
+  els.loadExampleBtn.addEventListener('click', ()=>{
+    if(state.rows.length){
+      askConfirm('This will replace your current data with example data. Continue?', loadExample);
+    } else {
+      loadExample();
+    }
+  });
+
+  els.clearBtn.addEventListener('click', ()=>{
+    askConfirm('Clear all steps and start a new study?', ()=>{
+      state.rows = [];
+      save();
+      renderTable();
+      renderSummary();
+    });
+  });
+
+  els.exportCsvBtn.addEventListener('click', ()=>{
+    const header = ["Step","Description","Cycle1","Cycle2","Cycle3","Cycle4","Cycle5","Avg","VA/NVA","WasteType","Notes"];
+    const lines = [header.join(",")];
+    state.rows.forEach((row,idx)=>{
+      const avg = avgOf(row.cycles).toFixed(1);
+      const fields = [idx+1, row.desc, ...row.cycles, avg, row.va, row.waste, row.notes]
+        .map(f => '"' + String(f).replace(/"/g,'""') + '"');
+      lines.push(fields.join(","));
+    });
+    const blob = new Blob([lines.join("\n")], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = (els.processName.value || 'cycle-time-study').replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+    a.download = name + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  els.exportJsonBtn.addEventListener('click', ()=>{
+    save();
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const name = (els.processName.value || 'cycle-time-study').replace(/[^a-z0-9]+/gi,'-').toLowerCase();
+    a.download = name + '-backup.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  els.importJsonBtn.addEventListener('click', ()=>{
+    els.importJsonInput.value = '';
+    els.importJsonInput.click();
+  });
+
+  els.importJsonInput.addEventListener('change', ()=>{
+    const file = els.importJsonInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      let parsed;
+      try{
+        parsed = JSON.parse(reader.result);
+        if(!parsed || !Array.isArray(parsed.rows) || typeof parsed.meta !== 'object'){
+          throw new Error('bad shape');
+        }
+      }catch(e){
+        els.setupHint.textContent = 'That file is not a valid backup for this tool.';
+        els.setupHint.hidden = false;
+        return;
+      }
+      const doImport = ()=>{
+        state = parsed;
+        state.rows.forEach(r=>{
+          if(typeof r.id !== 'number') r.id = ++rowId;
+          if(r.id >= rowId) rowId = r.id + 1;
+        });
+        els.processName.value = state.meta.processName || "";
+        els.studyDate.value = state.meta.studyDate || "";
+        els.observer.value = state.meta.observer || "";
+        els.shiftLength.value = state.meta.shiftLength || 460;
+        els.breaks.value = state.meta.breaks || 40;
+        els.demand.value = state.meta.demand || 6;
+        save();
+        renderTable();
+        renderSummary();
+      };
+      if(state.rows.length){
+        askConfirm('This will replace your current data with the imported backup. Continue?', doImport);
+      } else {
+        doImport();
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  [els.processName, els.studyDate, els.observer, els.shiftLength, els.breaks, els.demand].forEach(el=>{
+    el.addEventListener('input', ()=>{ save(); renderSummary(); });
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
