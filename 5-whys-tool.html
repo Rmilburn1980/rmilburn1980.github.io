@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>5 Whys Root Cause Tool</title>
+<meta name="description" content="Structured 5 Whys root cause analysis with evidence checks, reverse logic test, corrective actions and verification. Prints as a one page report.">
+<style>
+:root{
+  --bg:#0B1220;
+  --panel:#11192B;
+  --panel2:#0E1728;
+  --line:#2A3A52;
+  --text:#F1F5F9;
+  --muted:#8B9CB5;
+  --accent:#00D9C0;
+  --accent-ink:#062621;
+  --warn:#FFB800;
+  --bad:#FF3B5C;
+  --good:#00E68A;
+  --radius:12px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+a{color:var(--accent)}
+.wrap{max-width:1000px;margin:0 auto;padding:16px 16px 48px}
+header.top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:8px;color:var(--accent);text-decoration:none;font-size:15px;background:var(--panel)}
+.hub:hover{border-color:var(--accent)}
+h1{margin:12px 0 4px;font-size:1.7rem;line-height:1.2}
+.sub{margin:0 0 16px;color:var(--muted)}
+h2{font-size:.75rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:16px}
+details.help{margin-bottom:16px}
+details.help summary{cursor:pointer;font-weight:600;padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);list-style:none}
+details.help[open] summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+details.help .body{padding:12px 16px;background:var(--panel);border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius)}
+details.help ul{margin:6px 0 12px;padding-left:20px}
+label{display:block;font-size:.85rem;color:var(--muted);margin:0 0 4px}
+input,select,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit;font-size:16px}
+textarea{resize:vertical;min-height:44px;overflow:hidden}
+input:focus,select:focus,textarea:focus,button:focus-visible,summary:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.full{grid-column:1/-1}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+button{font:inherit;font-size:15px;padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.danger:hover{border-color:var(--bad);color:var(--bad)}
+button.small{padding:5px 10px;font-size:14px}
+.why{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.why.root{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.whyhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.badge{display:inline-block;background:var(--accent);color:var(--accent-ink);font-weight:700;border-radius:999px;padding:2px 12px;font-size:.9rem}
+.q{color:var(--muted);font-size:.9rem;margin:0 0 8px;overflow-wrap:anywhere}
+.because{text-align:center;color:var(--muted);font-size:.85rem;margin:6px 0}
+.because::before{content:"\2193  because"}
+.rootpick{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--text);margin:0;cursor:pointer}
+.rootpick input{width:auto;accent-color:var(--accent);transform:scale(1.2)}
+.warn{border:1px solid var(--warn);background:#2B2210;color:var(--warn);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.95rem}
+.ok{border:1px solid var(--good);background:#0B2A1E;color:var(--good);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.95rem}
+.readback ol{margin:8px 0 0;padding-left:22px}
+.readback li{margin-bottom:4px;overflow-wrap:anywhere}
+.check{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.check li{font-size:.95rem;color:var(--muted)}
+.check li.done{color:var(--good)}
+.check li::before{content:"\25CB  "}
+.check li.done::before{content:"\2714  "}
+table.actions{width:100%;min-width:940px;table-layout:fixed;border-collapse:collapse}
+table.actions th:nth-child(2){width:170px}
+table.actions th:nth-child(3){width:140px}
+table.actions th:nth-child(4){width:165px}
+table.actions th:nth-child(5){width:145px}
+table.actions th:nth-child(6){width:90px}
+table.actions th{font-size:.8rem;color:var(--muted);text-align:left;font-weight:600;padding:0 6px 6px 0}
+table.actions td{padding:0 6px 8px 0;vertical-align:top}
+.tablewrap{overflow-x:auto}
+.foot{color:var(--muted);font-size:.85rem;margin-top:24px}
+.saved{color:var(--muted);font-size:.85rem;align-self:center}
+.printonly{display:none}
+.confirm-overlay{position:fixed;inset:0;background:rgba(4,8,16,.65);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.confirm-overlay[hidden]{display:none}
+.confirm-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px 24px;max-width:380px;width:100%}
+.confirm-box p{margin:0 0 18px;font-size:.95rem;line-height:1.4}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px}
+@media (max-width:720px){
+  .g2,.g3,.check{grid-template-columns:1fr}
+  table.actions,table.actions tbody,table.actions tr,table.actions td{display:block;width:100%;min-width:0}
+  table.actions th:nth-child(n){width:auto}
+  table.actions thead{display:none}
+  table.actions tr{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
+  table.actions td{padding:0 0 8px}
+  table.actions td::before{content:attr(data-l);display:block;font-size:.8rem;color:var(--muted);margin-bottom:2px}
+}
+@media print{
+  @page{size:A4;margin:12mm}
+  :root{--bg:#fff;--panel:#fff;--panel2:#fff;--line:#999;--text:#000;--muted:#333;--accent:#0a6b60;--accent-ink:#fff;--warn:#000;--bad:#000;--good:#000}
+  body{font-size:11pt;background:#fff;color:#000}
+  .noprint,details.help,.btnrow,.saved,.foot,.hub,.because,.warn,.ok,.checklistcard,button,.confirm-overlay{display:none!important}
+  .printonly{display:block}
+  .card,.why{break-inside:avoid;border:1px solid #999;box-shadow:none;margin-bottom:8px;padding:8px}
+  input,select,textarea{border:1px solid #bbb;background:#fff;color:#000;font-size:10pt;padding:3px 5px}
+  .badge{background:#fff;color:#000;border:1px solid #000}
+  .rootpick{display:none}
+  table.actions{min-width:0;table-layout:fixed}
+  table.actions th:nth-child(2){width:17%}
+  table.actions th:nth-child(3){width:13%}
+  table.actions th:nth-child(4){width:17%}
+  table.actions th:nth-child(5){width:15%}
+  table.actions th:nth-child(6){display:none}
+  table.actions select{padding:3px 2px}
+  .why.root{border:2px solid #000;box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top noprint">
+    <a class="hub" href="https://rmilburn1980.github.io/index.html">&larr; Portfolio Hub</a>
+    <span class="saved" id="saved" role="status" aria-live="polite"></span>
+  </header>
+
+  <h1>5 Whys Root Cause Tool</h1>
+  <p class="sub">Define the problem, ask why with evidence at each step, test the logic in reverse, then set actions and check they worked. Supports the Analyse phase of the <a href="dmaic-fpy-dashboard.html">DMAIC project board</a>.</p>
+  <p class="printonly" id="printMeta"></p>
+
+  <details class="help">
+    <summary>How to use this tool</summary>
+    <div class="body">
+      <ul>
+        <li><strong>Define the problem</strong> with what, where, when and how big. A vague problem gives a vague root cause.</li>
+        <li><strong>Answer each why from evidence</strong>, not opinion. Go and look at the process, then tick how you know.</li>
+        <li><strong>Five is a guide.</strong> Stop when you reach a cause in the process or system that you can fix. Add or remove whys as needed.</li>
+        <li><strong>Watch for blame.</strong> If the answer is a person, ask why the system allowed it.</li>
+        <li><strong>Test in reverse.</strong> Read the chain from the root cause back to the problem. If the root cause were fixed, would the problem have been prevented?</li>
+        <li><strong>Close the loop</strong> with containment, corrective and preventive actions, and a measure to verify the fix held.</li>
+        <li>If the problem has several causes, use a fishbone first and run one 5 Whys per branch.</li>
+      </ul>
+    </div>
+  </details>
+
+  <div class="btnrow noprint">
+    <button class="primary" id="btnExample" type="button">Load example</button>
+    <button id="btnPrint" type="button">Print or save as PDF</button>
+    <button id="btnExport" type="button">Export backup</button>
+    <button id="btnImport" type="button">Import backup</button>
+    <button class="danger" id="btnClear" type="button">Clear all</button>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  </div>
+
+  <section class="card">
+    <h2>1. Problem statement</h2>
+    <div class="grid g3">
+      <div><label for="p_area">Process / line / area</label><textarea id="p_area" data-p="area"></textarea></div>
+      <div><label for="p_date">Date raised</label><input id="p_date" type="date" data-p="date"></div>
+      <div><label for="p_owner">Owner / facilitator</label><textarea id="p_owner" data-p="owner"></textarea></div>
+      <div class="full"><label for="p_statement">What is the problem? (specific, factual)</label><textarea id="p_statement" data-p="statement" placeholder="What happened, where, and when"></textarea></div>
+      <div class="full"><label for="p_size">How big is it? (count, rate, cost, or impact)</label><textarea id="p_size" data-p="size" placeholder="For example: 6 units in one week, 2.4 hours lost per shift"></textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. The whys</h2>
+    <div id="whys"></div>
+    <div class="btnrow noprint" style="margin-top:12px;margin-bottom:0">
+      <button id="btnAddWhy" type="button">+ Add another why</button>
+      <span class="saved" id="depthNote"></span>
+    </div>
+    <div id="blameBox"></div>
+  </section>
+
+  <section class="card">
+    <h2>3. Root cause and logic check</h2>
+    <div class="grid g2">
+      <div class="full"><label for="rootText">Root cause statement (a process or system gap you can fix)</label><textarea id="rootText" placeholder="Flag a why above as the root cause, then state it here in your own words"></textarea></div>
+      <div><label for="category">Root cause category</label>
+        <select id="category">
+          <option value="">Select</option>
+          <option>Standard work or procedure</option>
+          <option>Training or skills system</option>
+          <option>Equipment or tooling</option>
+          <option>Material or supply</option>
+          <option>Method or process design</option>
+          <option>Measurement or inspection</option>
+          <option>Management or ownership</option>
+          <option>Environment or layout</option>
+        </select></div>
+      <div><label for="reverse">Reverse test: if this were fixed, would the problem have been prevented?</label>
+        <select id="reverse">
+          <option value="">Select</option>
+          <option value="yes">Yes, the chain holds</option>
+          <option value="unsure">Unsure, needs more evidence</option>
+          <option value="no">No, re-check the whys</option>
+        </select></div>
+    </div>
+    <div class="readback" id="readback"></div>
+  </section>
+
+  <section class="card">
+    <h2>4. Actions</h2>
+    <div class="tablewrap">
+    <table class="actions" id="actTable">
+      <thead><tr><th>Action</th><th>Type</th><th>Owner</th><th>Due</th><th>Status</th><th></th></tr></thead>
+      <tbody id="actBody"></tbody>
+    </table>
+    </div>
+    <div class="btnrow noprint" style="margin-top:8px;margin-bottom:0"><button id="btnAddAct" type="button">+ Add action</button></div>
+  </section>
+
+  <section class="card">
+    <h2>5. Verify it worked</h2>
+    <div class="grid g3">
+      <div class="full"><label for="v_measure">Measure that proves the fix held</label><textarea id="v_measure" data-v="measure"></textarea></div>
+      <div><label for="v_target">Target</label><textarea id="v_target" data-v="target"></textarea></div>
+      <div><label for="v_checkDate">Check date</label><input id="v_checkDate" type="date" data-v="checkDate"></div>
+      <div><label for="v_result">Result</label><textarea id="v_result" data-v="result"></textarea></div>
+      <div class="full"><label for="v_effective">Outcome</label>
+        <select id="v_effective" data-v="effective">
+          <option value="">Not yet checked</option>
+          <option value="effective">Effective, standardise</option>
+          <option value="partial">Partly, revisit the whys</option>
+          <option value="ineffective">Not effective, restart</option>
+        </select></div>
+    </div>
+  </section>
+
+  <section class="card checklistcard noprint">
+    <h2>Completeness check</h2>
+    <ul class="check" id="checklist"></ul>
+  </section>
+
+  <p class="foot">5 Whys Root Cause Tool &middot; Continuous Improvement toolkit.<br>
+  Data saves automatically in this browser only. It will not appear on another device or browser. Use Export backup and Import backup to move an analysis between them. The example is based on a real stoppage on Line 8.</p>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmMsg" hidden>
+  <div class="confirm-box">
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button type="button" id="confirmCancel">Cancel</button>
+      <button type="button" class="primary" id="confirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY='fivewhys-tool-v1';
+  var mkWhy=function(){return {why:'',evidence:'',status:''};};
+  var mkAct=function(){return {text:'',type:'Corrective',owner:'',due:'',status:'Open'};};
+  var blank=function(){return {
+    problem:{area:'',date:'',owner:'',statement:'',size:''},
+    whys:[mkWhy(),mkWhy(),mkWhy(),mkWhy(),mkWhy()],
+    rootIdx:-1,rootText:'',category:'',reverse:'',
+    actions:[mkAct()],
+    verify:{measure:'',target:'',checkDate:'',result:'',effective:''}
+  };};
+  var S=blank();
+  var STATUS=[['','How do you know?'],['gemba','Verified at the gemba'],['data','Data or records'],['assumed','Assumption, unchecked']];
+  var TYPES=['Containment','Corrective','Preventive'];
+  var ASTAT=['Open','In progress','Done','Verified'];
+  var BLAME=/\b(careless|carelessness|lazy|forgot|forgotten|negligent|negligence|mistake|failed to|did not bother|didn't bother|not paying attention|human error|operator error|complacen\w*|wasn't listening|ignored)\b/i;
+
+  var $=function(id){return document.getElementById(id);};
+  var saveTimer=null;
+
+  function save(){
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+      try{localStorage.setItem(KEY,JSON.stringify(S));$('saved').textContent='Saved in this browser';}
+      catch(e){$('saved').textContent='Not saved: browser storage unavailable. Use Export backup.';}
+    },250);
+  }
+  function load(){
+    try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.whys&&o.problem){S=o;}}}catch(e){}
+  }
+  function autosize(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
+  function autosizeAll(){var t=document.querySelectorAll('textarea');for(var i=0;i<t.length;i++)autosize(t[i]);}
+  function el(tag,attrs,kids){
+    var e=document.createElement(tag);
+    if(attrs)for(var k in attrs){if(k==='text')e.textContent=attrs[k];else if(k==='class')e.className=attrs[k];else e.setAttribute(k,attrs[k]);}
+    if(kids)kids.forEach(function(c){if(c)e.appendChild(c);});
+    return e;
+  }
+  function askConfirm(msg,onOk,noCancel){
+    var ov=$('confirmOverlay'),ok=$('confirmOk'),cancel=$('confirmCancel');
+    $('confirmMsg').textContent=msg;
+    cancel.hidden=!!noCancel;ok.textContent=noCancel?'OK':'Confirm';
+    ov.hidden=false;ok.focus();
+    function done(){ov.hidden=true;ok.onclick=null;cancel.onclick=null;document.removeEventListener('keydown',esc);}
+    function esc(e){if(e.key==='Escape')done();}
+    document.addEventListener('keydown',esc);
+    ok.onclick=function(){done();if(onOk)onOk();};
+    cancel.onclick=done;
+  }
+  function trunc(s,n){s=(s||'').trim();return s.length>n?s.slice(0,n-1)+'...':s;}
+
+  /* ---------- static fields ---------- */
+  function bindStatic(){
+    document.querySelectorAll('[data-p]').forEach(function(n){
+      n.value=S.problem[n.dataset.p]||'';
+      n.oninput=function(){S.problem[n.dataset.p]=n.value;if(n.tagName==='TEXTAREA')autosize(n);derive();save();};
+    });
+    document.querySelectorAll('[data-v]').forEach(function(n){
+      n.value=S.verify[n.dataset.v]||'';
+      n.oninput=n.onchange=function(){S.verify[n.dataset.v]=n.value;if(n.tagName==='TEXTAREA')autosize(n);derive();save();};
+    });
+    var rt=$('rootText');rt.value=S.rootText||'';rt.oninput=function(){S.rootText=rt.value;autosize(rt);derive();save();};
+    var cat=$('category');cat.value=S.category||'';cat.onchange=function(){S.category=cat.value;derive();save();};
+    var rv=$('reverse');rv.value=S.reverse||'';rv.onchange=function(){S.reverse=rv.value;derive();save();};
+  }
+
+  /* ---------- whys ---------- */
+  function renderWhys(){
+    var box=$('whys');box.innerHTML='';
+    S.whys.forEach(function(w,i){
+      if(i>0)box.appendChild(el('div',{class:'because','aria-hidden':'true'}));
+      var card=el('div',{class:'why'+(S.rootIdx===i?' root':''),'data-i':i});
+      var head=el('div',{class:'whyhead'});
+      head.appendChild(el('span',{class:'badge',text:'Why '+(i+1)}));
+      var right=el('div',{class:'noprint',style:'display:flex;gap:10px;align-items:center;flex-wrap:wrap'});
+      var lab=el('label',{class:'rootpick'});
+      var rad=el('input',{type:'radio',name:'rootpick'});
+      rad.checked=S.rootIdx===i;
+      rad.onchange=function(){
+        S.rootIdx=i;
+        if(!S.rootText.trim()){S.rootText=S.whys[i].why;$('rootText').value=S.rootText;autosize($('rootText'));}
+        renderWhys();derive();save();
+      };
+      lab.appendChild(rad);lab.appendChild(document.createTextNode('This is the root cause'));
+      right.appendChild(lab);
+      if(S.whys.length>2){
+        var rm=el('button',{type:'button',class:'small danger',text:'Remove','aria-label':'Remove why '+(i+1)});
+        rm.onclick=function(){
+          S.whys.splice(i,1);
+          if(S.rootIdx===i)S.rootIdx=-1;else if(S.rootIdx>i)S.rootIdx--;
+          renderWhys();derive();save();
+        };
+        right.appendChild(rm);
+      }
+      head.appendChild(right);
+      card.appendChild(head);
+      card.appendChild(el('p',{class:'q','data-q':i}));
+      var g=el('div',{class:'grid g2'});
+      var d1=el('div',{class:'full'});
+      d1.appendChild(el('label',{for:'why_'+i,text:'Answer (because...)'}));
+      var ta=el('textarea',{id:'why_'+i});ta.value=w.why;
+      ta.oninput=function(){S.whys[i].why=ta.value;autosize(ta);derive();save();};
+      d1.appendChild(ta);g.appendChild(d1);
+      var d2=el('div');
+      d2.appendChild(el('label',{for:'ev_'+i,text:'Evidence (what you saw, measured or checked)'}));
+      var ev=el('textarea',{id:'ev_'+i});ev.value=w.evidence;
+      ev.oninput=function(){S.whys[i].evidence=ev.value;autosize(ev);derive();save();};
+      d2.appendChild(ev);g.appendChild(d2);
+      var d3=el('div');
+      d3.appendChild(el('label',{for:'st_'+i,text:'Evidence type'}));
+      var sel=el('select',{id:'st_'+i});
+      STATUS.forEach(function(s){var o=el('option',{value:s[0],text:s[1]});sel.appendChild(o);});
+      sel.value=w.status;
+      sel.onchange=function(){S.whys[i].status=sel.value;derive();save();};
+      d3.appendChild(sel);g.appendChild(d3);
+      card.appendChild(g);
+      box.appendChild(card);
+    });
+    $('btnAddWhy').disabled=S.whys.length>=8;
+    autosizeAll();
+  }
+
+  /* ---------- actions ---------- */
+  function renderActs(){
+    var b=$('actBody');b.innerHTML='';
+    S.actions.forEach(function(a,i){
+      var tr=el('tr');
+      function cell(label,node){var td=el('td',{'data-l':label});td.appendChild(node);tr.appendChild(td);}
+      var t=el('textarea',{'aria-label':'Action '+(i+1)+' description'});t.value=a.text;
+      t.oninput=function(){a.text=t.value;autosize(t);derive();save();};
+      cell('Action',t);
+      var ty=el('select',{'aria-label':'Action '+(i+1)+' type'});
+      TYPES.forEach(function(x){ty.appendChild(el('option',{value:x,text:x}));});ty.value=a.type;
+      ty.onchange=function(){a.type=ty.value;save();};cell('Type',ty);
+      var ow=el('textarea',{'aria-label':'Action '+(i+1)+' owner'});ow.value=a.owner;
+      ow.oninput=function(){a.owner=ow.value;autosize(ow);derive();save();};cell('Owner',ow);
+      var du=el('input',{type:'date','aria-label':'Action '+(i+1)+' due date'});du.value=a.due;
+      du.oninput=function(){a.due=du.value;save();};cell('Due',du);
+      var st=el('select',{'aria-label':'Action '+(i+1)+' status'});
+      ASTAT.forEach(function(x){st.appendChild(el('option',{value:x,text:x}));});st.value=a.status;
+      st.onchange=function(){a.status=st.value;save();};cell('Status',st);
+      var rmTd=el('td',{class:'noprint'});
+      if(S.actions.length>1){
+        var rm=el('button',{type:'button',class:'small danger',text:'Remove','aria-label':'Remove action '+(i+1)});
+        rm.onclick=function(){S.actions.splice(i,1);renderActs();derive();save();};
+        rmTd.appendChild(rm);
+      }
+      tr.appendChild(rmTd);
+      b.appendChild(tr);
+    });
+    autosizeAll();
+  }
+
+  /* ---------- derived views ---------- */
+  function derive(){
+    var W=S.whys;
+    W.forEach(function(w,i){
+      var q=document.querySelector('[data-q="'+i+'"]');
+      if(!q)return;
+      if(i===0){q.textContent='Why did this happen? '+(S.problem.statement.trim()?'Problem: '+trunc(S.problem.statement,120):'Write the problem statement first.');}
+      else{q.textContent=W[i-1].why.trim()?'Why did this happen? '+trunc(W[i-1].why,120):'Answer the previous why first.';}
+    });
+
+    var answered=W.filter(function(w){return w.why.trim();});
+    var noEv=answered.filter(function(w){return !w.evidence.trim()||w.status===''||w.status==='assumed';}).length;
+    $('depthNote').textContent=answered.length+' of '+W.length+' whys answered'+(answered.length?(noEv?'; '+noEv+' without checked evidence':'; all with evidence'):'');
+
+    var rootWhy=S.rootIdx>=0?W[S.rootIdx]:null;
+    var bb=$('blameBox');bb.innerHTML='';
+    var anyBlame=W.some(function(w){return BLAME.test(w.why);})||BLAME.test(S.rootText||'');
+    if(anyBlame){
+      bb.appendChild(el('div',{class:'warn',role:'alert',text:'One of your answers reads like blame on a person. Ask why the system allowed it: was the standard work clear, was the training in place, was the check practical?'}));
+    }
+    if(rootWhy&&rootWhy.status==='assumed'){
+      bb.appendChild(el('div',{class:'warn',text:'The root cause is marked as an assumption. Go and check it at the process before you act on it.'}));
+    }
+    if(S.rootIdx>=0&&S.rootIdx<W.length-1&&W.slice(S.rootIdx+1).some(function(w){return w.why.trim();})){
+      bb.appendChild(el('div',{class:'warn',text:'You have answered whys after the one flagged as the root cause. Check the flag is on the right one.'}));
+    }
+
+    var rb=$('readback');rb.innerHTML='';
+    if(S.rootIdx>=0&&rootWhy&&rootWhy.why.trim()){
+      rb.appendChild(el('h2',{text:'Read it back from the root cause',style:'margin-top:16px;font-size:1rem'}));
+      var ol=el('ol');
+      for(var i=S.rootIdx;i>=0;i--){
+        if(!W[i].why.trim())continue;
+        ol.appendChild(el('li',{text:(i===S.rootIdx?'Because ':'Which caused: ')+W[i].why.trim()}));
+      }
+      if(S.problem.statement.trim())ol.appendChild(el('li',{text:'Therefore the problem: '+S.problem.statement.trim()}));
+      rb.appendChild(ol);
+      rb.appendChild(el('p',{class:'q',style:'margin-top:8px',text:'Does each line follow from the one before it? If any link feels weak, go back to the evidence for that why.'}));
+    }
+    if(S.reverse==='yes'){rb.appendChild(el('div',{class:'ok',text:'Reverse test passed. The chain holds.'}));}
+    if(S.reverse==='no'){rb.appendChild(el('div',{class:'warn',text:'Reverse test failed. Re-check the whys and the evidence behind each one.'}));}
+
+    var actsOk=S.actions.some(function(a){return a.text.trim();});
+    var hasCorr=S.actions.some(function(a){return a.text.trim()&&a.type!=='Containment';});
+    var owners=S.actions.filter(function(a){return a.text.trim();}).every(function(a){return a.owner.trim();})&&actsOk;
+    var items=[
+      ['Problem stated with a size or impact',S.problem.statement.trim()&&S.problem.size.trim()],
+      ['At least 3 whys answered',answered.length>=3],
+      ['Every answered why has checked evidence',answered.length>0&&noEv===0],
+      ['Root cause flagged and stated',S.rootIdx>=0&&S.rootText.trim()],
+      ['Root cause is a system gap, not a person',S.rootIdx>=0&&S.rootText.trim()&&!anyBlame],
+      ['Reverse test passed',S.reverse==='yes'],
+      ['Corrective or preventive action set',hasCorr],
+      ['Every action has an owner',owners],
+      ['Verification measure and target set',S.verify.measure.trim()&&S.verify.target.trim()],
+      ['Result checked and effective',S.verify.effective==='effective']
+    ];
+    var ul=$('checklist');ul.innerHTML='';
+    items.forEach(function(it){ul.appendChild(el('li',{class:it[1]?'done':'',text:it[0]}));});
+
+    var meta=[];
+    if(S.problem.area)meta.push('Area: '+S.problem.area);
+    if(S.problem.date)meta.push('Date: '+S.problem.date);
+    if(S.problem.owner)meta.push('Owner: '+S.problem.owner);
+    $('printMeta').textContent=meta.join('   |   ');
+  }
+
+  /* ---------- example ---------- */
+  function example(){
+    S={
+      problem:{area:'Line 8, front panels',date:'',owner:'',
+        statement:'The line ran out of front panels. The build is sequenced and the front panel can only be fitted in its own bay, so the whole line stopped until panels arrived the next day.',
+        size:'Half a day lost, 4 units held up, 46 people affected across the whole line'},
+      whys:[
+        {why:'There was no stock of front panels.',evidence:'I signalled for panels to be delivered to the line and stores said there was no stock.',status:'gemba'},
+        {why:'The system still showed stock, but it was damaged front panels line side that had not been taken off the MRB system.',evidence:'I was shown the stock on the system and found the damaged front panels line side.',status:'gemba'},
+        {why:'Quality had not taken them off the MRB system because they were not aware of them.',evidence:'Quality were not aware of the damaged panels.',status:'data'},
+        {why:'Rejections were recorded and the cost incurred, but there was no step for quality to review them, and the MRB system does not flag them up.',evidence:'The MRB system does not flag rejected parts, and quality never looked at the rejections to see what needed to come off MRB.',status:'data'}
+      ],
+      rootIdx:3,
+      rootText:'The rejection process had no quality review step and the MRB system does not flag rejected parts, so damaged stock stayed on the system and nobody was alerted.',
+      category:'Method or process design',reverse:'yes',
+      actions:[
+        {text:'Quality instructed to check the shortfall system for any line stopping parts and whether they need taking off the MRB system.',type:'Corrective',owner:'Quality',due:'',status:'Done'},
+        {text:'Stores also check the MRB system as a backup, so quality is not a single point of failure.',type:'Preventive',owner:'Stores',due:'',status:'Done'},
+        {text:'Production told to put any defective or damaged in production part on the shortfall system as soon as it is found.',type:'Corrective',owner:'Production',due:'',status:'Done'}
+      ],
+      verify:{measure:'Recurrence of running out of front panels because damaged stock was still on the MRB system',target:'No recurrence',checkDate:'',result:'It did not happen again',effective:'effective'}
+    };
+    fullRender();save();
+  }
+
+  function fullRender(){bindStatic();renderWhys();renderActs();derive();autosizeAll();}
+
+  /* ---------- buttons ---------- */
+  $('btnAddWhy').onclick=function(){if(S.whys.length<8){S.whys.push(mkWhy());renderWhys();derive();save();}};
+  $('btnAddAct').onclick=function(){S.actions.push(mkAct());renderActs();derive();save();};
+  $('btnExample').onclick=function(){
+    var has=S.problem.statement.trim()||S.whys.some(function(w){return w.why.trim();});
+    if(has){askConfirm('Replace your current analysis with the example? Export a backup first if you want to keep it.',example);}
+    else{example();}
+  };
+  $('btnClear').onclick=function(){
+    askConfirm('Clear the whole analysis? This cannot be undone. Export a backup first if you want to keep it.',function(){S=blank();fullRender();save();});
+  };
+  $('btnPrint').onclick=function(){autosizeAll();window.print();};
+  window.addEventListener('beforeprint',autosizeAll);
+  $('btnExport').onclick=function(){
+    var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='5-whys-backup.json';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  };
+  $('btnImport').onclick=function(){$('fileIn').click();};
+  $('fileIn').onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();
+    r.onload=function(){
+      try{
+        var o=JSON.parse(r.result);
+        if(!o||!Array.isArray(o.whys)||!o.problem)throw new Error('bad');
+        var b=blank();
+        S={problem:Object.assign(b.problem,o.problem),whys:o.whys.slice(0,8).map(function(w){return Object.assign(mkWhy(),w);}),
+           rootIdx:typeof o.rootIdx==='number'?o.rootIdx:-1,rootText:o.rootText||'',category:o.category||'',reverse:o.reverse||'',
+           actions:(Array.isArray(o.actions)&&o.actions.length?o.actions:[mkAct()]).map(function(a){return Object.assign(mkAct(),a);}),
+           verify:Object.assign(b.verify,o.verify||{})};
+        if(S.whys.length<2)S.whys=[mkWhy(),mkWhy()];
+        if(S.rootIdx>=S.whys.length)S.rootIdx=-1;
+        fullRender();save();
+      }catch(err){askConfirm('That file is not a valid 5 Whys backup.',null,true);}
+      e.target.value='';
+    };
+    r.readAsText(f);
+  };
+
+  load();fullRender();
+})();
+</script>
+</body>
+</html>
