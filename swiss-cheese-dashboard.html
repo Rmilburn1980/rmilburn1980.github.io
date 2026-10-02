@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swiss Cheese Model Dashboard</title>
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent);word-break:break-all}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:680px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem;word-break:normal}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+main{padding:20px;max-width:1240px;margin:0 auto}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.tools label{color:var(--muted);font-size:.85rem}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+input:focus,select:focus,textarea:focus,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.small{padding:6px 12px;font-size:.8rem}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.15}
+.kpi .l{color:var(--muted);font-size:.82rem;margin-top:4px}
+.kpi.crit .n{color:var(--crit)} .kpi.ok .n{color:var(--low)} .kpi.warn .n{color:var(--med)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 4px}
+.sub{color:var(--muted);font-size:.85rem;margin:0 0 12px}
+.names{display:grid;grid-template-columns:1fr 1.6fr;gap:12px}
+@media (max-width:700px){.names{grid-template-columns:1fr}}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.fld input,.fld select{width:100%}
+.stage{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px}
+.stage svg{display:block;width:100%;height:auto}
+.ends{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;font-weight:600;margin:8px 4px 0}
+.verdict{margin-top:12px;padding:12px 14px;border-radius:10px;font-weight:600;font-size:.92rem;border:1px solid var(--line);background:var(--panel2)}
+.verdict.stop{border-color:var(--low)} .verdict.hit{border-color:var(--crit)}
+.layers{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px;margin-bottom:16px}
+.layer{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.layer.failed{border-color:var(--crit)} .layer.held{border-color:var(--low)}
+.layer .top{display:flex;align-items:center;gap:10px}
+.layer .top input{flex:1;font-weight:700;min-width:0}
+.num{width:28px;height:28px;border-radius:50%;background:#f5c542;color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grp{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.grp h4{margin:0;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.warn{color:var(--high);font-size:.78rem;margin:0}
+.calc{font-size:.84rem;margin:0}
+.calc b{color:var(--text)}
+.sw{display:flex;align-items:center;gap:8px;font-size:.85rem;cursor:pointer;user-select:none}
+.sw input{width:18px;height:18px;accent-color:var(--accent);padding:0}
+details{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+summary{cursor:pointer;font-size:.85rem;font-weight:600}
+.ev{list-style:none;margin:8px 0;padding:0}
+.ev li{border-top:1px solid var(--line);padding:8px 0;font-size:.82rem;display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ev .meta{color:var(--muted);font-size:.76rem}
+.evform{display:grid;gap:8px;margin-top:6px}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:.75rem;color:var(--ink);white-space:nowrap;flex-shrink:0}
+.b-low{background:var(--low)} .b-med{background:var(--med)} .b-high{background:var(--high)} .b-crit{background:var(--crit)} .b-none{background:#a9b8cf}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--line);margin-top:auto;font-size:.82rem}
+.sim{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;align-items:center}
+.bar{background:var(--panel2);border-radius:6px;height:16px;overflow:hidden;margin-top:6px}
+.bar > div{height:100%;background:var(--crit);border-radius:6px;min-width:2px}
+.note{color:var(--muted);font-size:.82rem;margin:10px 0 0}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+.sr{position:absolute;left:-9999px}
+.meta4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-weak{border-color:var(--high)}.st-ok{border-color:var(--low)}.st-inc,.st-none{border-color:var(--muted)}
+.status strong{font-size:1rem}
+.status .rs{margin:8px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+.tw{overflow-x:auto}
+table.lk{width:100%;border-collapse:collapse;font-size:.85rem}
+.lk th,.lk td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.lk th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.03em}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  .tools,.hub,#roll,#mc,.evform,.btn,.banner{display:none!important}
+  .card,.layer,.kpi,.status{break-inside:avoid}
+  details:not([open]) > *:not(summary){display:none}
+  .kpi .n,.kpi.crit .n,.kpi.warn .n,.kpi.ok .n{color:#000!important}
+  .warn,.status .rs,.calc b{color:#5a2a00!important}
+  .layer .calc b{color:#000!important}
+}
+@media (max-width:640px){
+  .lk thead{display:none}
+  .lk,.lk tbody,.lk tr,.lk td{display:block;width:100%}
+  .lk tr{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;padding:6px 0}
+  .lk td{display:flex;justify-content:space-between;gap:12px;border-bottom:0;padding:6px 12px}
+  .lk td::before{content:attr(data-l);color:var(--muted);font-size:.76rem;text-transform:uppercase;flex:0 0 45%}
+  .lk td:first-child{font-weight:700}
+}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.hint{display:block;color:var(--muted);font-size:.76rem;font-weight:400;line-height:1.35}
+.modebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.modebar .lbl{color:var(--muted);font-size:.82rem;margin-right:2px}
+.modebar button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:7px 14px;font:inherit;font-size:.85rem;cursor:pointer}
+.modebar button[aria-pressed=true]{background:var(--accent);color:var(--ink);border-color:var(--accent);font-weight:700}
+.lnav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.lnav .chip{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font:inherit;font-size:.85rem;cursor:pointer}
+.lnav .chip[aria-current=true]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.lnav .chip.done{border-color:var(--low)}
+.lnav .msg{flex:1 1 100%;color:var(--muted);font-size:.85rem}
+.startcard summary{font-weight:700;cursor:pointer;font-size:1.05rem}
+.startcard ol{margin:10px 0 0;padding-left:20px;color:var(--text);font-size:.9rem;line-height:1.5}
+.startcard li{margin-bottom:4px}
+.startcard dl{margin:8px 0 0;font-size:.85rem}
+.startcard dt{font-weight:700;margin-top:6px}
+.startcard dd{margin:0;color:var(--muted)}
+#layers.one{grid-template-columns:minmax(0,680px)}
+@media screen{#layers.simple [data-adv]{display:none}.layer.off{display:none}}
+@media print{.modebar,.lnav,.startcard{display:none!important}}
+.acct{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.logl{list-style:none;margin:8px 0 0;padding:0;font-size:.85rem}
+.logl li{border-top:1px solid var(--line);padding:6px 0;color:var(--text)}
+.logl .meta{color:var(--muted);font-size:.78rem}
+.disc{margin:10px 0 0;color:var(--text);font-size:.82rem;border-top:1px solid var(--line);padding-top:8px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Swiss Cheese Model Dashboard</h1>
+    <p>Enter your own audit, inspection and near miss counts for each layer of defence. The tool works out each layer's failure chance and the combined chance that harm gets through. Nothing here is fixed, every figure comes from what you type.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<main>
+  <details class="card startcard" id="start" open>
+    <summary>Start here: how to use this dashboard</summary>
+    <ol>
+      <li>Describe the scenario below: name the hazard, pick the worst outcome that could credibly happen, say how often the hazard is met in a year, and set your own tolerable harm events per year.</li>
+      <li>Work through the five layers of defence. Press <b>One layer at a time</b> if you want to be guided. For each layer enter how many checks you made and how many failed. A layer with no data is counted as always failing.</li>
+      <li>Add evidence for your numbers, such as an audit, a near miss or a photo.</li>
+      <li>Read the status box. It is deliberately cautious. If it says action needed, it means the evidence does not yet show the risk is under control.</li>
+      <li>Press <b>Save data file</b> before you leave. Your entries live only in this browser.</li>
+    </ol>
+    <details style="margin-top:10px"><summary>Words used here</summary>
+      <dl>
+        <dt>Layer</dt><dd>One defence between the hazard and harm, such as supervision or a guard.</dd>
+        <dt>Hole</dt><dd>A weakness in that defence. Active holes are unsafe acts in the moment. Latent holes are underlying causes that can lie dormant, such as poor design or too little time.</dd>
+        <dt>Check</dt><dd>Any time you looked at whether the layer worked: an audit, an inspection, a walk-round, a near miss review. A failed check is one where it did not work.</dd>
+        <dt>Cautious estimate</dt><dd>The pessimistic end of the likely range. With few checks the range is wide, so the cautious figure is high.</dd>
+        <dt>Tolerable level</dt><dd>The number of harm events a year your organisation would accept. You set it, the tool does not. Reducing risk as far as reasonably practicable (ALARP) still applies below it.</dd>
+        <dt>Hierarchy of controls</dt><dd>Eliminate, substitute, engineer, administrate, then PPE. Higher is stronger.</dd>
+      </dl>
+    </details>
+  </details>
+  <div class="tools">
+    <label for="scn">Scenario</label>
+    <select id="scn" aria-label="Scenario"></select>
+    <button class="btn" id="new">New scenario</button>
+    <button class="btn sec" id="dup">Duplicate</button>
+    <button class="btn sec" id="del">Delete</button>
+    <button class="btn sec" id="csv">Export CSV</button>
+    <button class="btn sec" id="json">Save data file</button>
+    <button class="btn sec" id="load">Load data file</button>
+    <button class="btn sec" id="print">Print or save as PDF</button>
+    <input type="file" id="file" accept="application/json,.json" class="sr" tabindex="-1" aria-label="Load data file">
+  </div>
+  <p class="savebar" id="saveNote" role="status"></p>
+  <div class="banner" id="banner" hidden>This scenario holds example numbers so you can see how it works. Overwrite them with your own, or press New scenario to start blank.</div>
+
+  <div class="card">
+    <div class="names">
+      <label class="fld">Scenario name<input id="sName" maxlength="80"></label>
+      <label class="fld">Hazard being controlled<input id="sHaz" maxlength="140"></label>
+    </div>
+    <div class="meta4">
+      <label class="fld">Severity of the credible worst outcome<select id="sSev"></select><small class="hint">The worst outcome that could credibly happen, not the usual one.</small></label>
+      <label class="fld">Times per year the hazard is met<input id="sExpo" type="number" min="0" step="1" inputmode="numeric"><small class="hint">How often people meet this hazard in a year. A daily task over 250 working days is 250.</small></label>
+      <label class="fld">Tolerable harm events per year (your own target)<input id="sTarget" type="number" min="0" step="any" inputmode="decimal"><small class="hint">What your organisation would accept, from your own risk criteria.</small></label>
+      <label class="fld">Review due<input id="sReview" type="date"></label>
+    </div>
+    <p class="note">Choose severity from the worst outcome that could credibly happen, not the usual one. Set the tolerable level from your organisation's own risk criteria, the tool does not choose it for you.</p>
+  </div>
+
+  <div class="card" id="acctCard">
+    <h2>Ownership, review and change log</h2>
+    <div class="acct">
+      <label class="fld">Owner (named person)<input id="sOwner" maxlength="60"><small class="hint">Who is accountable for keeping this analysis true.</small></label>
+      <label class="fld">Competent reviewer, name<input id="sReviewer" maxlength="60"><small class="hint">Someone competent in risk assessment who has checked the numbers and evidence.</small></label>
+      <label class="fld">Second reviewer, name (asked for severity 4 or 5)<input id="sSecond" maxlength="60"><small class="hint">A different person who has independently reviewed it.</small></label>
+    </div>
+    <details style="margin-top:10px"><summary id="logSum">Change log</summary>
+      <ul class="logl" id="logList"></ul>
+      <div class="evform"><label class="fld">Date<input type="date" id="logDate"></label>
+        <label class="fld">What changed and why<input id="logNote" maxlength="300" placeholder="For example, added 12 unannounced night shift checks after the near miss"></label>
+        <button class="btn small" id="logAdd" type="button">Add log entry</button></div>
+      <p class="note">Entries can be added but not edited or removed here. Record why you changed numbers, scores or controls.</p>
+    </details>
+  </div>
+
+  <div id="linkbox" class="status st-none" hidden></div>
+  <div id="status" class="status st-inc"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2>The layers of defence</h2>
+    <p class="sub">Aligned holes show the layers that failed on the rolled day. A solid layer stops the hazard.</p>
+    <div class="stage"><svg id="svg" viewBox="0 0 760 300" role="img" aria-label="Five slices of Swiss cheese with a hazard trajectory"></svg></div>
+    <div class="ends"><span>Hazard</span><span>Harm</span></div>
+    <div class="verdict" id="verdict"></div>
+    <div class="tools" style="margin:12px 0 0"><button class="btn" id="roll">Roll one day</button></div>
+  </div>
+
+  <div class="modebar" id="modebar" role="group" aria-label="How much detail to show">
+    <span class="lbl">View</span>
+    <button type="button" data-mode="simple" aria-pressed="true">Simple</button>
+    <button type="button" data-mode="full" aria-pressed="false">Full detail</button>
+    <button type="button" data-guide="1" aria-pressed="false">One layer at a time</button>
+  </div>
+  <div class="lnav" id="lnav" hidden></div>
+  <div class="layers" id="layers"></div>
+
+  <div class="card">
+    <h2>How much does this rely on layers failing independently?</h2>
+    <p class="sub">Layers often fail together, for example one supervision problem can weaken several layers. The first row assumes they never do, the last assumes the strongest layer is the only one that counts. The 50% row is a judgement setting used for the status, not a measured value. Figures quoted for engineered protection systems are much lower, but people and organisation layers share causes more often, so show a reviewer the whole range.</p>
+    <div class="tw"><table class="lk" id="lk"></table></div>
+    <p class="note" id="lkNote"></p>
+  </div>
+
+  <div class="card" id="evCard">
+    <h2>Events that make evidence out of date</h2>
+    <p class="sub">An incident, near miss, process or layout change, failed test or worker concern can make older evidence unreliable. Log it here. Any layer whose latest evidence is dated before the event is flagged until you log newer evidence.</p>
+    <ul class="ev" id="evList"></ul>
+    <div class="evform"><label class="fld">Type<select id="evType"></select></label>
+      <label class="fld">Date<input type="date" id="evDate"></label>
+      <label class="fld">What happened<input id="evNote" maxlength="200" placeholder="For example, near miss at the crossing on night shift"></label>
+      <button class="btn small" id="evAdd" type="button">Log event</button></div>
+  </div>
+
+  <div class="card">
+    <h2>Run 1,000 days</h2>
+    <p class="sub">Each day, every layer fails at random using the failure chance worked out from your data. Harm only occurs when all five fail together.</p>
+    <div class="sim">
+      <div><button class="btn" id="mc">Simulate 1,000 days</button></div>
+      <div id="mcOut" aria-live="polite">No simulation run yet.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>About the model</h2>
+    <p class="calc">The Swiss cheese model was put forward by James T. Reason of the University of Manchester. Each defence is a slice of cheese. The holes are weaknesses that keep changing in size and position. Harm happens when the holes in every slice line up for a moment, giving what Reason called a trajectory of accident opportunity.</p>
+    <p class="calc" style="margin-top:8px"><b>Active failures</b> are unsafe acts directly linked to an accident, such as a navigation error. <b>Latent failures</b> are contributory factors that can lie dormant for days, weeks or months until they play a part. Use the Type of hole selector on each layer to record which you have found. Latent holes are usually the ones that need a system level fix rather than a reminder to an individual.</p>
+    <p class="calc" style="margin-top:8px">Where it is used: aviation safety, engineering, healthcare, emergency services and, in process safety, oil and gas drilling and production. It is also the idea behind defence in depth in IT security. In healthcare it supported the view that errors come from system flaws, not character flaws.</p>
+    <p class="calc" style="margin-top:8px"><b>Before and after an event.</b> Used before anything goes wrong, the model helps you find weak layers and make sure your controls overlap, so one hole is covered by a solid part of the next layer. Used after an incident or near miss, you trace which layers failed and why, then record that as evidence here. The same layers serve both uses, so a real event is the best data you can add.</p>
+    <p class="calc" style="margin-top:8px"><b>Person approach and system approach.</b> Reason contrasted blaming the people at the sharp end (forgetfulness, tiredness, poor motivation) with asking why the system let the error through. His view is that we cannot change the human condition but we can change the conditions under which people work. In this dashboard, a failed check is a hole in a layer to be fixed, not a person to blame. Blame stops people reporting the near misses that make your numbers honest.</p>
+    <p class="calc" style="margin-top:8px"><b>More layers is not always safer.</b> The "hot cheese" model (Li and Thimbleby, 2014) argues that defence layers are dynamic and active, and that adding defences can add hazards, for example a guard that gets in the way and is then bypassed, or a checklist that adds workload. Tick "This layer may create a new hazard" on any layer where that could be true. It raises a flag only, because the tool cannot size a hazard you have not described.</p>
+    <p class="note">A further criticism is that a row of slices shows one straight path to harm. Real workplaces are interconnected, and harm can travel by routes nobody drew. The model is also strongest looking backwards at what caused a failure and weaker at predicting the next one, so keep a mindset of intelligent wariness and ask what else could go wrong. That is why the layers here are treated as partly linked and why unknown hazards are listed under what the tool cannot tell you.</p>
+    <p class="note">The model is respected but has been criticised for being used too broadly and without enough support from other models. This dashboard adds a simple probability calculation on top of it, which Reason's model does not itself prescribe, so treat the figures as a way to prioritise and discuss, not as a prediction.</p>
+    <details style="margin-top:10px"><summary>References</summary>
+      <ul class="ev">
+        <li><div>Reason, J. (1990). The Contribution of Latent Human Failures to the Breakdown of Complex Systems. Philosophical Transactions of the Royal Society B, 327(1241), 475-484. <a href="https://doi.org/10.1098/rstb.1990.0090" target="_blank" rel="noopener noreferrer">doi:10.1098/rstb.1990.0090</a></div></li>
+        <li><div>Reason, J. (1990). Human Error. Cambridge University Press.</div></li>
+        <li><div>Larouzee, J. and Le Coze, J.-C. (2020). Good and bad reasons: The Swiss cheese model and its critics. Safety Science, 126, 104660. <a href="https://doi.org/10.1016/j.ssci.2020.104660" target="_blank" rel="noopener noreferrer">doi:10.1016/j.ssci.2020.104660</a></div></li>
+        <li><div>Eurocontrol (2006). Revisiting the Swiss cheese model of accidents.</div></li>
+        <li><div>Reliability Center (n.d.). Ultimate Guide to Swiss Cheese Model and Its Applications. Practitioner article from a training and software provider, not peer reviewed. Used only for the before and after use and the complexity criticism, which the sources above support.</div></li>
+        <li><div>Reason, J. (2000). Human error: models and management. BMJ, 320(7237), 768-770. <a href="https://doi.org/10.1136/bmj.320.7237.768" target="_blank" rel="noopener noreferrer">doi:10.1136/bmj.320.7237.768</a></div></li>
+        <li><div>Li, Y. and Thimbleby, H. (2014). Hot cheese: a processed Swiss cheese model. Journal of the Royal College of Physicians of Edinburgh, 44(2). <a href="https://doi.org/10.4997/JRCPE.2014.205" target="_blank" rel="noopener noreferrer">doi:10.4997/JRCPE.2014.205</a></div></li>
+        <li><div>CCPS and Energy Institute (2018). Bow Ties in Risk Management: A Concept Book for Process Safety. AIChE and John Wiley and Sons.</div></li>
+      </ul>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>How the numbers work and what it cannot tell you</h2>
+    <p class="calc"><b>Best estimate</b> for a layer = (checks failed + 0.5) / (checks made + 1). This is a deliberately gentle figure and always sits beside the cautious one. <b>Cautious estimate</b> = the upper end of a two-sided 95% confidence interval (Wilson) for the same checks. Strictly that makes it a one-sided 97.5% bound, so it errs on the safe side. A layer with few checks gets a wide, pessimistic figure: with no failures in 20 checks the best estimate is about 2.4% but the cautious figure is about 16%. The combined chance multiplies the layers together, which assumes they fail independently, so look at the linkage table as well.</p>
+    <p class="calc" style="margin-top:8px"><b>Status</b> compares harm events per year (times the hazard is met multiplied by the cautious chance, with layers 50% linked) against your own tolerable level. It also flags layers with no data, thin evidence (under 10 checks very weak, 10 to 29 weak, 30 to 59 moderate, 60 or more stronger), no evidence logged, evidence over 12 months old or dated before a logged event, announced checks, layers that share a cause, heavy reliance on procedures and PPE, no owner or reviewer, and a missing second reviewer for severity 4 or 5.</p>
+    <p class="note"><b>Settings that are this tool's own defaults, not from a standard:</b> the 12 month evidence age, the check tiers, the 50% linkage, treating a layer with no data as always failing, and giving a control credit only from checks made after it went in. They are fixed in the tool. If your organisation's criteria differ, record that in the change log and do not rely on the status.</p>
+    <p class="note">Count checks that could genuinely fail: unannounced or random checks, near misses and incident data. Counts from announced audits where people knew they were watched will understate failure. Use one consistent definition of a failed check for each layer. A control only earns credit once you enter checks made after it went in.</p>
+    <p class="note">Not covered: hazards and failure modes nobody has thought of. Severity does not change the calculation, it only raises how much evidence you should demand. This tool supports a risk assessment and does not replace a suitable and sufficient assessment by a competent person, or your site's own procedures and legal duties.</p>
+  </div>
+</main>
+<footer>Decision support only, not a substitute for a suitable and sufficient risk assessment by a competent person. Swiss Cheese Model Dashboard. Based on James Reason's model of accident causation. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-swiss-cheese-v2";
+var NAMES=["Organisational","Supervision","Engineering controls","Procedures and training","PPE and last line"];
+var KINDS=[["","Hole type: not classified"],["active","Active failure (unsafe act, immediate cause)"],["latent","Latent failure (underlying cause, can lie dormant)"]];
+var CTYPES=["","Eliminate","Substitute","Engineering","Administrative","PPE"];
+var SEV=[[0,"Not set"],[1,"1 Minor"],[2,"2 First aid"],[3,"3 Lost time injury"],[4,"4 Major injury"],[5,"5 Fatality or multiple serious injuries"]];
+var EVTYPES=["Incident","Near miss","Process or layout change","Failed test or check","Worker concern","Other"];
+var CKINDS=[["","How checks were made: not recorded"],["unannounced","Unannounced or random"],["mixed","Mixed"],["announced","Announced (people knew)"]];
+var TYPES=["Audit","Inspection","Near miss log","Incident report","Training record","Photo","Procedure or document","SafetyQube, an EHS management system","Other"];
+var st=load(), roll=null;
+
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function blankLayer(k){return {name:NAMES[k],what:"",hole:"",kind:"",ctype:"",ctl:"",checks:"",fails:"",ctlOn:false,newHaz:false,shared:"",checkKind:"",cChecks:"",cFails:"",evidence:[]};}
+function blankScenario(name){return {name:name||"New scenario",hazard:"",example:false,riskId:"",riskName:"",modified:"",sev:0,expo:"",target:"",review:"",owner:"",reviewer:"",second:"",events:[],log:[],layers:[0,1,2,3,4].map(blankLayer)};}
+function exampleScenario(){
+  var s=blankScenario("Example: pedestrian struck by forklift");
+  s.hazard="A forklift travelling through a shared walkway.";s.example=true;s.sev=5;s.expo=200;s.target=0.01;s.review="2026-12-01";
+  ["Administrative","Administrative","Engineering","Administrative","PPE"].forEach(function(ct,k){s.layers[k].ctype=ct;});
+  var d=[
+   ["Traffic policy and safety culture","Traffic plan not reviewed after a layout change.","Review the traffic plan after every layout change.",12,4,12,1],
+   ["Supervision and monitoring","Spot checks inconsistent on night shift.","Scheduled walkway audits every shift.",40,14,40,7],
+   ["Barriers, walkways, speed limiters","One crossing point has no barrier.","Fit barriers and a gated crossing.",60,12,60,2],
+   ["Banksman, signage, training","Visitors not briefed before entering.","Visitor induction before site entry.",30,9,30,4],
+   ["High visibility clothing, proximity alerts","Proximity tags not worn by everyone.","Issue proximity tags to all staff.",50,20,50,9]];
+  d.forEach(function(r,k){var L=s.layers[k];L.what=r[0];L.hole=r[1];L.ctl=r[2];L.checks=r[3];L.fails=r[4];L.cChecks=r[5];L.cFails=r[6];});
+  ["latent","latent","latent","latent","active"].forEach(function(kd,k){s.layers[k].kind=kd;});
+  s.layers[2].evidence.push({type:"Audit",date:"2026-09-01",note:"Walkway audit, 60 spot checks over 12 weeks (example).",link:""});
+  return s;
+}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function bigNum(v){var n=parseInt(v,10);return (isFinite(n)&&n>=0)?Math.min(n,1000000000):"";}
+function fnum(v){var n=parseFloat(v);return (isFinite(n)&&n>=0)?Math.min(n,1000000000):"";}
+function num(v){var n=parseInt(v,10);return (isFinite(n)&&n>=0)?Math.min(n,1000000):"";}
+function safeLink(v){v=str(v,300).trim();return (/^(https?:\/\/|[A-Za-z0-9_\-.\/]+$)/.test(v))?v:"";}
+function sanitize(d){
+  if(!d||!Array.isArray(d.scenarios)||!d.scenarios.length)return null;
+  var out={i:0,scenarios:[]};
+  d.scenarios.slice(0,30).forEach(function(s){
+    if(!s||!Array.isArray(s.layers))return;
+    var n=blankScenario(str(s.name,80)||"Scenario");n.hazard=str(s.hazard,140);n.example=!!s.example;
+    n.riskId=(parseInt(s.riskId,10)>0)?parseInt(s.riskId,10):"";n.riskName=str(s.riskName,120);n.modified=/^\d{4}-\d{2}-\d{2}$/.test(String(s.modified||""))?String(s.modified):"";
+    var sv=parseInt(s.sev,10);n.sev=(sv>=0&&sv<=5)?sv:0;n.expo=bigNum(s.expo);n.target=fnum(s.target);n.review=/^\d{4}-\d{2}-\d{2}$/.test(String(s.review||""))?String(s.review):"";
+    n.owner=str(s.owner,60);n.reviewer=str(s.reviewer,60);n.second=str(s.second,60);
+    n.events=(Array.isArray(s.events)?s.events:[]).slice(0,30).map(function(e){e=e||{};return {type:EVTYPES.indexOf(e.type)>-1?e.type:"Other",date:/^\d{4}-\d{2}-\d{2}$/.test(String(e.date||""))?String(e.date):"",note:str(e.note,200)};}).filter(function(e){return e.date;});
+    n.log=(Array.isArray(s.log)?s.log:[]).slice(0,200).map(function(e){e=e||{};return {date:/^\d{4}-\d{2}-\d{2}$/.test(String(e.date||""))?String(e.date):"",note:str(e.note,300)};}).filter(function(e){return e.date&&e.note.trim();});
+    for(var k=0;k<5;k++){
+      var L=s.layers[k]||{},T=n.layers[k];
+      T.name=str(L.name,60)||NAMES[k];T.what=str(L.what,140);T.hole=str(L.hole,140);T.kind=(L.kind==="active"||L.kind==="latent")?L.kind:"";T.ctl=str(L.ctl,140);
+      T.ctype=CTYPES.indexOf(L.ctype)>-1?L.ctype:"";T.checks=num(L.checks);T.fails=num(L.fails);T.ctlOn=!!L.ctlOn;T.newHaz=!!L.newHaz;T.shared=str(L.shared,60);T.checkKind=(L.checkKind==="unannounced"||L.checkKind==="mixed"||L.checkKind==="announced")?L.checkKind:"";T.cChecks=num(L.cChecks);T.cFails=num(L.cFails);
+      T.evidence=(Array.isArray(L.evidence)?L.evidence:[]).slice(0,50).map(function(e){return {type:TYPES.indexOf(e.type)>-1?e.type:"Other",date:str(e.date,10),note:str(e.note,200),link:safeLink(e.link)};});
+    }
+    out.scenarios.push(n);
+  });
+  if(!out.scenarios.length)return null;
+  var i=parseInt(d.i,10);out.i=(i>=0&&i<out.scenarios.length)?i:0;return out;
+}
+function load(){
+  try{var s=sanitize(JSON.parse(localStorage.getItem(KEY)));if(s){s.scenarios.forEach(function(x){if(!x.modified)x.modified=today();});return s;}}catch(e){}
+  return {i:0,scenarios:[exampleScenario()]};
+}
+var RKEY="rmilburn-risk-register-v2", RPAGE="risk-assessment-dashboard.html";
+function save(noTouch){
+  try{
+    if(!noTouch){var c0=cur();if(c0)c0.modified=today();markEdit();}
+    var out=JSON.parse(JSON.stringify(st));
+    out.scenarios.forEach(function(sc,i){sc.summary=summarise(i);});
+    localStorage.setItem(KEY,JSON.stringify(out));
+  }catch(e){}
+}
+function summarise(i){
+  var keep=st.i,o=null;st.i=i;
+  try{
+    var s=cur(),stt=status();
+    o={best:combined(true),cautious:vals(true).reduce(mul,1),evCaut:(s.expo===""?null:s.expo*blend(vals(true),0.5)),level:stt.level,head:stt.head,sev:s.sev,updated:s.modified||today(),minChecks:minChecks(),oldest:oldestEv()};
+  }catch(e){o=null;}
+  st.i=keep;return o;
+}
+function regRisk(id){
+  try{
+    var d=JSON.parse(localStorage.getItem(RKEY));if(!Array.isArray(d))return null;
+    for(var i=0;i<d.length;i++){
+      if(d[i]&&parseInt(d[i].id,10)===id){
+        var l=parseInt(d[i].l,10),s=parseInt(d[i].s,10),rl=parseInt(d[i].rl,10),rs=parseInt(d[i].rs,10);
+        if(!(l>=1&&l<=5&&s>=1&&s<=5))return null;
+        return {name:str(d[i].hazard,120),l:l,s:s,rl:(rl>=1&&rl<=5)?rl:l,rs:(rs>=1&&rs<=5)?rs:s};
+      }
+    }
+  }catch(e){}
+  return null;
+}
+function $(id){return document.getElementById(id);}
+var UIK="rmilburn-swiss-cheese-ui";
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return (o&&typeof o==="object")?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function stampTxt(ms){var d=new Date(ms);return d.toLocaleDateString("en-GB")+" at "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}
+function markEdit(){uiSet("edit",Date.now());renderSave();}
+function markFile(){uiSet("fileSaved",Date.now());renderSave();}
+function renderSave(){
+  var el=document.getElementById("saveNote");if(!el)return;
+  var o=uiGet(),fs=+o.fileSaved||0,ed=+o.edit||0,t,dirty=false;
+  if(!fs&&!ed){t="Your data stays only in this browser. Use Save data file to keep a copy you can move or restore.";}
+  else if(!fs){t="You have not saved a data file yet. Your entries live only in this browser and can be lost if its data is cleared. Press Save data file.";dirty=true;}
+  else if(ed>fs){t="Changes since your last data file save on "+stampTxt(fs)+". Press Save data file.";dirty=true;}
+  else{t="Data file last saved on "+stampTxt(fs)+". No changes since.";}
+  el.textContent=t;el.className="savebar"+(dirty?" dirty":"");
+}
+var ui=(function(){var o=uiGet();return {simple:o.mode!=="full",guide:!!o.guide,k:0};})();
+
+function esc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function pct(p){var v=p*100;if(v>0&&v<0.0001)return "under 0.0001%";return v>=1?v.toFixed(1)+"%":v>=0.01?v.toFixed(2)+"%":v.toPrecision(2)+"%";}
+function oneIn(p){return p>0&&p<1?"about 1 in "+Math.round(1/p).toLocaleString("en-GB"):"every time";}
+function expn(x){return x>=10?x.toFixed(0):x>=1?x.toFixed(1):x.toPrecision(2);}
+function cur(){return st.scenarios[st.i];}
+
+/* maths */
+function est(fails,checks){if(checks===""||!(checks>0))return null;var f=Math.min(fails===""?0:fails,checks);return (f+0.5)/(checks+1);}
+function baseP(L){return est(L.fails,L.checks);}
+function effP(L){
+  var b=baseP(L);
+  if(L.ctlOn){var q=est(L.cFails,L.cChecks);if(q!==null)return {p:q,src:"control"};return {p:b,src:b===null?"none":"nocredit"};}
+  return {p:b,src:b===null?"none":"base"};
+}
+function combined(useCtl){
+  var p=1;cur().layers.forEach(function(L){var v=useCtl?effP(L).p:baseP(L);p*=(v===null?1:v);});return p;
+}
+function rollP(L){var v=effP(L).p;return v===null?1:v;}
+function bandCls(p){return p===null?"b-none":p>=0.35?"b-crit":p>=0.25?"b-high":p>=0.15?"b-med":"b-low";}
+
+/* svg */
+function drawSvg(){
+  var s="",x0=150,gap=105,ty=150,i,x,stopX=null,hit=false;
+  if(roll){var fh=roll.indexOf(false);if(fh===-1){hit=true;stopX=700;}else{stopX=x0+fh*gap-3;}}
+  s+='<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ef4444"/></marker></defs>';
+  s+='<polygon points="52,120 82,175 22,175" fill="#fb923c" stroke="#0b1220" stroke-width="2"/><rect x="50" y="137" width="4" height="20" fill="#0b1220"/><rect x="50" y="162" width="4" height="4" fill="#0b1220"/>';
+  s+='<circle cx="712" cy="'+ty+'" r="26" fill="'+(hit?"#ef4444":"#2c4466")+'" stroke="#0b1220" stroke-width="2"/><path d="M700 138L724 162M724 138L700 162" stroke="'+(hit?"#0b1220":"#a9b8cf")+'" stroke-width="4" stroke-linecap="round"/>';
+  for(i=0;i<5;i++){
+    x=x0+i*gap;var failed=roll?roll[i]:false;var hy=roll&&failed?ty:(i%2?90:210);
+    s+='<polygon points="'+x+',56 '+(x+48)+',34 '+(x+48)+',254 '+x+',276" fill="#f5c542" stroke="#b8891a" stroke-width="2"/>';
+    s+='<ellipse cx="'+(x+24)+'" cy="'+hy+'" rx="11" ry="24" fill="#0f1b2d" stroke="#b8891a" stroke-width="2"/>';
+    s+='<ellipse cx="'+(x+24)+'" cy="'+(hy<ty?215:85)+'" rx="6" ry="12" fill="#0f1b2d" stroke="#b8891a" stroke-width="1.5"/>';
+    s+='<text x="'+(x+24)+'" y="258" text-anchor="middle" font-size="24" font-weight="800" fill="#0b1220" font-family="system-ui,Arial,sans-serif">'+(i+1)+'</text>';
+  }
+  if(roll){
+    s+='<path id="traj" d="M84 '+ty+' L'+stopX+' '+ty+'" stroke="#ef4444" stroke-width="5" fill="none" stroke-linecap="round" pathLength="1"'+(hit?' marker-end="url(#ah)"':'')+'/>';
+    if(!hit)s+='<rect x="'+(stopX-2)+'" y="'+(ty-30)+'" width="6" height="60" rx="2" fill="#22c55e" stroke="#0b1220" stroke-width="1.5"/>';
+  }
+  $("svg").innerHTML=s;
+  var t=$("traj");
+  if(t&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+    t.style.strokeDasharray="1";t.style.strokeDashoffset="1";t.getBoundingClientRect();
+    t.style.transition="stroke-dashoffset .9s ease-out";t.style.strokeDashoffset="0";
+  }
+}
+function setVerdict(){
+  var v=$("verdict");
+  if(!roll){v.className="verdict";v.textContent="Roll a day to see whether the hazard gets through.";return;}
+  var L=cur().layers,first=roll.indexOf(false);
+  var nodata=L.filter(function(l){return effP(l).p===null;}).length;
+  var extra=nodata?" "+nodata+" layer"+(nodata>1?"s have":" has")+" no data and counted as failing.":"";
+  if(first===-1){v.className="verdict hit";v.textContent="All five layers failed together. The holes lined up and harm occurred."+extra;}
+  else{v.className="verdict stop";v.textContent="Stopped at layer "+(first+1)+" ("+L[first].name+"). "+roll.filter(Boolean).length+" of 5 layers failed today, but one solid layer was enough."+extra;}
+}
+
+/* results (no re-render of inputs) */
+function mul(a,b){return a*b;}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function cutoff(){var d=new Date();d.setDate(d.getDate()-365);return dstr(d);}
+function fmtD(d){var p=String(d).split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:d;}
+function wilsonUpper(f,n){
+  if(!(n>0))return 1;f=Math.min(f===""?0:f,n);
+  var z=1.96,z2=z*z,ph=f/n;
+  return Math.min(1,(ph+z2/(2*n)+z*Math.sqrt(ph*(1-ph)/n+z2/(4*n*n)))/(1+z2/n));
+}
+function layerUse(L){
+  if(L.ctlOn&&L.cChecks!==""&&L.cChecks>0)return {n:L.cChecks,f:L.cFails};
+  if(L.checks!==""&&L.checks>0)return {n:L.checks,f:L.fails};
+  return null;
+}
+function upP(L){var u=layerUse(L);return u?wilsonUpper(u.f,u.n):1;}
+function latestEv(L){var d="";L.evidence.forEach(function(e){if(e.date>d)d=e.date;});return d;}
+function tier(n){return n<10?"very weak":n<30?"weak":n<60?"moderate":"stronger";}
+function lastEvent(){var d="";cur().events.forEach(function(e){if(e.date>d)d=e.date;});return d;}
+function predates(L){var ev=lastEvent();if(!ev||!L.evidence.length)return false;var le=latestEv(L);return !!le&&le<ev;}
+function minChecks(){var m=null;cur().layers.forEach(function(L){var u=layerUse(L),n=u?u.n:0;if(m===null||n<m)m=n;});return m;}
+function oldestEv(){var m="";cur().layers.forEach(function(L){var le=latestEv(L);if(le&&(m===""||le<m))m=le;});return m;}
+function sharedGroups(){
+  var g={};cur().layers.forEach(function(L,k){var t=(L.shared||"").trim().toLowerCase();if(!t)return;(g[t]=g[t]||{name:L.shared.trim(),ls:[]}).ls.push(k+1);});
+  return Object.keys(g).map(function(k){return g[k];}).filter(function(x){return x.ls.length>1;});
+}
+function listN(a){return a.length>1?a.slice(0,-1).join(", ")+" and "+a[a.length-1]:String(a[0]);}
+function layerFlags(L){
+  var fl=[],u=layerUse(L);
+  if(!u)fl.push("No data entered. Counted as always failing.");
+  else if(u.n<30)fl.push("Only "+u.n+" checks. Evidence is "+tier(u.n)+".");
+  else if(u.n<60)fl.push(u.n+" checks. Evidence is moderate. Even with no failures the cautious figure would still be "+pct(wilsonUpper(0,u.n))+".");
+  if(!L.evidence.length)fl.push("No evidence logged to back these numbers.");
+  else{var le=latestEv(L);if(le&&le<cutoff())fl.push("Latest evidence is over 12 months old ("+fmtD(le)+").");}
+  if(predates(L))fl.push("Latest evidence ("+fmtD(latestEv(L))+") is dated before the event logged on "+fmtD(lastEvent())+". Re-check this layer and log new evidence.");
+  if(L.checkKind==="announced")fl.push("Checks were announced, so failures are probably under-counted. Treat these figures as optimistic.");
+  if(L.ctlOn&&!(L.cChecks!==""&&L.cChecks>0))fl.push("Control marked in place but no checks since it went in, so no credit given.");
+  if(L.newHaz)fl.push("You noted this layer may create a new hazard or make other layers harder to use. Assess that hazard separately. It is not in the numbers.");
+  return fl;
+}
+function vals(up){return cur().layers.map(function(L){if(up)return upP(L);var v=effP(L).p;return v===null?1:v;});}
+function blend(v,d){return (1-d)*v.reduce(mul,1)+d*Math.min.apply(null,v);}
+function fmtE(x){return x===0?"0":x>=1?x.toFixed(1):x>=0.001?x.toPrecision(2):"under 0.001";}
+function yearsStr(e){
+  if(!(e>0))return "never";
+  var y=1/e;if(y<1)return "more than once a year";if(y>=1000)return "over 1,000 years";
+  return "about every "+(y>=10?Math.round(y):y.toFixed(1))+" years";
+}
+function status(){
+  var s=cur(),L=s.layers,reasons=[],blocking=false;
+  if(!s.sev){reasons.push("Severity of the credible worst outcome is not set.");blocking=true;}
+  if(s.expo===""){reasons.push("Times per year the hazard is met is not set.");blocking=true;}
+  if(s.riskId){
+    var rr=regRisk(s.riskId);
+    if(!rr)reasons.push("The linked register risk was not found in this browser. Load the risk register data file.");
+    else if(s.sev&&rr.s!==s.sev)reasons.push("Severity here ("+s.sev+") differs from the risk register ("+rr.s+"). Reconcile them.");
+  }
+  var nod=[],low=[],vweak=[],noev=[],old=[],pre=[],ann=[],cut=cutoff();
+  L.forEach(function(l,k){
+    var u=layerUse(l);
+    if(!u){nod.push(k+1);return;}
+    if(u.n<10)vweak.push(k+1);else if(u.n<30)low.push(k+1);
+    if(l.checkKind==="announced")ann.push(k+1);
+    if(predates(l))pre.push(k+1);
+    if(!l.evidence.length)noev.push(k+1);
+    else{var le=latestEv(l);if(le&&le<cut)old.push(k+1);}
+  });
+  function lst(a){return "layer"+(a.length>1?"s ":" ")+a.join(", ");}
+  if(nod.length){reasons.push("No data for "+lst(nod)+".");blocking=true;}
+  if(vweak.length)reasons.push("Very weak evidence (under 10 checks) for "+lst(vweak)+".");
+  if(low.length)reasons.push("Weak evidence (10 to 29 checks) for "+lst(low)+".");
+  if(ann.length)reasons.push("Checks for "+lst(ann)+" were announced, so failures are probably under-counted.");
+  if(pre.length)reasons.push("Evidence for "+lst(pre)+" is dated before the latest logged event ("+fmtD(lastEvent())+"). Re-check and log new evidence.");
+  sharedGroups().forEach(function(g){reasons.push("Layers "+listN(g.ls)+" share a cause ("+g.name+"), so they are not independent. See the fully linked row below.");});
+  if(noev.length)reasons.push("No evidence logged for "+lst(noev)+".");
+  if(old.length)reasons.push("Evidence over 12 months old for "+lst(old)+".");
+  var rel=L.filter(function(l){return l.ctype==="Administrative"||l.ctype==="PPE";}).length;
+  if(rel>=3)reasons.push(rel+" layers rely mainly on procedures or PPE, which depend on people getting it right every time. Look higher up the hierarchy of controls.");
+  if(!s.owner.trim())reasons.push("No named owner.");
+  if(!s.reviewer.trim())reasons.push("No competent reviewer named.");
+  if(s.sev>=4&&!s.second.trim())reasons.push("Severity "+s.sev+": this tool asks for a second reviewer's name before you rely on the result.");
+  if(!s.review)reasons.push("No review date set.");
+  else if(s.review<dstr(new Date()))reasons.push("Review overdue since "+fmtD(s.review)+".");
+  var weak=vweak.length||low.length||noev.length||old.length||ann.length||pre.length;
+  var ev=(s.expo===""?0:s.expo)*blend(vals(true),0.5);
+  var level,head;
+  if(blocking){level="inc";head="Not assessed yet. Fill in the missing items listed below.";}
+  else if(s.target===""){level="none";head="No tolerable level set. Enter your own target to get a comparison.";}
+  else if(ev>s.target){level="over";head="Above your tolerable level on the cautious estimate. Action needed.";}
+  else if(weak||(s.sev>=4&&reasons.length)){level="weak";head="Under your target, but the evidence is weak. Do not rely on it yet.";}
+  else{level="ok";head="Under your tolerable level on the cautious estimate. Keep reducing the risk where reasonably practicable (ALARP) and keep reviewing.";}
+  var line=blocking?"":"Cautious estimate with layers 50% linked (a judgement setting): "+fmtE(ev)+" harm events per year"+(s.target!==""?", against a tolerable level of "+fmtE(s.target)+".":".");
+  return {level:level,head:head,reasons:reasons,line:line};
+}
+function renderStatus(){
+  var r=status(),el=$("status");
+  el.className="status st-"+r.level;
+  el.innerHTML='<strong>'+esc(r.head)+'</strong>'+(r.line?'<p class="calc">'+esc(r.line)+'</p>':'')+
+    (r.reasons.length?'<ul class="rs">'+r.reasons.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul>':'')+
+    '<p class="disc">This shows how strong or weak the evidence is. It is not a probability of harm, a compliance check or a sign-off. A competent person must judge the result.</p>';
+}
+function renderLinked(){
+  var s=cur(),b=vals(false),u=vals(true);
+  var rows=[["Layers fail independently (best case)",0],["25% linked",0.25],["50% linked (judgement setting used for the status)",0.5],["Fully linked (worst case, only the strongest layer counts)",1]];
+  $("lk").innerHTML='<thead><tr><th>Assumption</th><th>Best estimate per exposure</th><th>Cautious per exposure</th><th>Cautious events per year</th><th>Roughly</th></tr></thead><tbody>'+
+   rows.map(function(r){
+     var pb=blend(b,r[1]),pu=blend(u,r[1]),ey=s.expo===""?null:s.expo*pu;
+     return '<tr><td data-l="Assumption">'+esc(r[0])+'</td><td data-l="Best per exposure">'+pct(pb)+'</td><td data-l="Cautious per exposure">'+pct(pu)+'</td><td data-l="Cautious events per year">'+(ey===null?'Enter times per year':fmtE(ey))+'</td><td data-l="Roughly">'+(ey===null?'':yearsStr(ey))+'</td></tr>';
+   }).join("")+'</tbody>';
+}
+function renderLkNote(){
+  var g=sharedGroups(),el=$("lkNote");if(!el)return;
+  el.textContent=g.length?g.map(function(x){return "Layers "+listN(x.ls)+" share a cause ("+x.name+"), so the independent row understates the risk. Look at the fully linked row.";}).join(" "):"No shared causes recorded. Use the optional Shared cause field on a layer to record one, for example the same supervisor or procedure.";
+}
+function kpisOnly(){
+  var s=cur(),c=combined(true),b=combined(false),cu=vals(true).reduce(mul,1);
+  var withData=s.layers.filter(function(L){return effP(L).p!==null;}).length;
+  var ctl=s.layers.filter(function(L){return L.ctlOn&&effP(L).src==="control";}).length;
+  var ev=s.layers.reduce(function(a,L){return a+L.evidence.length;},0);
+  var fold=(c>0&&b>0)?b/c:1;
+  var lat=s.layers.filter(function(L){return L.kind==='latent';}).length,act=s.layers.filter(function(L){return L.kind==='active';}).length;
+  var evy=s.expo===""?null:s.expo*blend(vals(true),0.5);
+  $("kpis").innerHTML=
+   '<div class="kpi warn"><div class="n">'+pct(c)+'</div><div class="l">Best estimate that harm gets through, per exposure</div></div>'+
+   '<div class="kpi crit"><div class="n">'+pct(cu)+'</div><div class="l">Cautious estimate per exposure (upper end of a 95% interval for each layer)</div></div>'+
+   '<div class="kpi crit"><div class="n">'+(evy===null?'Set times per year':fmtE(evy))+'</div><div class="l">Harm events per year, cautious, layers 50% linked</div></div>'+
+   '<div class="kpi ok"><div class="n">'+(fold>=100?fold.toFixed(0):fold.toFixed(1))+'x</div><div class="l">Best estimate reduction from evidenced controls ('+ctl+' layer'+(ctl===1?'':'s')+')</div></div>'+
+   '<div class="kpi"><div class="n">'+withData+' of 5</div><div class="l">Layers with data</div></div>'+
+   '<div class="kpi"><div class="n">'+ev+'</div><div class="l">Evidence items logged</div></div>'+
+   '<div class="kpi"><div class="n">'+minChecks()+'</div><div class="l">Fewest checks on any layer ('+tier(minChecks())+' evidence)</div></div>'+
+   '<div class="kpi"><div class="n">'+(oldestEv()?fmtD(oldestEv()):'None')+'</div><div class="l">Oldest latest evidence across layers'+(s.layers.some(function(L){return !L.evidence.length;})?' (some layers have none)':'')+'</div></div>'+
+   '<div class="kpi"><div class="n">'+lat+' latent, '+act+' active</div><div class="l">Holes classified (latent failures are the system level fixes)</div></div>';
+}
+function renderKpis(){kpisOnly();renderStatus();renderLinked();renderLkNote();}
+function updateCards(){
+  var cards=document.querySelectorAll(".layer");
+  cur().layers.forEach(function(L,k){
+    var c=cards[k];if(!c)return;
+    var b=baseP(L),e=effP(L);
+    var raw=(L.checks!==""&&L.checks>0)?Math.round(Math.min(L.fails===""?0:L.fails,L.checks)/L.checks*1000)/10+"% failed":"No checks entered";
+    c.querySelector("[data-o=raw]").textContent=raw;
+    c.querySelector("[data-o=est]").innerHTML=b===null?"Failure chance used: <b>assumed 100%</b> until you enter checks":"Failure chance used: <b>"+pct(b)+"</b>";
+    var w=c.querySelector("[data-o=warn]");w.textContent=(L.fails!==""&&L.checks!==""&&L.fails>L.checks)?"Failures cannot exceed checks made. Counted as equal to checks.":"";
+    var cc=c.querySelector("[data-o=cest]");
+    if(cc){
+      var q=est(L.cFails,L.cChecks);
+      cc.innerHTML=q===null?"No credit yet. Enter checks made since the control went in.":"Failure chance with control: <b>"+pct(q)+"</b>";
+      var cw=c.querySelector("[data-o=cwarn]");cw.textContent=(L.cFails!==""&&L.cChecks!==""&&L.cFails>L.cChecks)?"Failures cannot exceed checks made. Counted as equal to checks.":"";
+    }
+    var fl2=layerFlags(L);
+    sharedGroups().forEach(function(g){if(g.ls.indexOf(k+1)>-1)fl2.push("Shares a cause with layer"+(g.ls.length>2?"s ":" ")+listN(g.ls.filter(function(x){return x!==k+1;}))+" ("+g.name+"). These layers are not independent.");});
+    var fe=c.querySelector("[data-o=flags]");if(fe)fe.innerHTML=fl2.map(esc).join("<br>");
+    var te=c.querySelector("[data-o=tier]");if(te){var uu=layerUse(L);te.textContent=uu?"Evidence strength: "+tier(uu.n)+" ("+uu.n+" checks)":"Evidence strength: none";}
+    var badge=c.querySelector("[data-o=badge]");
+    badge.className="badge "+bandCls(e.p);
+    badge.textContent=e.p===null?"No data":"Fails "+pct(e.p);
+    var st2=c.querySelector("[data-o=state]");
+    st2.textContent=L.evidence.length?L.evidence.length+" evidence item"+(L.evidence.length>1?"s":""):"Unevidenced";
+    var sm=c.querySelector("summary");if(sm)sm.textContent="Evidence log ("+L.evidence.length+")";
+  });
+}
+function renderResults(){renderKpis();updateCards();}
+
+/* layer cards (structural render) */
+function evList(L,k){
+  return L.evidence.map(function(e,j){
+    var link=e.link?(' <a href="'+esc(e.link)+'" target="_blank" rel="noopener noreferrer">Open file</a>'):"";
+    return '<li><div><strong>'+esc(e.type)+'</strong><div class="meta">'+esc(e.date)+'</div>'+esc(e.note)+link+'</div><button class="btn sec small" data-rm="'+k+':'+j+'" aria-label="Remove evidence item">Remove</button></li>';
+  }).join("")||'<li class="meta">No evidence logged yet.</li>';
+}
+function renderLayers(){
+  var wasOpen=[].map.call(document.querySelectorAll(".layer details"),function(d){return d.open;});
+  $("layers").innerHTML=cur().layers.map(function(L,k){
+    var state=roll?(roll[k]?"failed":"held"):"";
+    return '<div class="layer '+state+((ui.guide&&k!==ui.k)?' off':'')+'" data-k="'+k+'">'+
+     '<div class="top"><span class="num">'+(k+1)+'</span><input data-f="name" value="'+esc(L.name)+'" maxlength="60" aria-label="Layer '+(k+1)+' name"></div>'+
+     '<label class="fld" data-adv>What this layer is<input data-f="what" value="'+esc(L.what)+'" maxlength="140" placeholder="For example, barriers and speed limiters"></label>'+
+     '<label class="fld">The hole (weakness found)<input data-f="hole" value="'+esc(L.hole)+'" maxlength="140" placeholder="What goes wrong in practice"><small class="hint">Where this layer lets the hazard through, in plain words.</small></label>'+
+     '<label class="fld" data-adv>Type of hole<select data-f="kind">'+KINDS.map(function(o){return '<option value="'+o[0]+'"'+(L.kind===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join("")+'</select></label>'+
+     '<div class="grp"><h4>Before the control</h4><div class="pair">'+
+       '<label class="fld">Checks made<input type="number" min="0" step="1" inputmode="numeric" data-f="checks" value="'+esc(L.checks)+'"><small class="hint">Times you looked at this layer: audits, walk-rounds, near miss reviews.</small></label>'+
+       '<label class="fld">Checks failed<input type="number" min="0" step="1" inputmode="numeric" data-f="fails" value="'+esc(L.fails)+'"><small class="hint">How many of those found it not working.</small></label></div>'+
+       '<p class="calc" data-o="raw"></p><p class="calc" data-o="est"></p><p class="calc" data-o="tier"></p><p class="warn" data-o="warn"></p></div>'+
+     '<label class="fld" data-adv>How the checks were made<select data-f="checkKind">'+CKINDS.map(function(o){return '<option value="'+o[0]+'"'+(L.checkKind===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join("")+'</select><small class="hint">Announced checks understate failure because people behave differently when watched.</small></label>'+
+     '<label class="fld" data-adv>Shared cause with other layers (optional)<input data-f="shared" value="'+esc(L.shared)+'" maxlength="60" placeholder="For example, night shift supervisor"><small class="hint">Layers with the same entry are treated as not independent.</small></label>'+
+     '<label class="fld">Control to plug the hole<input data-f="ctl" value="'+esc(L.ctl)+'" maxlength="140" placeholder="What you put in place"></label>'+
+     '<label class="fld" data-adv>Control type (hierarchy of controls)<select data-f="ctype">'+CTYPES.map(function(o){return '<option value="'+o+'"'+(L.ctype===o?' selected':'')+'>'+esc(o||'Not set')+'</option>';}).join("")+'</select></label>'+
+     '<label class="sw"><input type="checkbox" data-f="ctlOn"'+(L.ctlOn?' checked':'')+'> Control is in place</label><small class="hint">Tick only when the control is actually in use. Then count checks made since.</small>'+
+     '<label class="sw" data-adv><input type="checkbox" data-f="newHaz"'+(L.newHaz?' checked':'')+'> This layer may create a new hazard</label>'+
+     (L.ctlOn?'<div class="grp"><h4>Since the control went in</h4><div class="pair">'+
+       '<label class="fld">Checks made<input type="number" min="0" step="1" inputmode="numeric" data-f="cChecks" value="'+esc(L.cChecks)+'"></label>'+
+       '<label class="fld">Checks failed<input type="number" min="0" step="1" inputmode="numeric" data-f="cFails" value="'+esc(L.cFails)+'"></label></div>'+
+       '<p class="calc" data-o="cest"></p><p class="warn" data-o="cwarn"></p></div>':'')+
+     '<details><summary>Evidence log ('+L.evidence.length+')</summary><ul class="ev">'+evList(L,k)+'</ul>'+
+       '<div class="evform"><label class="fld">Type<select data-e="type">'+TYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join("")+'</select></label>'+
+       '<label class="fld">Date<input type="date" data-e="date" value="'+today()+'"></label>'+
+       '<label class="fld">What it shows<input data-e="note" maxlength="200" placeholder="For example, 12 weekly walkway audits"></label>'+
+       '<label class="fld">Link or file name in your repo (optional)<input data-e="link" maxlength="300" placeholder="evidence/walkway-audit.pdf"></label>'+
+       '<button class="btn small" data-add="'+k+'">Add evidence</button></div></details>'+
+     '<p class="warn" data-o="flags"></p>'+
+     '<div class="foot"><span data-o="state" class="calc"></span><span class="badge" data-o="badge"></span></div></div>';
+  }).join("");
+  [].forEach.call(document.querySelectorAll(".layer details"),function(d,i){if(wasOpen[i])d.open=true;});
+  $("layers").className="layers"+(ui.simple?" simple":"")+(ui.guide?" one":"");
+  renderModes();
+  updateCards();
+}
+function layerHasData(L){return !!layerUse(L);}
+function renderModes(){
+  var b=document.querySelectorAll("#modebar button");
+  [].forEach.call(b,function(x){
+    if(x.dataset.mode)x.setAttribute("aria-pressed",String((x.dataset.mode==="simple")===ui.simple));
+    if(x.dataset.guide)x.setAttribute("aria-pressed",String(ui.guide));
+  });
+  var n=$("lnav");n.hidden=!ui.guide;if(!ui.guide){n.innerHTML="";return;}
+  var L=cur().layers,done=L.filter(layerHasData).length,h="";
+  L.forEach(function(l,k){h+='<button type="button" class="chip'+(layerHasData(l)?' done':'')+'" data-go="'+k+'"'+(k===ui.k?' aria-current="true"':'')+'>'+(k+1)+' '+esc(l.name)+(layerHasData(l)?' (data)':'')+'</button>';});
+  h+='<span class="msg">Layer '+(ui.k+1)+' of 5. '+done+' of 5 layers have data. '+(ui.k<4?'Use the numbered buttons to move between layers.':'That is the last layer. Check the status at the top, add evidence, then press Save data file.')+'</span>';
+  n.innerHTML=h;
+}
+function renderTop(){
+  var s=cur();
+  $("sName").value=s.name;$("sHaz").value=s.hazard;$("sSev").value=String(s.sev);$("sExpo").value=s.expo;$("sTarget").value=s.target;$("sReview").value=s.review;$("banner").hidden=!s.example;
+  $("scn").innerHTML=st.scenarios.map(function(x,i){return '<option value="'+i+'">'+esc(x.name||"Untitled")+'</option>';}).join("");
+  $("scn").value=st.i;
+}
+function renderLink(){
+  var s=cur(),el=$("linkbox");
+  if(!s.riskId){el.hidden=true;el.innerHTML="";return;}
+  var rr=regRisk(s.riskId);el.hidden=false;
+  el.innerHTML='<strong>Linked to the risk register</strong><p class="calc">'+esc(rr?rr.name:(s.riskName||("Risk "+s.riskId)))+'</p>'+
+    (rr?'<p class="calc">Register scores: likelihood '+rr.l+', severity '+rr.s+'. Claimed residual likelihood '+rr.rl+' and severity '+rr.rs+'. The register decides which controls count as verified.</p>':'<p class="calc">The register entry was not found in this browser. Load the risk register data file on the register page to restore the link.</p>')+
+    '<p class="calc"><a href="'+RPAGE+'#open='+s.riskId+'">Open in the risk register</a> <button class="btn sec small" id="unlink" type="button">Unlink</button></p>';
+}
+function renderAcct(){
+  var s=cur();$("sOwner").value=s.owner;$("sReviewer").value=s.reviewer;$("sSecond").value=s.second;
+  $("logSum").textContent="Change log ("+s.log.length+")";
+  $("logList").innerHTML=s.log.slice().reverse().map(function(e){return '<li><div class="meta">'+esc(fmtD(e.date))+'</div>'+esc(e.note)+'</li>';}).join("")||'<li class="meta">No entries yet.</li>';
+  if(!$("logDate").value)$("logDate").value=today();
+}
+function renderEvents(){
+  var s=cur();
+  $("evList").innerHTML=s.events.slice().sort(function(a,b){return a.date<b.date?1:-1;}).map(function(e,j){
+    var idx=s.events.indexOf(e);
+    return '<li><div><strong>'+esc(e.type)+'</strong><div class="meta">'+esc(fmtD(e.date))+'</div>'+esc(e.note)+'</div><button class="btn sec small" data-evrm="'+idx+'" type="button" aria-label="Remove event">Remove</button></li>';
+  }).join("")||'<li class="meta">No events logged.</li>';
+  if(!$("evDate").value)$("evDate").value=today();
+}
+function renderAll(){renderTop();renderAcct();renderEvents();renderLink();renderKpis();renderLayers();drawSvg();setVerdict();}
+function reset(){roll=null;$("mcOut").textContent="No simulation run yet.";}
+
+/* events */
+$("scn").onchange=function(){st.i=+$("scn").value;reset();save(true);renderAll();};
+$("sName").oninput=function(){cur().name=$("sName").value;cur().example=false;$("banner").hidden=true;save();
+  var o=$("scn").options[st.i];if(o)o.textContent=cur().name||"Untitled";};
+$("sSev").innerHTML=SEV.map(function(o){return '<option value="'+o[0]+'">'+esc(o[1])+'</option>';}).join("");
+function setMeta(){cur().example=false;$("banner").hidden=true;save();renderKpis();}
+$("sSev").onchange=function(){cur().sev=+$("sSev").value;setMeta();};
+$("sExpo").oninput=function(){cur().expo=bigNum($("sExpo").value);setMeta();};
+$("sTarget").oninput=function(){cur().target=fnum($("sTarget").value);setMeta();};
+$("sReview").onchange=function(){var v=$("sReview").value;cur().review=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:"";setMeta();};
+$("sOwner").oninput=function(){cur().owner=$("sOwner").value;setMeta();};
+$("sReviewer").oninput=function(){cur().reviewer=$("sReviewer").value;setMeta();};
+$("sSecond").oninput=function(){cur().second=$("sSecond").value;setMeta();};
+$("logAdd").onclick=function(){
+  var n=$("logNote").value.trim(),d=$("logDate").value;if(!n){$("logNote").focus();return;}
+  cur().log.push({date:/^\d{4}-\d{2}-\d{2}$/.test(d)?d:today(),note:n.slice(0,300)});$("logNote").value="";save();renderAcct();
+};
+$("evType").innerHTML=EVTYPES.map(function(t){return '<option>'+esc(t)+'</option>';}).join("");
+$("evAdd").onclick=function(){
+  var n=$("evNote").value.trim(),d=$("evDate").value;if(!n){$("evNote").focus();return;}
+  cur().events.push({type:$("evType").value,date:/^\d{4}-\d{2}-\d{2}$/.test(d)?d:today(),note:n.slice(0,200)});$("evNote").value="";
+  cur().example=false;save();renderEvents();renderLayers();renderKpis();
+};
+$("evList").addEventListener("click",function(e){var t=e.target;if(t.dataset.evrm===undefined)return;cur().events.splice(+t.dataset.evrm,1);save();renderEvents();renderLayers();renderKpis();});
+$("print").onclick=function(){window.print();};
+$("sHaz").oninput=function(){cur().hazard=$("sHaz").value;save();};
+$("new").onclick=function(){st.scenarios.push(blankScenario());st.i=st.scenarios.length-1;reset();save();renderAll();$("sName").focus();$("sName").select();};
+$("dup").onclick=function(){var c=JSON.parse(JSON.stringify(cur()));c.name=(c.name||"Scenario")+" copy";c.example=false;c.riskId="";c.riskName="";c.modified=today();st.scenarios.push(c);st.i=st.scenarios.length-1;reset();save();renderAll();};
+$("del").onclick=function(){
+  if(!confirm("Delete this scenario and its evidence log?"))return;
+  st.scenarios.splice(st.i,1);if(!st.scenarios.length)st.scenarios.push(blankScenario());
+  st.i=Math.max(0,Math.min(st.i,st.scenarios.length-1));reset();save(true);renderAll();
+};
+$("layers").addEventListener("input",function(e){
+  var t=e.target,card=t.closest(".layer");if(!card||!t.dataset.f||t.type==="checkbox")return;
+  var L=cur().layers[+card.dataset.k],f=t.dataset.f;
+  if(f==="checks"||f==="fails"||f==="cChecks"||f==="cFails")L[f]=num(t.value);else L[f]=t.value;
+  cur().example=false;$("banner").hidden=true;roll=null;save();renderResults();drawSvg();setVerdict();
+  if(f==="name"||f==="checks"||f==="fails"||f==="cChecks"||f==="cFails"){document.querySelectorAll(".layer").forEach(function(c){c.classList.remove("failed","held");});}
+});
+$("layers").addEventListener("change",function(e){
+  var t=e.target,card=t.closest(".layer");if(!card)return;
+  if(t.dataset.f==="newHaz"){cur().layers[+card.dataset.k].newHaz=t.checked;save();renderLayers();return;}
+  if(t.dataset.f==="ctlOn"){cur().layers[+card.dataset.k].ctlOn=t.checked;roll=null;save();renderLayers();renderKpis();drawSvg();setVerdict();}
+});
+$("layers").addEventListener("click",function(e){
+  var t=e.target;
+  if(t.dataset.add!==undefined){
+    var card=t.closest(".layer"),L=cur().layers[+t.dataset.add];
+    var g=function(n){return card.querySelector('[data-e="'+n+'"]').value;};
+    var note=g("note").trim();if(!note){card.querySelector('[data-e="note"]').focus();return;}
+    L.evidence.push({type:g("type"),date:g("date")||today(),note:note.slice(0,200),link:safeLink(g("link"))});
+    cur().example=false;save();renderLayers();renderKpis();
+    var d=document.querySelectorAll(".layer")[+t.dataset.add].querySelector("details");if(d)d.open=true;
+  }
+  if(t.dataset.rm){
+    var p=t.dataset.rm.split(":");cur().layers[+p[0]].evidence.splice(+p[1],1);save();renderLayers();renderKpis();
+    var d2=document.querySelectorAll(".layer")[+p[0]].querySelector("details");if(d2)d2.open=true;
+  }
+});
+$("roll").onclick=function(){roll=cur().layers.map(function(L){return Math.random()<rollP(L);});renderLayers();drawSvg();setVerdict();};
+$("mc").onclick=function(){
+  var n=1000,hits=0,d,k,fail,P=cur().layers.map(rollP);
+  for(d=0;d<n;d++){fail=true;for(k=0;k<5&&fail;k++){if(Math.random()>=P[k])fail=false;}if(fail)hits++;}
+  var exp=P.reduce(function(a,b){return a*b;},1)*n;
+  $("mcOut").innerHTML='<strong>'+hits+' harm events in 1,000 days</strong> ('+(hits/n*100).toFixed(1)+'%). Expected from the maths: '+expn(exp)+'.<div class="bar" aria-hidden="true"><div style="width:'+Math.min(100,hits/n*100*8)+'%"></div></div>';
+};
+function download(name,text,type){
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();
+}
+$("json").onclick=function(){download("swiss-cheese-data.json",JSON.stringify(st,null,1),"application/json");markFile();};
+$("load").onclick=function(){$("file").click();};
+$("file").onchange=function(){
+  var f=$("file").files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var s=sanitize(JSON.parse(r.result));if(!s)throw 0;st=s;reset();save(true);renderAll();markFile();}
+    catch(e){alert("That file is not a valid data file from this dashboard.");}
+    $("file").value="";
+  };
+  r.readAsText(f);
+};
+$("csv").onclick=function(){
+  var head=["Scenario","Layer no","Layer","What it is","Hole","Hole type","Control","Checks made","Checks failed","Failure chance (before)","Control in place","Checks since control","Failed since control","Failure chance used","Evidence items","Control type","Cautious failure chance (95% upper)","May create new hazard","Severity","Times per year hazard met","Tolerable events per year","Review due","Evidence strength","How checks were made","Shared cause","Owner","Competent reviewer","Second reviewer"];
+  var rows=[];
+  st.scenarios.forEach(function(s){s.layers.forEach(function(L,k){
+    var b=baseP(L),q=est(L.cFails,L.cChecks),e=effP(L);
+    rows.push([s.name,k+1,L.name,L.what,L.hole,L.kind||"Not classified",L.ctl,L.checks,L.fails,b===null?"":(b*100).toFixed(2)+"%",L.ctlOn?"Yes":"No",L.cChecks,L.cFails,e.p===null?"No data":(e.p*100).toFixed(2)+"%",L.evidence.length,L.ctype||"Not set",(upP(L)*100).toFixed(2)+"%",L.newHaz?"Yes":"No",s.sev||"Not set",s.expo,s.target,s.review,(layerUse(L)?tier(layerUse(L).n):"No data"),(L.checkKind||"Not recorded"),L.shared,s.owner,s.reviewer,s.second]);
+  });});
+  var csv=[head].concat(rows).map(function(r){return r.map(function(c){var v=String(c);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
+  download("swiss-cheese-layers.csv",csv,"text/csv");
+};
+$("linkbox").addEventListener("click",function(e){
+  if(e.target.id==="unlink"){
+    if(!confirm("Unlink this analysis from the risk register? The register will no longer show these results."))return;
+    cur().riskId="";cur().riskName="";save();renderAll();
+  }
+});
+(function(){
+  try{
+    var q=new URLSearchParams(location.search),rid=parseInt(q.get("risk"),10);
+    if(rid>0){
+      var ex=-1,i;for(i=0;i<st.scenarios.length;i++){if(st.scenarios[i].riskId===rid){ex=i;break;}}
+      if(ex>-1){st.i=ex;}
+      else{
+        var hz=str(q.get("hazard")||"",140),n=blankScenario(str(hz,80)||("Risk "+rid)),sv=parseInt(q.get("sev"),10);
+        n.hazard=hz;n.sev=(sv>=1&&sv<=5)?sv:0;n.riskId=rid;n.riskName=str(hz,120);n.modified=today();
+        st.scenarios.push(n);st.i=st.scenarios.length-1;
+      }
+      save(true);
+      history.replaceState(null,"",location.pathname);
+    }
+  }catch(e){}
+})();
+$("modebar").addEventListener("click",function(e){
+  var t=e.target.closest("button");if(!t)return;
+  if(t.dataset.mode){ui.simple=t.dataset.mode==="simple";uiSet("mode",t.dataset.mode);renderLayers();}
+  else if(t.dataset.guide){ui.guide=!ui.guide;uiSet("guide",ui.guide);if(ui.guide){ui.k=0;var L=cur().layers;for(var i=0;i<5;i++){if(!layerHasData(L[i])){ui.k=i;break;}}}renderLayers();}
+});
+$("lnav").addEventListener("click",function(e){var t=e.target.closest("button");if(!t||t.dataset.go===undefined)return;ui.k=+t.dataset.go;renderLayers();window.scrollTo({top:$("lnav").getBoundingClientRect().top+window.pageYOffset-10});});
+(function(){var o=uiGet(),d=$("start");if(o.startClosed)d.open=false;d.addEventListener("toggle",function(){uiSet("startClosed",!d.open);});})();
+renderSave();
+renderAll();
+save(true);
+window.addEventListener("storage",function(e){if(e.key===RKEY)renderAll();});
+window.addEventListener("pageshow",function(e){if(e.persisted)renderAll();});
+})();
+</script>
+</body>
+</html>

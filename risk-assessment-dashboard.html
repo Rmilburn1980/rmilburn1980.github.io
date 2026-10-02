@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk Assessment Dashboard</title>
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent);word-break:break-all}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:700px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem;word-break:normal}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1240px;margin:0 auto}
+section[hidden]{display:none}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,th:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.small{padding:6px 12px;font-size:.8rem}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-weak{border-color:var(--high)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.status strong{font-size:1rem}
+.status .rs{margin:8px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .n{font-size:1.9rem;font-weight:700;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:.82rem;margin-top:4px}
+.kpi.crit .n{color:var(--crit)} .kpi.high .n{color:var(--high)} .kpi.ok .n{color:var(--low)} .kpi.warn .n{color:var(--med)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:1rem;margin:0 0 12px}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.toggle button{background:transparent;color:var(--muted);border:0;padding:7px 14px;cursor:pointer;font-weight:600;font-size:.85rem}
+.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.matrix{display:grid;grid-template-columns:34px repeat(5,minmax(0,1fr));grid-template-rows:repeat(5,56px) 26px;gap:4px}
+.matrix .cell{border-radius:6px;display:flex;align-items:flex-end;justify-content:flex-end;padding:4px;color:var(--ink);font-weight:700;font-size:.8rem;position:relative}
+.cell .pill{background:var(--ink);color:var(--text);border-radius:999px;min-width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:.85rem;padding:0 6px}
+.cell .sc{position:absolute;top:3px;left:6px;font-size:.68rem;font-weight:600}
+.ax{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.8rem;font-weight:600}
+.axis-note{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.78rem;margin-top:8px}
+.bars .row{display:grid;grid-template-columns:78px 1fr 28px;gap:10px;align-items:center;margin-bottom:10px;font-size:.88rem}
+.bars .track{background:var(--panel2);border-radius:6px;height:16px;overflow:hidden}
+.bars .fill{height:100%;border-radius:6px}
+.list{margin:0;padding:0;list-style:none}
+.list li{padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:.88rem}
+.list li:last-child{border-bottom:none}
+.sm{color:var(--muted);font-size:.78rem}
+.badge{display:inline-block;flex-shrink:0;padding:2px 10px;border-radius:999px;font-weight:700;font-size:.75rem;color:var(--ink);white-space:nowrap}
+.b-low{background:var(--low)} .b-med{background:var(--med)} .b-high{background:var(--high)} .b-crit{background:var(--crit)} .b-none{background:#a9b8cf}
+.tag{display:inline-block;border:1px solid var(--med);color:var(--med);border-radius:6px;padding:0 6px;font-size:.7rem;font-weight:700;margin-left:6px;vertical-align:middle}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}
+.tools input[type=search]{flex:1;min-width:180px}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);cursor:pointer}
+tr:last-child td{border-bottom:none}
+.over{color:var(--high);font-weight:700}
+.fl{margin:6px 0 0;padding-left:16px;color:var(--muted);font-size:.76rem}
+.rowbtn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem;margin:0 4px 4px 0}
+.rowbtn:hover{border-color:var(--accent)}
+a.rowbtn{display:inline-block;text-decoration:none;color:var(--text);word-break:normal}
+@media (max-width:760px){
+  .tablewrap{border:0;background:transparent}
+  table thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  #rows tr{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:6px 0}
+  #rows td{display:flex;justify-content:space-between;gap:12px;border-bottom:0;padding:6px 12px}
+  #rows td::before{content:attr(data-l);color:var(--muted);font-size:.74rem;text-transform:uppercase;flex:0 0 34%}
+  #rows td > div.v{flex:1;text-align:right}
+}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;width:min(860px,96vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(5,10,20,.7)}
+.f{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f h2{grid-column:1/-1;margin:0;font-size:1.1rem}
+.f h3{grid-column:1/-1;margin:8px 0 0;font-size:.9rem;border-top:1px solid var(--line);padding-top:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+.f textarea{min-height:64px;resize:vertical}
+.f .actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.f .help{grid-column:1/-1;color:var(--muted);font-size:.8rem;margin:0}
+.rowg{grid-column:1/-1;display:grid;gap:8px;align-items:end;border-top:1px solid var(--line);padding:10px 0}
+.rowg.ev{grid-template-columns:1fr 1fr 2fr 1.4fr auto}
+.rowg.ct{grid-template-columns:2fr 1.1fr 1.3fr 1fr auto}
+.dflags{grid-column:1/-1;border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 14px;font-size:.85rem;background:var(--panel2)}
+.dflags ul{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+.err{grid-column:1/-1;color:#ff8f8f;font-weight:700;font-size:.88rem;margin:0}
+@media (max-width:700px){.f{grid-template-columns:1fr}.rowg.ev,.rowg.ct{grid-template-columns:1fr}}
+.guide table{min-width:0}
+.guide td,.guide th{cursor:default}
+.calc{font-size:.85rem;margin:0 0 8px}
+.note{color:var(--muted);font-size:.82rem;margin-top:12px}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+.sr{position:absolute;left:-9999px}
+@media (max-width:560px){.matrix{grid-template-rows:repeat(5,46px) 26px}main{padding:14px}}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  .tools,.hub,.btn,.banner,nav,.rowbtn,.toggle{display:none!important}
+  section[hidden]{display:block!important}
+  .kpi .n,.kpi.crit .n,.kpi.warn .n,.kpi.ok .n,.kpi.high .n,.over{color:#000!important}
+  .card,.kpi,.status,tr{break-inside:avoid}
+  .tablewrap{overflow:visible}
+  .cell .pill{background:#000!important;color:#fff!important}
+}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.disc{margin:8px 0 0;color:var(--muted);font-size:.82rem}
+.logl{list-style:none;margin:6px 0 0;padding:0;font-size:.85rem;grid-column:1/-1}
+.logl li{border-top:1px solid var(--line);padding:5px 0}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Risk Assessment Dashboard</h1>
+    <p>A 5 x 5 risk register built for safety critical use. Every score needs a basis and evidence, a control only reduces risk once it has been verified, and severity 4 and 5 risks are escalated whatever the likelihood. Example data is labelled, replace it with your own.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Dashboard sections">
+  <button role="tab" aria-selected="true" data-tab="overview">Overview</button>
+  <button role="tab" aria-selected="false" data-tab="register">Risk Register</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Scoring Guide and Rules</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<section id="overview">
+  <div class="banner" id="banner" hidden>Risks tagged Example hold made up numbers so you can see how the rules work. Do not use them for real decisions. Add your own risks, edit or delete the examples.</div>
+  <div id="status" class="status st-empty"></div>
+  <p class="disc">This register shows how strong or weak the assurance is. It is not a compliance check or a sign-off, and a score is not a probability of harm. A competent person must judge the result.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Risk matrix</h2>
+      <div class="toggle" role="group" aria-label="Matrix view">
+        <button id="vInh" aria-pressed="false">Inherent (before controls)</button>
+        <button id="vRes" aria-pressed="true">Residual (verified controls only)</button>
+      </div>
+      <div class="matrix" id="matrix"></div>
+      <div class="axis-note"><span>Vertical: Likelihood (1 rare, 5 almost certain)</span><span>Horizontal: Severity (1 minor, 5 fatal)</span></div>
+      <p class="note">Colours include the severity rules: severity 5 is never rated below High and severity 4 never below Medium, so a rare but deadly event cannot hide in the green. Residual view counts a control only if it was verified working in the last 12 months.</p>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <div class="card"><h2>Needs attention first</h2><ul class="list" id="top"></ul></div>
+      <div class="card"><h2>Rating after verified controls</h2><div class="bars" id="bars"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="register" hidden>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search hazard, area, owner, controls" aria-label="Search risks">
+    <select id="fBand" aria-label="Filter by rating after verified controls">
+      <option value="">All ratings</option><option>Low</option><option>Medium</option><option>High</option><option>Critical</option>
+    </select>
+    <select id="fAs" aria-label="Filter by assurance">
+      <option value="">All assurance levels</option><option value="none">Not assured: no evidence</option><option value="weak">Weak</option><option value="assured">Assured</option>
+    </select>
+    <select id="fSev" aria-label="Filter by severity">
+      <option value="">All severities</option><option value="hi">Severity 4 or 5 only</option>
+    </select>
+  </div>
+  <div class="tools">
+    <button class="btn" id="add">Add risk</button>
+    <button class="btn sec" id="csv">Export CSV</button>
+    <button class="btn sec" id="json">Save data file</button>
+    <button class="btn sec" id="load">Load data file</button>
+    <button class="btn sec" id="print">Print or save as PDF</button>
+    <button class="btn sec" id="reset">Reset to example data</button>
+    <input type="file" id="file" accept="application/json,.json" class="sr" tabindex="-1" aria-label="Load data file">
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr>
+      <th data-k="hazard" tabindex="0">Hazard</th><th data-k="area" tabindex="0">Area</th><th data-k="inh" tabindex="0">Inherent</th>
+      <th data-k="res" tabindex="0">After verified controls</th><th data-k="assure" tabindex="0">Assurance</th><th data-k="owner" tabindex="0">Owner</th><th data-k="review" tabindex="0">Review due</th><th>Actions</th>
+    </tr></thead>
+    <tbody id="rows"></tbody>
+  </table></div>
+  <p class="note">Click a column heading to sort. Entries save in this browser only, so use Save data file to keep a copy and to move work between devices. Anything on a public GitHub Pages site is visible to everyone, so keep names, photos and employer documents out of it.</p>
+</section>
+
+<section id="guide" hidden>
+  <div class="grid2 guide">
+    <div class="card">
+      <h2>Rating bands (Likelihood x Severity)</h2>
+      <table><tbody>
+        <tr><td><span class="badge b-low">Low</span></td><td>1 to 4</td><td>Monitor and review at the normal interval.</td></tr>
+        <tr><td><span class="badge b-med">Medium</span></td><td>5 to 9</td><td>Tolerable only if controls are in place, verified and reviewed.</td></tr>
+        <tr><td><span class="badge b-high">High</span></td><td>10 to 16</td><td>Action required. Add or strengthen controls and set a deadline.</td></tr>
+        <tr><td><span class="badge b-crit">Critical</span></td><td>17 to 25</td><td>Stop and escalate. Do not proceed until reduced.</td></tr>
+      </tbody></table>
+      <p class="note">Severity floors: severity 5 is never rated below High and severity 4 never below Medium, whatever the likelihood. Severity 4 and 5 risks also need named senior sign-off.</p>
+    </div>
+    <div class="card">
+      <h2>Hierarchy of controls</h2>
+      <table><tbody>
+        <tr><td>1</td><td><strong>Eliminate</strong></td><td>Remove the hazard completely.</td></tr>
+        <tr><td>2</td><td><strong>Substitute</strong></td><td>Replace with something less hazardous.</td></tr>
+        <tr><td>3</td><td><strong>Engineering</strong></td><td>Guarding, interlocks, ventilation, segregation.</td></tr>
+        <tr><td>4</td><td><strong>Administrative</strong></td><td>Procedures, training, signage, rotation. These depend on people getting it right every time.</td></tr>
+        <tr><td>5</td><td><strong>PPE</strong></td><td>Last line of defence.</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Rules this dashboard applies</h2>
+    <p class="calc"><b>Basis and evidence.</b> Every risk needs a written basis for its likelihood and severity scores and at least one evidence item such as audit results, incident or near miss data, measurements or inspection records. A risk without these is shown as Not assured.</p>
+    <p class="calc"><b>Verified controls only.</b> A control reduces residual risk only if its status is Verified working and it was last checked less than 12 months ago. Otherwise the risk is treated at its inherent level, however low the claimed residual score is.</p>
+    <p class="calc"><b>Weak assurance.</b> A risk is flagged Weak for any of these: no controls recorded, a claimed reduction that is not demonstrated, verification or evidence over 12 months old, a severity 4 or 5 risk resting on procedures or PPE only, reliance on PPE alone, missing senior sign-off on a severity 4 or 5 risk, no owner or competent reviewer, no second reviewer on a High or Critical risk, or no review date or an overdue review.</p>
+    <p class="calc"><b>Layer analysis.</b> Each risk can be linked to a Swiss cheese analysis of its layers of defence. The register reads that analysis (it never changes it) and shows its best and cautious estimates beside your scores. It flags a linked analysis that is incomplete, stale, above its own tolerable level, based on weak evidence, uses a different severity, or suggests the event happens at least once a year while the likelihood is scored 1 or 2. It never changes a score for you. Both dashboards must sit in the same folder on the same site, and saved data stays in one browser, so use Save data file and Load data file to move both between devices.</p>
+    <p class="calc"><b>Reviewers and change log.</b> Each risk needs a named owner and a named competent reviewer. A risk rated High or Critical after controls should also name a second reviewer. Missing names make a risk Weak. The change log records why scores, evidence or controls changed. Entries can be added but not edited or removed in this tool.</p>
+    <p class="calc"><b>Your risk criteria.</b> The band cut-offs (1 to 4 Low, 5 to 9 Medium, 10 to 16 High, 17 to 25 Critical), the severity floors (severity 5 never below High, severity 4 never below Medium) and the 12 month limits on verification and evidence are this dashboard's defaults. They are not taken from HSE, ISO or any standard, and no study tests them. The floors exist because multiplying two 1 to 5 scores can give a rare fatal event the same rating as a frequent trivial one. Treat all of them as your organisation's own risk criteria: have a competent person adopt or change them, and record that decision in the change log.</p>
+    <p class="calc"><b>Severity wording.</b> Choose severity from the worst outcome that could credibly happen, not the usual one. 1 minor, 2 first aid, 3 lost time injury, 4 major injury, 5 fatality or multiple serious injuries. Likelihood: 1 rare, 2 unlikely, 3 possible, 4 likely, 5 almost certain.</p>
+    <p class="note">The 12 month limit, the severity floors and the band boundaries are defaults chosen for this tool, not published standards. Align them with your own site procedure and risk criteria before use. This dashboard supports a risk assessment and does not replace a suitable and sufficient assessment by a competent person, or your site's own procedures and legal duties. Assurance means the paperwork supports the score, it does not mean the risk is safe.</p>
+  </div>
+</section>
+</main>
+<footer>Decision support only, not a substitute for a suitable and sufficient risk assessment by a competent person. Risk Assessment Dashboard. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<dialog id="dlg" aria-labelledby="dTitle">
+  <form class="f" id="form" method="dialog" novalidate>
+    <h2 id="dTitle">Add risk</h2>
+    <div class="dflags" id="dFlags"></div>
+    <div class="dflags" id="dLayer" style="border-color:var(--line)"></div>
+    <label class="full">Hazard<input id="hazard" maxlength="120"></label>
+    <label>Area<input id="area" maxlength="60"></label>
+    <label>Who is at risk<input id="who" maxlength="60"></label>
+    <label class="full">Credible worst outcome<input id="harm" maxlength="160" placeholder="For example, fatality from being struck by a vehicle"></label>
+    <h3>Inherent risk, before any controls</h3>
+    <label>Likelihood<select id="l"></select></label>
+    <label>Severity of the credible worst outcome<select id="s"></select></label>
+    <label class="full">Basis for these scores (required)<textarea id="basis" maxlength="400" placeholder="Why these numbers? What did you observe, measure or review?"></textarea></label>
+    <h3>Evidence for the scores</h3>
+    <div id="evList" class="full" style="grid-column:1/-1"></div>
+    <div class="actions" style="justify-content:flex-start"><button type="button" class="btn sec small" id="addEv">Add evidence item</button></div>
+    <h3>Controls</h3>
+    <div id="ctList" style="grid-column:1/-1"></div>
+    <div class="actions" style="justify-content:flex-start"><button type="button" class="btn sec small" id="addCt">Add control</button></div>
+    <p class="help">Choose Verified working only when someone has checked the control actually works in practice, and enter the date. A control that is only in place, or only proposed, does not reduce the residual score here.</p>
+    <h3>Residual risk, if the controls work</h3>
+    <label>Residual likelihood<select id="rl"></select></label>
+    <label>Residual severity<select id="rs"></select></label>
+    <h3>Ownership and review</h3>
+    <label>Owner<input id="owner" maxlength="40"></label>
+    <label>Review due<input id="review" type="date"></label>
+    <label>Senior sign-off, name (required for severity 4 or 5)<input id="signName" maxlength="60"></label>
+    <label>Sign-off date<input id="signDate" type="date"></label>
+    <label>Competent reviewer, name<input id="reviewer" maxlength="60"></label>
+    <label>Second reviewer, name (asked for High or Critical after controls)<input id="second" maxlength="60"></label>
+    <h3>Change log</h3>
+    <ul class="logl" id="logList"></ul>
+    <label>What changed and why<input id="logNote" maxlength="300"></label>
+    <div class="actions" style="justify-content:flex-start"><button type="button" class="btn sec small" id="addLog">Add log entry</button></div>
+    <p class="help">Entries can be added but not edited or removed here. Record why you changed scores, evidence or controls.</p>
+    <p class="err" id="dErr" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn sec" id="cancel">Cancel</button>
+      <button type="submit" class="btn" id="save">Save risk</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-risk-register-v2", OLD="rmilburn-risk-register-v1", STALE=365;
+var TYPES=["Incident or near miss data","Audit","Inspection","Measurement or monitoring","Training record","Procedure or document","SafetyQube, an EHS management system","Photo","Other"];
+var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
+var CST=[["proposed","Proposed"],["implemented","In place, not yet checked"],["verified","Verified working"]];
+var NAMES=["Low","Medium","High","Critical"], RANK={Low:0,Medium:1,High:2,Critical:3};
+var SWKEY="rmilburn-swiss-cheese-v2", SWPAGE="swiss-cheese-dashboard.html";
+var risks=[], view="res", editId=null, draft=null, sortK="res", sortDir=-1, A={}, SW={};
+
+/* ---------- helpers ---------- */
+function $(id){return document.getElementById(id);}
+var UIK="rmilburn-risk-register-ui";
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return (o&&typeof o==="object")?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function stampTxt(ms){var d=new Date(ms);return d.toLocaleDateString("en-GB")+" at "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}
+function markEdit(){uiSet("edit",Date.now());renderSave();}
+function markFile(){uiSet("fileSaved",Date.now());renderSave();}
+function renderSave(){
+  var el=document.getElementById("saveNote");if(!el)return;
+  var o=uiGet(),fs=+o.fileSaved||0,ed=+o.edit||0,t,dirty=false;
+  if(!fs&&!ed){t="Your data stays only in this browser. Use Save data file to keep a copy you can move or restore.";}
+  else if(!fs){t="You have not saved a data file yet. Your entries live only in this browser and can be lost if its data is cleared. Press Save data file.";dirty=true;}
+  else if(ed>fs){t="Changes since your last data file save on "+stampTxt(fs)+". Press Save data file.";dirty=true;}
+  else{t="Data file last saved on "+stampTxt(fs)+". No changes since.";}
+  el.textContent=t;el.className="savebar"+(dirty?" dirty":"");
+}
+
+function esc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function off(days){var d=new Date();d.setDate(d.getDate()+days);return dstr(d);}
+function todayStr(){return dstr(new Date());}
+function cutoff(){return off(-STALE);}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function isDate(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||""));}
+function dOk(v){return isDate(v)?String(v):"";}
+function ival(v,d){var n=parseInt(v,10);return (n>=1&&n<=5)?n:d;}
+function safeLink(v){v=str(v,300).trim();return (/^(https?:\/\/[^\s]+|[A-Za-z0-9_\-.\/ ]+)$/.test(v))?v:"";}
+function newId(){return Date.now()+Math.floor(Math.random()*1000);}
+function sc(l,s){return l*s;}
+function band(n){return n>=17?"Critical":n>=10?"High":n>=5?"Medium":"Low";}
+function floorOf(s){return s===5?"High":s===4?"Medium":"Low";}
+function rating(l,s){var b=band(l*s),f=floorOf(s);return RANK[f]>RANK[b]?f:b;}
+function floored(l,s){return RANK[floorOf(s)]>RANK[band(l*s)];}
+function bcls(name){return name==="Critical"?"b-crit":name==="High"?"b-high":name==="Medium"?"b-med":"b-low";}
+function colv(name){return name==="Critical"?"var(--crit)":name==="High"?"var(--high)":name==="Medium"?"var(--med)":"var(--low)";}
+function rbadge(l,s){var n=rating(l,s);return '<span class="badge '+bcls(n)+'" title="Score '+(l*s)+(floored(l,s)?', raised by the severity '+s+' rule':'')+'">'+n+' '+(l*s)+'</span>';}
+
+/* ---------- seed data (all labelled example) ---------- */
+function ev(type,days,note){return {type:type,date:off(days),note:note,link:""};}
+function ct(text,type,status,days){return {text:text,type:type,status:status,vdate:days==null?"":off(days)};}
+function seed(){
+  var S=[
+   {hazard:"Pedestrian and forklift interface",area:"Logistics",who:"All staff",harm:"Fatality from being struck by a forklift",l:3,s:5,basis:"Shared walkway, frequent pedestrian crossings and forklift traffic through every shift.",evidence:[ev("Audit",-40,"Walkway audit, 60 spot checks")],controls:[ct("Segregated walkways and barriers","Engineering","verified",-50),ct("Banksman at the loading bay","Administrative","implemented")],rl:2,rs:5,owner:"Logistics Manager",review:off(120),signName:"Example Director",signDate:off(-30)},
+   {hazard:"Unguarded cutting machinery",area:"Woodworking",who:"Operatives",harm:"Amputation or fatality from contact with blades",l:3,s:5,basis:"Older machine, guard removal seen during a walk round.",evidence:[],controls:[ct("Interlocked guards","Engineering","implemented"),ct("Lock off procedure","Administrative","implemented")],rl:1,rs:5,owner:"Maintenance Lead",review:off(60),signName:"",signDate:""},
+   {hazard:"Working at height on roof fitting",area:"Final assembly",who:"Operatives",harm:"Fatal fall",l:2,s:5,basis:"Roof access over 2 metres, platform used on every build.",evidence:[ev("Inspection",-500,"Platform inspection")],controls:[ct("Fixed platforms and harness points","Engineering","verified",-400)],rl:1,rs:5,owner:"Production Manager",review:off(-20),signName:"Example Director",signDate:off(-500)},
+   {hazard:"Solvent and adhesive vapour exposure (COSHH)",area:"Bonding",who:"Operatives",harm:"Long term respiratory harm",l:4,s:3,basis:"Solvent based adhesive used daily in a semi enclosed area.",evidence:[ev("Measurement or monitoring",-60,"Air monitoring against the exposure limit")],controls:[ct("Local exhaust ventilation","Engineering","verified",-70),ct("Respirators","PPE","implemented")],rl:2,rs:3,owner:"EHS Lead",review:off(30),signName:"",signDate:""},
+   {hazard:"Manual handling of panels at assembly stage",area:"Production",who:"Operatives",harm:"Musculoskeletal injury, lost time",l:4,s:3,basis:"Repeated two person lifts of large panels.",evidence:[],controls:[ct("Hoist assist","Engineering","proposed")],rl:2,rs:3,owner:"Cell Leader",review:off(10),signName:"",signDate:""},
+   {hazard:"Noise from powered hand tools",area:"Production",who:"Operatives",harm:"Permanent hearing loss",l:4,s:2,basis:"Tool noise measured above the lower action level at the bench.",evidence:[ev("Measurement or monitoring",-90,"Noise survey at the bench")],controls:[ct("Hearing protection","PPE","verified",-90)],rl:3,rs:2,owner:"EHS Lead",review:off(150),signName:"",signDate:""},
+   {hazard:"Slips and trips from cables and hoses",area:"Production",who:"All staff",harm:"Fall injury",l:4,s:2,basis:"Cables and hoses cross walkways during builds.",evidence:[ev("Inspection",-30,"Weekly housekeeping inspections")],controls:[ct("Cable management and 5S audits","Administrative","verified",-30)],rl:2,rs:2,owner:"Cell Leader",review:off(45),signName:"",signDate:""}
+  ];
+  return S.map(function(r){r.id=newId();r.example=true;r.reviewer="Safety Advisor (example)";r.second="Operations Director (example)";return r;});
+}
+
+/* ---------- sanitising (used for load, import and migration) ---------- */
+function cleanRisk(r){
+  if(!r||typeof r!=="object")return null;
+  var o={id:parseInt(r.id,10)||newId(),example:!!r.example};
+  o.hazard=str(r.hazard,120).trim();o.area=str(r.area,60);o.who=str(r.who,60);o.harm=str(r.harm,160);o.basis=str(r.basis,400);
+  o.l=ival(r.l,3);o.s=ival(r.s,3);
+  o.rl=Math.min(ival(r.rl,o.l),o.l);o.rs=Math.min(ival(r.rs,o.s),o.s);
+  o.layered=!!r.layered;o.owner=str(r.owner,40);o.review=dOk(r.review);o.signName=str(r.signName,60);o.signDate=dOk(r.signDate);o.reviewer=str(r.reviewer,60);o.second=str(r.second,60);
+  o.log=(Array.isArray(r.log)?r.log:[]).slice(0,200).map(function(e){e=e||{};return {date:dOk(e.date),note:str(e.note,300)};}).filter(function(e){return e.date&&e.note.trim();});
+  o.evidence=(Array.isArray(r.evidence)?r.evidence:[]).slice(0,30).map(function(e){e=e||{};return {type:TYPES.indexOf(e.type)>-1?e.type:"Other",date:dOk(e.date),note:str(e.note,200),link:safeLink(e.link)};}).filter(function(e){return e.note.trim();});
+  o.controls=(Array.isArray(r.controls)?r.controls:[]).slice(0,12).map(function(c){c=c||{};
+    var st=(c.status==="proposed"||c.status==="implemented"||c.status==="verified")?c.status:"proposed";
+    var vd=dOk(c.vdate);if(st!=="verified")vd="";
+    if(st==="verified"&&(!vd||vd>todayStr()))st="implemented";
+    return {text:str(c.text,160),type:HOC.indexOf(c.type)>-1?c.type:"",status:st,vdate:st==="verified"?vd:""};}).filter(function(c){return c.text.trim();});
+  return o.hazard?o:null;
+}
+function cleanAll(list){return (Array.isArray(list)?list:[]).slice(0,300).map(cleanRisk).filter(Boolean);}
+function migrate(old){
+  return cleanAll(old.map(function(r){
+    var txt=str(r&&r.controls,160);
+    return {id:r&&r.id,hazard:r&&r.hazard,area:r&&r.area,who:r&&r.who,harm:"",basis:"",l:r&&r.l,s:r&&r.s,rl:r&&r.rl,rs:r&&r.rs,owner:r&&r.owner,review:r&&r.review,
+      evidence:[],controls:txt?[{text:txt,type:HOC.indexOf(r.hoc)>-1?r.hoc:"Administrative",status:"implemented",vdate:""}]:[]};
+  }));
+}
+function load(){
+  try{var d=JSON.parse(localStorage.getItem(KEY));var c=cleanAll(d);if(c.length)return c;}catch(e){}
+  try{var o=JSON.parse(localStorage.getItem(OLD));if(Array.isArray(o)&&o.length){var m=migrate(o);if(m.length){try{localStorage.setItem(KEY,JSON.stringify(m));}catch(e){}return m;}}}catch(e){}
+  return cleanAll(seed());
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(risks));}catch(e){}markEdit();}
+
+/* ---------- layer analysis from the Swiss cheese dashboard (read only) ---------- */
+function pct(p){var v=p*100;if(v>0&&v<0.0001)return "under 0.0001%";return v>=1?v.toFixed(1)+"%":v>=0.01?v.toFixed(2)+"%":v.toPrecision(2)+"%";}
+function fmtE(x){return x===0?"0":x>=1?x.toFixed(1):x>=0.001?x.toPrecision(2):"under 0.001";}
+function num01(v){var n=Number(v);return (v!==null&&v!==""&&isFinite(n)&&n>=0&&n<=1)?n:null;}
+function numPos(v){var n=Number(v);return (v!==null&&v!==""&&isFinite(n)&&n>=0)?n:null;}
+function readSwiss(){
+  var map={};
+  try{
+    var d=JSON.parse(localStorage.getItem(SWKEY));
+    if(!d||!Array.isArray(d.scenarios))return map;
+    d.scenarios.forEach(function(s){
+      var rid=parseInt(s&&s.riskId,10);if(!(rid>0))return;
+      var m=s.summary,sm=null;
+      if(m&&typeof m==="object"){
+        var lv=["inc","none","over","weak","ok"].indexOf(m.level)>-1?m.level:"inc";
+        sm={best:num01(m.best),cautious:num01(m.cautious),evCaut:numPos(m.evCaut),level:lv,head:str(m.head,200),updated:dOk(m.updated),minChecks:(parseInt(m.minChecks,10)>=0?Math.min(parseInt(m.minChecks,10),1000000):null),oldest:dOk(m.oldest)};
+        if(sm.best===null||sm.cautious===null)sm=null;
+      }
+      var sv=parseInt(s.sev,10);
+      var o={name:str(s.name,80),sev:(sv>=1&&sv<=5)?sv:0,summary:sm,count:1};
+      var prev=map[rid];
+      if(prev){
+        var pe=(prev.summary&&prev.summary.evCaut!==null)?prev.summary.evCaut:-1,ne=(sm&&sm.evCaut!==null)?sm.evCaut:-1;
+        prev.count+=1;if(pe>=ne)return;o.count=prev.count;
+      }
+      map[rid]=o;
+    });
+  }catch(e){}
+  return map;
+}
+
+/* ---------- the assurance rules ---------- */
+function analyse(r){
+  var cut=cutoff(),today=todayStr(),F=[],hi=r.s>=4,none=false;
+  var vcur=r.controls.filter(function(c){return c.status==="verified"&&c.vdate&&c.vdate>=cut;});
+  var vold=r.controls.filter(function(c){return c.status==="verified"&&c.vdate&&c.vdate<cut;});
+  var demo=vcur.length>0;
+  var el=demo?r.rl:r.l, es=demo?r.rs:r.s;
+  if(!r.basis.trim()){none=true;F.push("No written basis for the scores.");}
+  if(!r.evidence.length){none=true;F.push("No evidence logged to back the scores.");}
+  else{var last="";r.evidence.forEach(function(e){if(e.date&&e.date>last)last=e.date;});
+    if(!last)F.push("Evidence items have no date.");else if(last<cut)F.push("Latest evidence is over 12 months old ("+fmt(last)+").");}
+  if(!r.controls.length)F.push("No controls recorded.");
+  var claimed=(r.rl<r.l||r.rs<r.s);
+  if(!demo&&r.controls.length){
+    if(vold.length)F.push("Control verification is over 12 months old, so the risk is treated at its inherent level.");
+    else if(claimed)F.push("A lower residual score is claimed but no control is verified working. Treated at the inherent level.");
+    else F.push("No control has been verified working.");
+  }
+  if(r.controls.length&&r.controls.every(function(c){return c.type==="PPE";}))F.push("Relies on PPE alone, the last line of defence.");
+  if(hi&&vcur.length&&!vcur.some(function(c){return c.type==="Eliminate"||c.type==="Substitute"||c.type==="Engineering";}))F.push("Severity "+r.s+" risk relies on procedures or PPE only. Look higher up the hierarchy of controls.");
+  if(hi&&!(r.signName.trim()&&r.signDate))F.push("Senior sign-off missing for a severity "+r.s+" risk.");
+  if(!r.owner.trim())F.push("No owner named.");
+  if(!(r.reviewer||"").trim())F.push("No competent reviewer named.");
+  var effB=rating(el,es);
+  if((effB==="High"||effB==="Critical")&&!(r.second||"").trim())F.push("A "+effB+" risk should have a second reviewer named.");
+  if(!r.review)F.push("No review date set.");else if(r.review<today)F.push("Review overdue since "+fmt(r.review)+".");
+  var LA=SW[r.id];
+  if(LA){
+    var sm2=LA.summary;
+    if(!sm2)F.push("The linked layer analysis has no saved results yet. Open it and review it.");
+    else{
+      if(sm2.level==="inc")F.push("The linked layer analysis is incomplete.");
+      if(sm2.level==="over")F.push("The linked layer analysis is above its own tolerable level.");
+      if(sm2.level==="weak")F.push("The linked layer analysis has weak evidence.");
+      if(sm2.updated&&sm2.updated<cut)F.push("The linked layer analysis was last changed over 12 months ago.");
+      if(sm2.minChecks!==null&&sm2.minChecks<10)F.push("The linked layer analysis rests on fewer than 10 checks on at least one layer.");
+      if(sm2.evCaut!==null&&sm2.evCaut>=1&&el<=2)F.push("The layer analysis suggests at least one harm event a year (cautious estimate) but likelihood is scored "+el+". Re-check the score or the data.");
+    }
+    if(LA.sev&&LA.sev!==r.s)F.push("Severity in the layer analysis ("+LA.sev+") differs from this risk ("+r.s+").");
+  }else if(r.layered){F.push("A layer analysis was started but is not found in this browser. Load the Swiss cheese data file.");}
+  return {demo:demo,el:el,es:es,eff:rating(el,es),inh:rating(r.l,r.s),flags:F,level:none?"none":(F.length?"weak":"assured"),hi:hi};
+}
+function recompute(){A={};risks.forEach(function(r){A[r.id]=analyse(r);});}
+function abadge(a){var t=a.level==="none"?"Not assured":a.level==="weak"?"Weak":"Assured";var c=a.level==="none"?"b-crit":a.level==="weak"?"b-high":"b-low";return '<span class="badge '+c+'">'+t+'</span>';}
+
+/* ---------- overview ---------- */
+function count(fn){return risks.filter(function(r){return fn(r,A[r.id]);}).length;}
+function renderStatus(){
+  var el=$("status"),n=risks.length;
+  if(!n){el.className="status st-empty";el.innerHTML="<strong>No risks recorded yet.</strong>";return;}
+  var crit=count(function(r,a){return a.eff==="Critical";});
+  var hiNot=count(function(r,a){return a.hi&&a.level!=="assured";});
+  var highNot=count(function(r,a){return (a.eff==="High"||a.eff==="Critical")&&a.level!=="assured";});
+  var noSign=count(function(r,a){return a.hi&&!(r.signName.trim()&&r.signDate);});
+  var noVer=count(function(r,a){return !a.demo;});
+  var overdue=count(function(r){return r.review&&r.review<todayStr();});
+  var noEv=count(function(r){return !r.evidence.length;});
+  var lvl,head;
+  if(crit){lvl="over";head="A critical risk is on the register. Stop and escalate before work continues.";}
+  else if(hiNot||highNot){lvl="weak";head="Some serious risks are not assured. Do not treat this register as reliable yet.";}
+  else{lvl="ok";head="Every serious risk has evidence and verified controls. Keep verifying and reviewing, a register is never finished.";}
+  var R=[];
+  if(crit)R.push(crit+" critical risk"+(crit>1?"s":"")+" after verified controls.");
+  if(hiNot)R.push(hiNot+" severity 4 or 5 risk"+(hiNot>1?"s are":" is")+" not assured.");
+  if(noSign)R.push(noSign+" severity 4 or 5 risk"+(noSign>1?"s are":" is")+" missing senior sign-off.");
+  if(highNot)R.push(highNot+" high or critical risk"+(highNot>1?"s are":" is")+" not assured.");
+  if(noVer)R.push(noVer+" risk"+(noVer>1?"s have":" has")+" no control verified in the last 12 months, so "+(noVer>1?"they are":"it is")+" shown at the inherent level.");
+  if(noEv)R.push(noEv+" risk"+(noEv>1?"s have":" has")+" no evidence logged.");
+  if(overdue)R.push(overdue+" review"+(overdue>1?"s are":" is")+" overdue.");
+  el.className="status st-"+lvl;
+  el.innerHTML="<strong>"+esc(head)+"</strong>"+(R.length?'<ul class="rs">'+R.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>":"");
+}
+function renderKpis(){
+  var hc=count(function(r,a){return a.eff==="High"||a.eff==="Critical";});
+  var s45=count(function(r,a){return a.hi;});
+  var s45n=count(function(r,a){return a.hi&&a.level!=="assured";});
+  var noVer=count(function(r,a){return !a.demo;});
+  var over=count(function(r){return r.review&&r.review<todayStr();});
+  var noEv=count(function(r){return !r.evidence.length;});
+  $("kpis").innerHTML=
+   '<div class="kpi"><div class="n">'+risks.length+'</div><div class="l">Risks on register</div></div>'+
+   '<div class="kpi high"><div class="n">'+hc+'</div><div class="l">High or critical after verified controls</div></div>'+
+   '<div class="kpi"><div class="n">'+s45+'</div><div class="l">Severity 4 or 5 risks</div></div>'+
+   '<div class="kpi crit"><div class="n">'+s45n+'</div><div class="l">Of those, not assured</div></div>'+
+   '<div class="kpi warn"><div class="n">'+noVer+'</div><div class="l">With no verified control</div></div>'+
+   '<div class="kpi warn"><div class="n">'+noEv+'</div><div class="l">With no evidence logged</div></div>'+
+   '<div class="kpi warn"><div class="n">'+over+'</div><div class="l">Reviews overdue</div></div>';
+}
+function renderMatrix(){
+  var h="";
+  for(var l=5;l>=1;l--){
+    h+='<div class="ax">'+l+'</div>';
+    for(var s=1;s<=5;s++){
+      var n=risks.filter(function(r){var a=A[r.id];return view==="inh"?(r.l===l&&r.s===s):(a.el===l&&a.es===s);}).length;
+      var rt=rating(l,s);
+      h+='<div class="cell" style="background:'+colv(rt)+'" title="Likelihood '+l+', Severity '+s+', score '+(l*s)+', rating '+rt+'"><span class="sc">'+(l*s)+'</span>'+(n?'<span class="pill">'+n+'</span>':'')+'</div>';
+    }
+  }
+  h+='<div></div>';for(var s2=1;s2<=5;s2++)h+='<div class="ax">'+s2+'</div>';
+  $("matrix").innerHTML=h;
+}
+function renderBars(){
+  var cs=["var(--low)","var(--med)","var(--high)","var(--crit)"];
+  var counts=NAMES.map(function(n){return count(function(r,a){return a.eff===n;});});
+  var max=Math.max.apply(null,counts.concat([1]));
+  $("bars").innerHTML=NAMES.map(function(n,i){return '<div class="row"><span>'+n+'</span><div class="track"><div class="fill" style="width:'+(counts[i]/max*100)+'%;background:'+cs[i]+'"></div></div><strong>'+counts[i]+'</strong></div>';}).join("");
+}
+function prio(r){var a=A[r.id];return (a.hi&&a.level!=="assured"?1000:0)+RANK[a.eff]*100+(a.level==="none"?20:a.level==="weak"?10:0)+sc(a.el,a.es)/100;}
+function renderTop(){
+  var t=risks.slice().sort(function(a,b){return prio(b)-prio(a);}).slice(0,6);
+  $("top").innerHTML=t.map(function(r){var a=A[r.id];
+    return '<li><span><strong>'+esc(r.hazard)+'</strong>'+(r.example?'<span class="tag">Example</span>':'')+'<br><span class="sm">'+esc(r.area)+(a.flags.length?' | '+esc(a.flags[0]):'')+'</span></span>'+rbadge(a.el,a.es)+'</li>';}).join("")||'<li>No risks yet.</li>';
+}
+
+/* ---------- register ---------- */
+function renderRows(){
+  var q=$("q").value.toLowerCase(),fb=$("fBand").value,fa=$("fAs").value,fs=$("fSev").value;
+  var data=risks.filter(function(r){var a=A[r.id];
+    var txt=(r.hazard+" "+r.area+" "+r.owner+" "+r.controls.map(function(c){return c.text;}).join(" ")).toLowerCase();
+    return (!q||txt.indexOf(q)>-1)&&(!fb||a.eff===fb)&&(!fa||a.level===fa)&&(!fs||a.hi);
+  });
+  var val={hazard:function(r){return r.hazard.toLowerCase();},area:function(r){return r.area.toLowerCase();},
+    inh:function(r){return RANK[A[r.id].inh]*100+sc(r.l,r.s);},res:function(r){var a=A[r.id];return RANK[a.eff]*100+sc(a.el,a.es);},
+    assure:function(r){var l=A[r.id].level;return l==="none"?2:l==="weak"?1:0;},owner:function(r){return (r.owner||"").toLowerCase();},review:function(r){return r.review||"9999";}}[sortK];
+  data.sort(function(a,b){var x=val(a),y=val(b);return (x>y?1:x<y?-1:0)*sortDir;});
+  $("rows").innerHTML=data.map(function(r){
+    var a=A[r.id],od=r.review&&r.review<todayStr();
+    var fl=a.flags.map(function(f){return "<li>"+esc(f)+"</li>";}).join("");
+    return '<tr>'+
+     '<td data-l="Hazard"><div class="v"><strong>'+esc(r.hazard)+'</strong>'+(r.example?'<span class="tag">Example</span>':'')+'<div class="sm">'+esc(r.harm)+'</div></div></td>'+
+     '<td data-l="Area"><div class="v">'+esc(r.area)+'<div class="sm">'+esc(r.who)+'</div></div></td>'+
+     '<td data-l="Inherent"><div class="v">'+rbadge(r.l,r.s)+'<div class="sm">L'+r.l+' x S'+r.s+'</div></div></td>'+
+     '<td data-l="After verified controls"><div class="v">'+rbadge(a.el,a.es)+'<div class="sm">'+(a.demo?'L'+a.el+' x S'+a.es:'No verified control, shown at inherent level')+'</div></div></td>'+
+     '<td data-l="Assurance"><div class="v">'+abadge(a)+(fl?'<ul class="fl">'+fl+'</ul>':'')+'</div></td>'+
+     '<td data-l="Owner"><div class="v">'+esc(r.owner||"Not set")+'</div></td>'+
+     '<td data-l="Review due"><div class="v'+(od?' over':'')+'">'+(r.review?fmt(r.review):"Not set")+(od?'<div class="sm over">Overdue</div>':'')+'</div></td>'+
+     '<td data-l="Actions"><div class="v"><button class="rowbtn" data-e="'+r.id+'">Open or edit</button><a class="rowbtn" data-layer="'+r.id+'" href="'+esc(SWPAGE+"?risk="+r.id+"&hazard="+encodeURIComponent(r.hazard.slice(0,140))+"&sev="+r.s)+'">'+(SW[r.id]?"Open layer analysis":"Create layer analysis")+'</a><button class="rowbtn" data-d="'+r.id+'">Delete</button></div></td></tr>';
+  }).join("")||'<tr><td colspan="8">No risks match.</td></tr>';
+}
+function renderAll(){SW=readSwiss();recompute();$("banner").hidden=!risks.some(function(r){return r.example;});renderStatus();renderKpis();renderMatrix();renderBars();renderTop();renderRows();}
+
+/* ---------- tabs and controls ---------- */
+document.querySelectorAll("nav button").forEach(function(b){
+  b.addEventListener("click",function(){
+    document.querySelectorAll("nav button").forEach(function(x){x.setAttribute("aria-selected",x===b?"true":"false");});
+    ["overview","register","guide"].forEach(function(id){$(id).hidden=(id!==b.dataset.tab);});
+  });
+});
+$("vInh").onclick=function(){view="inh";$("vInh").setAttribute("aria-pressed","true");$("vRes").setAttribute("aria-pressed","false");renderMatrix();};
+$("vRes").onclick=function(){view="res";$("vRes").setAttribute("aria-pressed","true");$("vInh").setAttribute("aria-pressed","false");renderMatrix();};
+["q"].forEach(function(id){$(id).oninput=renderRows;});["fBand","fAs","fSev"].forEach(function(id){$(id).onchange=renderRows;});
+document.querySelectorAll("th[data-k]").forEach(function(th){
+  function go(){var k=th.dataset.k;if(sortK===k)sortDir*=-1;else{sortK=k;sortDir=-1;}renderRows();}
+  th.onclick=go;th.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}};
+});
+
+/* ---------- dialog ---------- */
+["l","s","rl","rs"].forEach(function(id){$(id).innerHTML=[1,2,3,4,5].map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");});
+function readForm(){
+  var r={id:editId||0,example:false,evidence:draft.evidence.map(function(e){return {type:e.type,date:e.date,note:e.note,link:e.link};}),
+         controls:draft.controls.map(function(c){return {text:c.text,type:c.type,status:c.status,vdate:c.vdate};})};
+  ["hazard","area","who","harm","basis","owner","review","signName","signDate","reviewer","second"].forEach(function(k){r[k]=$(k).value;});
+  r.log=draft.log.map(function(e){return {date:e.date,note:e.note};});
+  ["l","s","rl","rs"].forEach(function(k){r[k]=+$(k).value;});
+  return r;
+}
+function liveFlags(){
+  var raw=readForm();
+  var r={id:editId||0,layered:!!(editId&&(risks.filter(function(x){return x.id===editId;})[0]||{}).layered),hazard:raw.hazard||"x",area:str(raw.area,60),who:"",harm:"",basis:raw.basis,l:raw.l,s:raw.s,rl:Math.min(raw.rl,raw.l),rs:Math.min(raw.rs,raw.s),owner:raw.owner,review:dOk(raw.review),signName:raw.signName,signDate:dOk(raw.signDate),reviewer:raw.reviewer,second:raw.second,
+    evidence:raw.evidence.filter(function(e){return e.note.trim();}).map(function(e){return {type:e.type,date:dOk(e.date),note:e.note,link:""};}),
+    controls:raw.controls.filter(function(c){return c.text.trim();}).map(function(c){var vd=c.status==="verified"?dOk(c.vdate):"";return {text:c.text,type:c.type,status:(c.status==="verified"&&(!vd||vd>todayStr()))?"implemented":c.status,vdate:vd};})};
+  var a=analyse(r),lc=a.level==="none"?"var(--crit)":a.level==="weak"?"var(--high)":"var(--low)";
+  var head=(a.level==="none"?"Not assured":a.level==="weak"?"Weak assurance":"Assured")+". Inherent "+r.l*r.s+" ("+a.inh+"), after verified controls "+(a.el*a.es)+" ("+a.eff+")"+(floored(a.el,a.es)?", raised by the severity "+a.es+" rule":"")+".";
+  var d=$("dFlags");d.style.borderColor=lc;
+  d.innerHTML="<strong>"+esc(head)+"</strong>"+(a.flags.length?"<ul>"+a.flags.map(function(f){return "<li>"+esc(f)+"</li>";}).join("")+"</ul>":"");
+}
+function renderLists(){
+  $("evList").innerHTML=draft.evidence.map(function(e,i){return '<div class="rowg ev">'+
+   '<label>Evidence type<select data-ei="'+i+'" data-ef="type">'+TYPES.map(function(t){return '<option'+(t===e.type?' selected':'')+'>'+esc(t)+'</option>';}).join("")+'</select></label>'+
+   '<label>Date<input type="date" data-ei="'+i+'" data-ef="date" value="'+esc(e.date)+'"></label>'+
+   '<label>What it shows<input maxlength="200" data-ei="'+i+'" data-ef="note" value="'+esc(e.note)+'"></label>'+
+   '<label>Link or file name (optional)<input maxlength="300" data-ei="'+i+'" data-ef="link" value="'+esc(e.link)+'"></label>'+
+   '<button type="button" class="btn sec small" data-erm="'+i+'">Remove</button></div>';}).join("")||'<p class="help">No evidence yet. A risk without evidence is shown as Not assured.</p>';
+  $("ctList").innerHTML=draft.controls.map(function(c,i){return '<div class="rowg ct">'+
+   '<label>Control<input maxlength="160" data-ci="'+i+'" data-cf="text" value="'+esc(c.text)+'"></label>'+
+   '<label>Type<select data-ci="'+i+'" data-cf="type"><option value="">Choose type</option>'+HOC.map(function(t){return '<option'+(t===c.type?' selected':'')+'>'+t+'</option>';}).join("")+'</select></label>'+
+   '<label>Status<select data-ci="'+i+'" data-cf="status">'+CST.map(function(o){return '<option value="'+o[0]+'"'+(o[0]===c.status?' selected':'')+'>'+o[1]+'</option>';}).join("")+'</select></label>'+
+   '<label>Last checked working<input type="date" data-ci="'+i+'" data-cf="vdate" value="'+esc(c.vdate)+'"></label>'+
+   '<button type="button" class="btn sec small" data-crm="'+i+'">Remove</button></div>';}).join("")||'<p class="help">No controls yet.</p>';
+}
+function renderLayerBox(){
+  var el=$("dLayer");
+  if(!editId){el.innerHTML='<strong>Layer analysis (Swiss cheese)</strong><p class="calc">Save the risk first, then use Create layer analysis on its row in the register.</p>';return;}
+  var L=SW[editId];
+  if(!L){el.innerHTML='<strong>Layer analysis (Swiss cheese)</strong><p class="calc">None linked yet. Use Create layer analysis on this risk in the register. For a severity 4 or 5 risk, examining the layers of defence is strongly advised.</p>';return;}
+  var sm=L.summary;
+  el.innerHTML='<strong>Layer analysis: '+esc(L.name)+(L.count>1?' (most cautious of '+L.count+' linked analyses)':'')+'</strong>'+
+    (sm?'<p class="calc">Best estimate per exposure '+pct(sm.best)+', cautious (upper end of a 95% interval per layer) '+pct(sm.cautious)+'. Fewest checks on any layer: '+(sm.minChecks===null?'not recorded':sm.minChecks)+'. Oldest latest evidence: '+(sm.oldest?fmt(sm.oldest):'none logged')+'. '+(sm.evCaut===null?'Times per year the hazard is met is not set there.':'Cautious harm events per year, layers 50% linked: '+fmtE(sm.evCaut)+'.')+' Status there: '+esc(sm.head)+' Last changed '+fmt(sm.updated)+'.</p>':'<p class="calc">No saved results yet. Open it and review it.</p>');
+}
+function renderLog(){
+  $("logList").innerHTML=draft.log.slice().reverse().map(function(e){return '<li><span style="color:var(--muted);font-size:.78rem">'+esc(fmt(e.date))+'</span><br>'+esc(e.note)+'</li>';}).join("")||'<li style="color:var(--muted)">No entries yet.</li>';
+}
+function openDlg(r){
+  editId=r?r.id:null;
+  $("dTitle").textContent=r?"Open or edit risk":"Add risk";
+  var d=r||{hazard:"",area:"",who:"",harm:"",l:3,s:3,basis:"",rl:3,rs:3,owner:"",review:off(90),signName:"",signDate:"",reviewer:"",second:"",log:[],evidence:[],controls:[]};
+  draft={log:(d.log||[]).map(function(e){return {date:e.date,note:e.note};}),evidence:d.evidence.map(function(e){return {type:e.type,date:e.date,note:e.note,link:e.link};}),controls:d.controls.map(function(c){return {text:c.text,type:c.type,status:c.status,vdate:c.vdate};})};
+  ["hazard","area","who","harm","basis","l","s","rl","rs","owner","review","signName","signDate","reviewer","second"].forEach(function(k){$(k).value=d[k]||"";});
+  $("logNote").value="";
+  $("dErr").textContent="";renderLists();renderLog();renderLayerBox();liveFlags();$("dlg").showModal();
+}
+$("add").onclick=function(){openDlg(null);};
+$("cancel").onclick=function(){$("dlg").close();};
+$("addLog").onclick=function(){var n=$("logNote").value.trim();if(!n){$("logNote").focus();return;}draft.log.push({date:todayStr(),note:n.slice(0,300)});$("logNote").value="";renderLog();};
+$("addEv").onclick=function(){draft.evidence.push({type:"Audit",date:todayStr(),note:"",link:""});renderLists();liveFlags();};
+$("addCt").onclick=function(){draft.controls.push({text:"",type:"",status:"proposed",vdate:""});renderLists();liveFlags();};
+$("form").addEventListener("input",function(e){
+  var t=e.target;
+  if(t.dataset.ei!==undefined){draft.evidence[+t.dataset.ei][t.dataset.ef]=t.value;}
+  if(t.dataset.ci!==undefined){
+    var c=draft.controls[+t.dataset.ci];c[t.dataset.cf]=t.value;
+    if(t.dataset.cf==="status"){if(t.value==="verified"&&!c.vdate)c.vdate=todayStr();if(t.value!=="verified")c.vdate="";renderLists();}
+  }
+  liveFlags();
+});
+$("form").addEventListener("change",function(e){if(e.target.dataset.ci!==undefined||e.target.dataset.ei!==undefined)liveFlags();});
+$("form").addEventListener("click",function(e){
+  var t=e.target;
+  if(t.dataset.erm!==undefined){draft.evidence.splice(+t.dataset.erm,1);renderLists();liveFlags();}
+  if(t.dataset.crm!==undefined){draft.controls.splice(+t.dataset.crm,1);renderLists();liveFlags();}
+});
+$("form").addEventListener("keydown",function(e){if(e.key==="Enter"&&e.target.tagName==="INPUT"){e.preventDefault();}});
+$("form").addEventListener("submit",function(e){
+  e.preventDefault();
+  var raw=readForm(),err="";
+  if(!raw.hazard.trim())err="Enter the hazard.";
+  else if(!raw.area.trim())err="Enter the area.";
+  else if(!raw.basis.trim())err="Enter the basis for the scores. A score without a reason cannot be checked.";
+  else if(raw.rl>raw.l||raw.rs>raw.s)err="Residual scores cannot be higher than the inherent scores.";
+  else if(raw.review&&!isDate(raw.review))err="Enter a valid review date.";
+  else{
+    for(var i=0;i<raw.controls.length;i++){
+      var c=raw.controls[i];if(!c.text.trim()){if(c.status==="verified")err="A control row is empty. Remove it or describe the control.";continue;}
+      if(!c.type){err="Choose a control type for: "+c.text;break;}
+      if(c.status==="verified"){if(!isDate(c.vdate)){err="Enter the date control was last checked working: "+c.text;break;}if(c.vdate>todayStr()){err="The check date cannot be in the future: "+c.text;break;}}
+    }
+    if(!err&&raw.s>=4&&raw.signName.trim()&&!isDate(raw.signDate))err="Enter the sign-off date.";
+  }
+  if(err){$("dErr").textContent=err;return;}
+  var o=cleanRisk(raw);if(!o){$("dErr").textContent="Could not save. Check the entries.";return;}
+  o.id=editId||newId();o.example=false;
+  if(editId){risks=risks.map(function(r){return r.id===editId?o:r;});}else{risks.push(o);}
+  save();$("dlg").close();renderAll();
+});
+$("rows").addEventListener("click",function(e){
+  var t=e.target;
+  if(t.dataset.layer){var lr=risks.filter(function(x){return x.id==t.dataset.layer;})[0];if(lr&&!lr.layered){lr.layered=true;save();}}
+  if(t.dataset.e){openDlg(risks.filter(function(r){return r.id==t.dataset.e;})[0]);}
+  if(t.dataset.d&&confirm("Delete this risk and its evidence?")){risks=risks.filter(function(r){return r.id!=t.dataset.d;});save();renderAll();}
+});
+
+/* ---------- data in and out ---------- */
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+$("reset").onclick=function(){if(confirm("Replace the whole register with the example data? Your own entries will be lost unless you saved a data file, and any layer analyses linked to your risks will no longer match.")){risks=cleanAll(seed());save();renderAll();}};
+$("print").onclick=function(){window.print();};
+$("json").onclick=function(){download("risk-register.json",JSON.stringify({version:2,risks:risks},null,1),"application/json");markFile();};
+$("load").onclick=function(){$("file").click();};
+$("file").onchange=function(){
+  var f=$("file").files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{var d=JSON.parse(r.result);var c=cleanAll(Array.isArray(d)?d:d.risks);if(!c.length)throw 0;
+      if(confirm("Replace the current register with "+c.length+" risk"+(c.length>1?"s":"")+" from this file?")){risks=c;save();renderAll();markFile();}}
+    catch(e){alert("That file is not a valid data file from this dashboard.");}
+    $("file").value="";
+  };
+  r.readAsText(f);
+};
+$("csv").onclick=function(){
+  var head=["Hazard","Area","Who at risk","Credible worst outcome","Likelihood","Severity","Inherent score","Inherent rating","Basis for scores","Evidence items","Latest evidence date","Controls","Residual likelihood claimed","Residual severity claimed","Residual used","Rating after verified controls","Verified control in last 12 months","Assurance","Assurance flags","Owner","Review due","Senior sign-off","Sign-off date","Competent reviewer","Second reviewer","Example data","Layer analysis linked","Layer cautious per exposure","Layer cautious events per year","Layer status"];
+  var rows=risks.map(function(r){var a=A[r.id],last="";r.evidence.forEach(function(e){if(e.date>last)last=e.date;});
+    return [r.hazard,r.area,r.who,r.harm,r.l,r.s,r.l*r.s,a.inh,r.basis,r.evidence.length,last,r.controls.map(function(c){return c.text+" ("+c.type+", "+c.status+(c.vdate?" "+c.vdate:"")+")";}).join("; "),r.rl,r.rs,a.el*a.es,a.eff,a.demo?"Yes":"No",a.level==="none"?"Not assured":a.level==="weak"?"Weak":"Assured",a.flags.join(" "),r.owner,r.review,r.signName,r.signDate,r.reviewer,r.second,r.example?"Yes":"No",SW[r.id]?"Yes":"No",(SW[r.id]&&SW[r.id].summary)?(SW[r.id].summary.cautious*100).toFixed(4)+"%":"",(SW[r.id]&&SW[r.id].summary&&SW[r.id].summary.evCaut!==null)?SW[r.id].summary.evCaut:"",(SW[r.id]&&SW[r.id].summary)?SW[r.id].summary.level:""];});
+  var csv=[head].concat(rows).map(function(row){return row.map(function(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
+  download("risk-register.csv",csv,"text/csv");
+};
+risks=load();renderSave();renderAll();
+(function(){
+  var m=/^#open=(\d+)$/.exec(location.hash||"");
+  if(m){var id=parseInt(m[1],10),r=risks.filter(function(x){return x.id===id;})[0];
+    if(r){document.querySelector("nav button[data-tab=register]").click();openDlg(r);}
+    try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
+})();
+window.addEventListener("storage",function(e){if(e.key===SWKEY&&!$("dlg").open)renderAll();});
+window.addEventListener("pageshow",function(e){if(e.persisted)renderAll();});
+})();
+</script>
+</body>
+</html>
