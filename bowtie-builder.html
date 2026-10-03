@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bow-tie Builder</title>
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:740px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1280px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,.rowbtn:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.small,.rowbtn.small{padding:5px 10px;font-size:.78rem}
+.rowbtn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem;text-decoration:none;display:inline-block}
+.rowbtn:hover{border-color:var(--accent)}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-weak{border-color:var(--high)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.status .rs{margin:8px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}
+.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:.75rem;color:var(--ink);white-space:nowrap}
+.b-low{background:var(--low)}.b-med{background:var(--med)}.b-high{background:var(--high)}.b-crit{background:var(--crit)}.b-none{background:#a9b8cf}
+.s-over{background:var(--crit)}.s-weak{background:var(--high)}.s-ok{background:var(--low)}.s-inc{background:#a9b8cf}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label,.bar label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea,.bar label input,.bar label select,.bar label textarea{width:100%}
+.f .full{grid-column:1/-1}
+.f .links{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.path{border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0;background:var(--panel2)}
+.path .head{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.path .head label{flex:1 1 260px;display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.path .head input{width:100%}
+.bar{border:1px solid var(--line);border-radius:10px;margin:10px 0 0;background:var(--bg)}
+.bar summary{cursor:pointer;padding:9px 12px;font-size:.88rem;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar .bf{padding:0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bar .bf .full{grid-column:1/-1}
+@media (max-width:700px){.bar .bf{grid-template-columns:1fr}}
+.pf{margin:8px 0 0;padding-left:18px;font-size:.8rem;color:#fcd9a8}
+.toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.toggle button{background:transparent;color:var(--muted);border:0;padding:7px 14px;cursor:pointer;font-weight:600;font-size:.85rem}
+.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.dwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:8px}
+.dwrap svg{display:block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:22px;height:14px;border-radius:3px;border:2px solid}
+.sw.v{background:#134e4a;border-color:#2dd4bf}.sw.i{background:#1c3050;border:2px dashed #facc15}.sw.p{background:transparent;border:2px dotted #a9b8cf}.sw.x{background:#4c1d1d;border:2px dashed #ef4444}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2)}
+tr:last-child td{border-bottom:none}
+.fl{margin:6px 0 0;padding-left:16px;color:var(--muted);font-size:.78rem}
+@media (max-width:760px){
+  .tablewrap{border:0;background:transparent}
+  table thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  .bl tr{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:6px 0}
+  .bl td{display:flex;justify-content:space-between;gap:12px;border-bottom:0;padding:6px 12px}
+  .bl td::before{content:attr(data-l);color:var(--muted);font-size:.74rem;text-transform:uppercase;flex:0 0 34%}
+  .bl td > div.v{flex:1;text-align:right}
+}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}}
+/* svg */
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.t-box{fill:#1e3a5f;stroke:#7dd3fc;stroke-width:1.5}
+.e-box{fill:#7f1d1d;stroke:#fca5a5;stroke-width:2}
+.c-box{fill:#78350f;stroke:#fdba74;stroke-width:1.5}
+.b-v{fill:#134e4a;stroke:#2dd4bf;stroke-width:2}
+.b-i{fill:#1c3050;stroke:#facc15;stroke-width:2;stroke-dasharray:6 4}
+.b-p{fill:#0f1b2d;stroke:#a9b8cf;stroke-width:2;stroke-dasharray:2 4}
+.b-x{fill:#4c1d1d;stroke:#ef4444;stroke-width:2;stroke-dasharray:6 4}
+.tx{fill:#f4f8fc;font-size:11px}.tx.big{font-size:12px}.tx.ev{font-size:13px;font-weight:700}.tx.lab{font-size:9.5px;font-weight:700;letter-spacing:.03em}.tx.col{fill:#a9b8cf;font-size:12px;font-weight:600}
+.ln{stroke:#a9b8cf;stroke-width:2;fill:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  nav,.hub,.btn,.rowbtn,.banner,.savebar,.toggle,.cards .btn{display:none!important}
+  .dwrap{overflow:visible;border:0}.dwrap svg{width:100%!important;height:auto!important}
+  .card,.status{break-inside:avoid}
+  .tx{fill:#fff}.tx.col{fill:#000}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Bow-tie Builder</h1>
+    <p>Show a hazard as a bow-tie: the threats that could cause the top event on the left, the consequences on the right, and the barriers between them. A barrier only counts once it has been verified working, and the tool shows every path that has none.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="list">Bow-ties</button>
+  <button role="tab" aria-selected="false" data-tab="edit">Editor</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and Guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<section id="list">
+  <div class="banner" id="banner" hidden>Bow-ties tagged Example hold made up details so you can see how the rules work. Do not use them for real decisions. Edit or delete the examples and build your own.</div>
+  <p class="disc">A bow-tie is a picture of how a hazard could cause harm and what stands in the way. It shows coverage, not how well each barrier works. A competent person must judge the result.</p>
+  <p><button class="btn" id="newBt">New bow-tie</button> <button class="btn sec" id="json">Save data file</button> <button class="btn sec" id="load">Load data file</button> <button class="btn sec" id="csv">Export CSV of all barriers</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file"></p>
+  <div class="cards" id="cards"></div>
+</section>
+<section id="edit" hidden></section>
+<section id="guide" class="guide" hidden>
+  <div class="card"><h2>What a bow-tie shows</h2>
+    <ul>
+      <li><b>Hazard:</b> the thing with the potential to cause harm.</li>
+      <li><b>Top event:</b> the moment control is lost, for example a forklift striking a pedestrian.</li>
+      <li><b>Threats:</b> the ways the top event could happen, on the left.</li>
+      <li><b>Preventive barriers:</b> what stops each threat reaching the top event.</li>
+      <li><b>Consequences:</b> what could follow the top event, on the right.</li>
+      <li><b>Mitigating barriers:</b> what limits the harm after the top event has happened.</li>
+    </ul>
+    <p class="sm">The bow-tie method complements the Swiss cheese layers of defence tool. The bow-tie shows the paths and the barriers on each. The Swiss cheese tool tests how well a set of layers holds up, using check counts.</p>
+  </div>
+  <div class="card"><h2>Rules the tool applies</h2>
+    <ul>
+      <li>A barrier counts as in place only when its status is Verified, with a date within the last 12 months, not in the future, and a note of what was checked. Anything else is shown as not verified.</li>
+      <li>Every threat and every consequence needs at least one verified barrier. A path with none is shown as a gap and the bow-tie is flagged as needing action.</li>
+      <li>A path with only one independent verified barrier is flagged, because nothing else stops it if that barrier fails.</li>
+      <li>Barriers given the same shared cause (for example, the same supervisor or the same power supply) count as one, because one failure can defeat them together.</li>
+      <li>For a severity 4 or 5 hazard, a path that relies only on procedures or PPE is flagged. Look higher: eliminate, substitute or engineer the risk out.</li>
+      <li>For a severity 4 or 5 hazard, each verified barrier should say what could make it fail and what protects it. Missing answers are flagged.</li>
+      <li>A bow-tie needs an owner, a competent reviewer who is not the owner, and a review date.</li>
+      <li>If you link a bow-tie to a risk in the Risk Register, the tool compares severities and shows the risk's rating. It never changes the register.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>Limits</h2>
+    <p>A green status means every path has at least two independent verified barriers. It does not mean the barriers are good enough, or that the picture is complete. Missing threats are the usual weakness, so ask people who do the job. Decision support only, not a substitute for a suitable and sufficient risk assessment by a competent person. Data stays in this browser unless you save a data file, and there is no sign-in, so it cannot prove who changed what.</p>
+  </div>
+</section>
+</main>
+<footer>Decision support only, not a substitute for a suitable and sufficient risk assessment by a competent person. Bow-tie Builder. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-bowtie-v1", RKEY="rmilburn-risk-register-v2", UIK="rmilburn-bowtie-ui", STALE=365;
+var RISKPAGE="risk-assessment-dashboard.html", ACTPAGE="corrective-action-tracker.html", SWPAGE="swiss-cheese-dashboard.html";
+var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"], ABBR={Eliminate:"ELIM",Substitute:"SUBS",Engineering:"ENG",Administrative:"ADMIN",PPE:"PPE","":"TYPE?"};
+var STATUS=[["proposed","Proposed"],["implemented","In place, not yet verified"],["verified","Verified working"]];
+var RANK={Low:0,Medium:1,High:2,Critical:3};
+var SEVL=["Not set","1 Minor","2 Moderate","3 Serious","4 Major","5 Fatal or life changing"];
+var bts=[], curId=null, view="diagram", risks=[], saveTimer=null;
+
+function $(id){return document.getElementById(id);}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function todayStr(){return dstr(new Date());}
+function off(days){var d=new Date();d.setDate(d.getDate()+days);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function newId(){return Date.now()+Math.floor(Math.random()*1000);}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function h(tag,a){
+  var e=document.createElement(tag),i,k;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;
+    else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected"||k==="disabled")e[k]=v;
+    else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add(e,arguments[i]);return e;
+}
+function add(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function clear(e){while(e.firstChild)e.removeChild(e.firstChild);}
+
+/* ---------- save status ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return (o&&typeof o==="object")?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function stampTxt(ms){var d=new Date(ms);return d.toLocaleDateString("en-GB")+" at "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}
+function renderSave(){
+  var el=$("saveNote"),o=uiGet(),fs=+o.fileSaved||0,ed=+o.edit||0,t,dirty=false;
+  if(!fs&&!ed){t="Your data stays only in this browser. Use Save data file to keep a copy you can move or restore.";}
+  else if(!fs){t="You have not saved a data file yet. Your entries live only in this browser and can be lost if its data is cleared. Press Save data file.";dirty=true;}
+  else if(ed>fs){t="Changes since your last data file save on "+stampTxt(fs)+". Press Save data file.";dirty=true;}
+  else{t="Data file last saved on "+stampTxt(fs)+". No changes since.";}
+  el.textContent=t;el.className="savebar"+(dirty?" dirty":"");
+}
+
+/* ---------- risks from the register (read only) ---------- */
+function readRisks(){
+  var out=[],cut=off(-STALE);
+  try{var d=JSON.parse(localStorage.getItem(RKEY));
+    (Array.isArray(d)?d:[]).forEach(function(r){
+      if(!r||typeof r!=="object"||!r.hazard)return;
+      var l=+r.l||3,s=+r.s||3,rl=+r.rl||l,rs=+r.rs||s;
+      var demo=(Array.isArray(r.controls)?r.controls:[]).some(function(c){return c&&c.status==="verified"&&c.vdate&&c.vdate>=cut&&c.vdate<=todayStr();});
+      var sc=(demo?rl:l)*(demo?rs:s),b=sc>=17?"Critical":sc>=10?"High":sc>=5?"Medium":"Low",f=s===5?"High":s===4?"Medium":"Low";
+      if(RANK[f]>RANK[b])b=f;
+      out.push({id:r.id,hazard:String(r.hazard).slice(0,120),name:b,s:s});
+    });}catch(e){}
+  return out;
+}
+function riskOf(bt){if(!bt.riskId)return null;for(var i=0;i<risks.length;i++)if(String(risks[i].id)===String(bt.riskId))return risks[i];return null;}
+function bcls(n){return n==="Critical"?"b-crit":n==="High"?"b-high":n==="Medium"?"b-med":n==="Low"?"b-low":"b-none";}
+
+/* ---------- sanitising ---------- */
+function cleanBarrier(b){
+  b=b||{};
+  var st=(b.status==="proposed"||b.status==="implemented"||b.status==="verified")?b.status:"proposed";
+  return {text:str(b.text,120).trim(),type:HOC.indexOf(b.type)>-1?b.type:"",status:st,vdate:st==="verified"?dOk(b.vdate):"",vnote:st==="verified"?str(b.vnote,200):"",shared:str(b.shared,60).trim(),fail:str(b.fail,160),failCtl:str(b.failCtl,160)};
+}
+function cleanPath(p,n){
+  p=p||{};return {text:str(p.text,120).trim(),barriers:(Array.isArray(p.barriers)?p.barriers:[]).slice(0,6).map(cleanBarrier).filter(function(b){return b.text;})};
+}
+function cleanBT(o){
+  if(!o||typeof o!=="object")return null;
+  var s=parseInt(o.sev,10),r={id:parseInt(o.id,10)||newId(),example:!!o.example};
+  r.name=str(o.name,80).trim();r.hazard=str(o.hazard,140);r.top=str(o.top,140);r.sev=(s>=1&&s<=5)?s:0;
+  r.owner=str(o.owner,60);r.reviewer=str(o.reviewer,60);r.review=dOk(o.review);r.riskId=o.riskId?parseInt(o.riskId,10)||null:null;
+  r.threats=(Array.isArray(o.threats)?o.threats:[]).slice(0,12).map(cleanPath).filter(function(p){return p.text;});
+  r.cons=(Array.isArray(o.cons)?o.cons:[]).slice(0,10).map(cleanPath).filter(function(p){return p.text;});
+  return r.name?r:null;
+}
+function cleanAll(l){return (Array.isArray(l)?l:[]).slice(0,100).map(cleanBT).filter(Boolean);}
+
+/* ---------- seed ---------- */
+function seed(){
+  function B(text,type,status,vd,vn,extra){var b={text:text,type:type,status:status,vdate:vd==null?"":off(vd),vnote:vn||"",shared:"",fail:"",failCtl:""};for(var k in (extra||{}))b[k]=extra[k];return b;}
+  var rid=null;risks.forEach(function(r){if(norm(r.hazard)==="pedestrian and forklift interface")rid=r.id;});
+  return cleanAll([{
+    id:newId(),example:true,name:"Pedestrian and forklift interface",hazard:"A forklift travelling through a shared walkway",top:"Forklift strikes a pedestrian",sev:5,owner:"Logistics Manager (example)",reviewer:"Safety Advisor (example)",review:off(90),riskId:rid,
+    threats:[
+      {text:"Pedestrian enters the forklift route unseen",barriers:[B("Barriers and segregated walkways","Engineering","verified",-35,"Walkway audit, 60 spot checks (example)",{fail:"Barrier damaged by impact",failCtl:"Weekly barrier inspection"}),B("Gated pedestrian crossing","Engineering","implemented"),B("Banksman at the loading bay","Administrative","implemented")]},
+      {text:"Driver loses attention or travels too fast",barriers:[B("Speed limiter fitted to every truck","Engineering","verified",-50,"Limiter test on all trucks (example)",{fail:"Limiter bypassed",failCtl:"Monthly limiter check"}),B("Driver training and authorisation","Administrative","verified",-120,"Training records checked against licence list (example)",{shared:"Supervisor checks"}),B("Horn and blue spot light","Engineering","verified",-20,"Walked the route and observed warnings (example)",{fail:"Light failure",failCtl:"Daily pre-use check"})]},
+      {text:"Poor visibility at the blind corner",barriers:[B("Convex mirrors at the corner","Engineering","implemented"),B("Traffic plan reviewed after layout change","Administrative","proposed")]}
+    ],
+    cons:[
+      {text:"Fatality or life changing injury",barriers:[B("Proximity sensor slows the truck","Engineering","proposed"),B("High visibility clothing","PPE","implemented")]},
+      {text:"Serious injury needing hospital",barriers:[B("Trained first aiders on every shift","Administrative","verified",-30,"Rota and certificates checked (example)",{shared:"Supervisor checks"}),B("Emergency stop on every truck","Engineering","verified",-45,"E-stop tested on all trucks (example)",{fail:"Stop not reachable",failCtl:"Operator familiarisation"})]},
+      {text:"Production stopped during investigation",barriers:[B("Incident response plan","Administrative","implemented")]}
+    ]
+  }]);
+}
+
+/* ---------- load and save ---------- */
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(d)){var c=cleanAll(d);return c;}}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(bts));}catch(e){}uiSet("edit",Date.now());renderSave();}
+function save(){saveNow();}
+function cur(){for(var i=0;i<bts.length;i++)if(bts[i].id===curId)return bts[i];return null;}
+
+/* ---------- analysis ---------- */
+function barrierState(b){
+  var t=todayStr(),cut=off(-STALE);
+  if(b.status==="verified"){
+    if(!b.vdate||!isDate(b.vdate)||!b.vnote.trim())return "incomplete";
+    if(b.vdate>t)return "incomplete";
+    if(b.vdate<cut)return "stale";
+    return "current";
+  }
+  return b.status;
+}
+function pathAnalysis(p,sev,kind){
+  var cur=[],stale=[],inc=[],notv=0,flags=[],weak=[];
+  p.barriers.forEach(function(b){var s=barrierState(b);if(s==="current")cur.push(b);else if(s==="stale")stale.push(b);else if(s==="incomplete")inc.push(b);else notv++;});
+  var groups={},indep=0;
+  cur.forEach(function(b){var g=norm(b.shared);if(!g)indep++;else{(groups[g]=groups[g]||[]).push(b);}});
+  Object.keys(groups).forEach(function(g){indep++;if(groups[g].length>1)weak.push("Barriers "+groups[g].map(function(b){return '"'+b.text+'"';}).join(" and ")+" share a cause ("+groups[g][0].shared+"), so they count as one.");});
+  if(indep===0){flags.push("No verified barrier"+(p.barriers.length?" ("+plural(p.barriers.length,"barrier")+" recorded, none verified working).":" recorded."));}
+  else if(indep===1)weak.push("Only one independent verified barrier. If it fails, nothing else stops this "+kind+".");
+  if(sev>=4&&cur.length&&!cur.some(function(b){return b.type==="Eliminate"||b.type==="Substitute"||b.type==="Engineering";}))weak.push("Severity "+sev+" and this "+kind+" relies on procedures or PPE only. Look higher in the hierarchy of controls.");
+  if(sev>=4){var nf=cur.filter(function(b){return !b.fail.trim()||!b.failCtl.trim();});if(nf.length)weak.push("Not yet considered what could make these fail, and what protects them: "+nf.map(function(b){return b.text;}).join(", ")+".");}
+  if(stale.length)weak.push("Verification is over 12 months old, so not counted: "+stale.map(function(b){return b.text;}).join(", ")+".");
+  if(inc.length)weak.push("Marked verified but missing a valid date or a note of what was checked, so not counted: "+inc.map(function(b){return b.text;}).join(", ")+".");
+  if(notv)weak.push(plural(notv,"barrier")+" in place or proposed but not yet verified working.");
+  return {name:p.text,count:p.barriers.length,verified:cur.length,indep:indep,gap:indep===0,gapFlags:flags,weak:weak};
+}
+function analyse(bt){
+  var t=todayStr(),reasons=[],blocking=false,paths=[],gaps=0,single=0,weakN=0;
+  if(!bt.hazard.trim()||!bt.top.trim()){reasons.push("Hazard and top event are not both filled in.");blocking=true;}
+  if(!bt.sev){reasons.push("Severity of the worst credible outcome is not set.");blocking=true;}
+  if(!bt.threats.length){reasons.push("No threats entered.");blocking=true;}
+  if(!bt.cons.length){reasons.push("No consequences entered.");blocking=true;}
+  bt.threats.forEach(function(p,i){var a=pathAnalysis(p,bt.sev,"threat");a.side="threat";a.i=i;paths.push(a);});
+  bt.cons.forEach(function(p,i){var a=pathAnalysis(p,bt.sev,"consequence");a.side="cons";a.i=i;paths.push(a);});
+  paths.forEach(function(a){if(a.gap)gaps++;else if(a.indep===1)single++;if(a.weak.length)weakN++;});
+  if(gaps)reasons.push(plural(gaps,"path")+" with no verified barrier.");
+  if(single)reasons.push(plural(single,"path")+" with only one independent verified barrier.");
+  var other=weakN-single;
+  var r=riskOf(bt);
+  if(!bt.owner.trim())reasons.push("No owner named.");
+  if(!bt.reviewer.trim())reasons.push("No competent reviewer named.");
+  else if(norm(bt.reviewer)===norm(bt.owner))reasons.push("The reviewer is the same person as the owner. A different competent person should review it.");
+  if(!bt.review)reasons.push("No review date set.");else if(bt.review<t)reasons.push("Review overdue since "+fmt(bt.review)+".");
+  if(bt.riskId&&!r)reasons.push("The linked risk was not found in the register on this device.");
+  if(r&&bt.sev&&r.s!==bt.sev)reasons.push("Severity here ("+bt.sev+") differs from the risk register ("+r.s+"). Reconcile them.");
+  var level,head;
+  if(blocking){level="inc";head="Not assessed yet. Fill in the missing items listed below.";}
+  else if(gaps){level="over";head="Some paths have no verified barrier. Action needed.";}
+  else if(reasons.length||weakN){level="weak";head="Every path has a verified barrier, but there are weaknesses to deal with.";}
+  else{level="ok";head="Every threat and consequence has at least two independent verified barriers. This shows coverage, not that the barriers are good enough. Keep reviewing.";}
+  if(!blocking&&weakN>single&&other>0)reasons.push(plural(other,"path")+" with other weaknesses. See the barrier list.");
+  return {level:level,head:head,reasons:reasons,paths:paths,gaps:gaps,single:single};
+}
+var LV={inc:"Incomplete",over:"Gaps",weak:"Weaknesses",ok:"Covered"};
+
+/* ---------- diagram ---------- */
+var NS="http://www.w3.org/2000/svg";
+function s(tag,a){var e=document.createElementNS(NS,tag),k;a=a||{};for(k in a){if(a[k]!==null&&a[k]!==undefined)e.setAttribute(k,a[k]);}for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c===null||c===undefined)continue;e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}return e;}
+function wrap(text,max,lines){
+  var words=String(text).split(/\s+/),out=[],line="";
+  words.forEach(function(w){
+    while(w.length>max){if(line){out.push(line);line="";}out.push(w.slice(0,max));w=w.slice(max);}
+    if(!line)line=w;else if((line+" "+w).length<=max)line+=" "+w;else{out.push(line);line=w;}
+  });
+  if(line)out.push(line);
+  if(out.length>lines){out=out.slice(0,lines);var l=out[lines-1];out[lines-1]=(l.length>max-3?l.slice(0,max-3):l)+"...";}
+  return out;
+}
+function boxText(g,cls,lines,cx,cy,lh){
+  var y0=cy-(lines.length-1)*lh/2;
+  lines.forEach(function(t,i){g.appendChild(s("text",{x:cx,y:y0+i*lh,"text-anchor":"middle","dominant-baseline":"middle","class":cls},t));});
+}
+function diagram(bt){
+  var BW=140,BH=68,GAP=24,TW=176,PAD=14,EW=214,EH=124,TOP=36,RH=BH+PAD*2;
+  var T=bt.threats,C=bt.cons;
+  var mL=1,mR=1;T.forEach(function(p){if(p.barriers.length>mL)mL=p.barriers.length;});C.forEach(function(p){if(p.barriers.length>mR)mR=p.barriers.length;});
+  var rows=Math.max(T.length,C.length,1),H=TOP+rows*RH+14;
+  var leftEnd=10+TW+GAP+mL*(BW+GAP),ex=leftEnd+16,rx0=ex+EW+16,W=rx0+mR*(BW+GAP)+TW+10,cy=TOP+rows*RH/2;
+  var svg=s("svg",{viewBox:"0 0 "+W+" "+H,width:W,height:H,role:"img","aria-label":"Bow-tie diagram for "+bt.name+". "+T.length+" threats on the left, the top event in the centre, "+C.length+" consequences on the right. The barrier list gives the same information as text."});
+  svg.appendChild(s("defs",null,s("marker",{id:"arr",viewBox:"0 0 10 10",refX:"9",refY:"5",markerWidth:"7",markerHeight:"7",orient:"auto-start-reverse"},s("path",{d:"M0,0 L10,5 L0,10 z",fill:"#a9b8cf"}))));
+  svg.appendChild(s("text",{x:10,y:20,"class":"tx col"},"Threats"));
+  svg.appendChild(s("text",{x:10+TW+GAP+(mL*(BW+GAP)-GAP)/2,y:20,"text-anchor":"middle","class":"tx col"},"Preventive barriers"));
+  svg.appendChild(s("text",{x:ex+EW/2,y:20,"text-anchor":"middle","class":"tx col"},"Top event"));
+  svg.appendChild(s("text",{x:rx0+(mR*(BW+GAP)-GAP)/2,y:20,"text-anchor":"middle","class":"tx col"},"Mitigating barriers"));
+  svg.appendChild(s("text",{x:rx0+mR*(BW+GAP)+TW/2,y:20,"text-anchor":"middle","class":"tx col"},"Consequences"));
+  var offL=(rows-T.length)*RH/2,offR=(rows-C.length)*RH/2;
+  function barrier(g,b,x,y){
+    var st=barrierState(b),cls=st==="current"?"b-v":st==="implemented"?"b-i":st==="proposed"?"b-p":"b-x";
+    var lab=ABBR[b.type]+" | "+(st==="current"?"VERIFIED":st==="implemented"?"NOT VERIFIED":st==="proposed"?"PROPOSED":st==="stale"?"CHECK OLD":"CHECK INCOMPLETE");
+    var bg=s("g",null,s("title",null,b.text+". "+(b.type||"No control type")+". "+(st==="current"?"Verified working on "+fmt(b.vdate)+".":st==="implemented"?"In place, not verified.":st==="proposed"?"Proposed.":st==="stale"?"Verification over 12 months old.":"Marked verified but the date or note is missing.")));
+    bg.appendChild(s("rect",{x:x,y:y-BH/2,width:BW,height:BH,rx:6,"class":cls}));
+    boxText(bg,"tx",wrap(b.text,21,3),x+BW/2,y-8,12.5);
+    bg.appendChild(s("text",{x:x+BW/2,y:y+BH/2-9,"text-anchor":"middle","dominant-baseline":"middle","class":"tx lab"},lab));
+    g.appendChild(bg);
+  }
+  var lines=s("g"),boxes=s("g");
+  T.forEach(function(p,i){
+    var y=TOP+offL+i*RH+RH/2,x1=10+TW;
+    lines.appendChild(s("polyline",{points:x1+","+y+" "+leftEnd+","+y+" "+(ex-2)+","+cy,"class":"ln","marker-end":"url(#arr)"}));
+    var g=s("g",null,s("title",null,"Threat: "+p.text));g.appendChild(s("rect",{x:10,y:y-30,width:TW,height:60,rx:8,"class":"t-box"}));boxText(g,"tx big",wrap(p.text,26,3),10+TW/2,y,14.5);boxes.appendChild(g);
+    p.barriers.forEach(function(b,j){barrier(boxes,b,10+TW+GAP+j*(BW+GAP),y);});
+  });
+  C.forEach(function(p,i){
+    var y=TOP+offR+i*RH+RH/2,xe=ex+EW,xc=rx0+mR*(BW+GAP);
+    lines.appendChild(s("polyline",{points:(xe+2)+","+cy+" "+(rx0-GAP/2)+","+y+" "+xc+","+y,"class":"ln","marker-end":"url(#arr)"}));
+    var g=s("g",null,s("title",null,"Consequence: "+p.text));g.appendChild(s("rect",{x:xc,y:y-30,width:TW,height:60,rx:8,"class":"c-box"}));boxText(g,"tx big",wrap(p.text,26,3),xc+TW/2,y,14.5);boxes.appendChild(g);
+    p.barriers.forEach(function(b,k){barrier(boxes,b,rx0+k*(BW+GAP),y);});
+  });
+  svg.appendChild(lines);
+  var eg=s("g",null,s("title",null,"Top event: "+bt.top+". Hazard: "+bt.hazard));
+  eg.appendChild(s("rect",{x:ex,y:cy-EH/2,width:EW,height:EH,rx:12,"class":"e-box"}));
+  boxText(eg,"tx ev",wrap(bt.top||"Top event not set",28,4),ex+EW/2,cy-8,16);
+  boxText(eg,"tx",wrap("Hazard: "+(bt.hazard||"not set"),32,2),ex+EW/2,cy+EH/2-22,13);
+  boxes.appendChild(eg);svg.appendChild(boxes);
+  return svg;
+}
+
+/* ---------- list page ---------- */
+function drawList(){
+  risks=readRisks();
+  $("banner").hidden=!bts.some(function(b){return b.example;});
+  var c=$("cards");clear(c);
+  if(!bts.length){c.appendChild(h("p",{text:"No bow-ties yet. Press New bow-tie."}));return;}
+  bts.forEach(function(bt){
+    var a=analyse(bt),r=riskOf(bt);
+    var card=h("div",{class:"card"},
+      h("h2",null,bt.name,bt.example?h("span",{class:"sm",text:" (example)"}):null),
+      h("p",null,h("span",{class:"badge s-"+a.level,text:LV[a.level]})," ",h("span",{class:"sm",text:a.head})),
+      h("p",{class:"sm",text:bt.top?"Top event: "+bt.top:"Top event not set"}),
+      h("p",{class:"sm",text:plural(bt.threats.length,"threat")+", "+plural(bt.cons.length,"consequence")+", "+plural(bt.threats.concat(bt.cons).reduce(function(n,p){return n+p.barriers.length;},0),"barrier")+(a.gaps?". "+plural(a.gaps,"path")+" with no verified barrier.":"")}),
+      r?h("p",{class:"sm"},"Linked risk: ",h("span",{class:"badge "+bcls(r.name),text:r.name})," "+r.hazard):null,
+      h("p",null,h("button",{class:"btn small",onclick:function(){openBT(bt.id);},text:"Open"})," ",h("button",{class:"btn sec small",onclick:function(){dup(bt.id);},text:"Duplicate"})," ",bt.example?h("button",{class:"btn danger small",onclick:function(){del(bt.id);},text:"Delete example"}):null));
+    c.appendChild(card);
+  });
+}
+function dup(id){var b=null;bts.forEach(function(x){if(x.id===id)b=x;});if(!b)return;var c=clone(b);c.id=newId();c.example=false;c.name=("Copy of "+b.name).slice(0,80);bts.push(c);save();drawList();}
+function del(id){if(!confirm("Delete this example bow-tie? Real bow-ties are kept. Duplicate one first if you want a copy."))return;bts=bts.filter(function(b){return b.id!==id;});if(curId===id)curId=null;save();drawList();}
+
+/* ---------- editor ---------- */
+function openBT(id){curId=id;showTab("edit");drawEdit();}
+function newBT(){
+  var b=cleanBT({id:newId(),name:"New bow-tie",threats:[],cons:[]});b.threats=[{text:"",barriers:[]}];b.cons=[{text:"",barriers:[]}];
+  bts.push(b);curId=b.id;save();showTab("edit");drawEdit();
+}
+var live={};
+function drawEdit(){
+  var bt=cur(),box=$("edit");clear(box);
+  if(!bt){box.appendChild(h("p",null,"Choose a bow-tie on the Bow-ties tab, or ",h("button",{class:"btn small",onclick:newBT,text:"start a new one"}),"."));return;}
+  risks=readRisks();
+  var stat=h("div",{class:"status st-empty",id:"bstat"}),out=h("div",{id:"bout"});
+  function recalc(){
+    var a=analyse(bt);
+    stat.className="status st-"+(a.level==="inc"?"empty":a.level);
+    clear(stat);stat.appendChild(h("strong",{text:a.head}));
+    if(a.reasons.length)stat.appendChild(h("ul",{class:"rs"},a.reasons.map(function(r){return h("li",{text:r});})));
+    drawOut(out,bt,a);
+  }
+  var timer=null;function changed(){save();clearTimeout(timer);timer=setTimeout(recalc,200);}
+  live.changed=changed;
+  function inp(o,k,opt){opt=opt||{};var e=opt.area?h("textarea",{maxlength:opt.max||200}):h("input",{type:opt.type||"text",maxlength:opt.max||140});e.value=o[k]==null?"":o[k];e.addEventListener("input",function(){o[k]=e.value;changed();});return e;}
+  function sel(o,k,opts,num){var e=h("select");opts.forEach(function(x){var v=x[0],t=x[1];e.appendChild(h("option",{value:v,text:t,selected:String(o[k])===String(v)}));});e.addEventListener("change",function(){o[k]=num?parseInt(e.value,10):e.value;changed();});return e;}
+  function lab(t,e,cls){return h("label",{class:cls||null},t,e);}
+
+  box.appendChild(h("p",null,h("button",{class:"btn sec small",onclick:function(){showTab("list");drawList();},text:"Back to the list"})," ",h("button",{class:"btn sec small",onclick:function(){window.print();},text:"Print"})));
+  box.appendChild(stat);
+  box.appendChild(h("p",{class:"disc",text:"This shows coverage of the paths, not how well each barrier works. A competent person must judge the result."}));
+  var riskSel=h("select");riskSel.appendChild(h("option",{value:"",text:"Not linked"}));
+  risks.slice().sort(function(a,b){return RANK[b.name]-RANK[a.name];}).forEach(function(r){riskSel.appendChild(h("option",{value:r.id,text:r.name+": "+r.hazard,selected:String(r.id)===String(bt.riskId)}));});
+  riskSel.addEventListener("change",function(){bt.riskId=riskSel.value?parseInt(riskSel.value,10):null;changed();drawLinks();});
+  var links=h("div",{class:"links"});
+  function drawLinks(){clear(links);var r=riskOf(bt);
+    if(r){links.appendChild(h("span",{class:"sm",text:"Risk rating now:"}));links.appendChild(h("span",{class:"badge "+bcls(r.name),text:r.name}));
+      links.appendChild(h("a",{class:"rowbtn",href:RISKPAGE+"#open="+encodeURIComponent(r.id),text:"Open risk"}));
+      links.appendChild(h("a",{class:"rowbtn",href:ACTPAGE+"#new="+encodeURIComponent(r.id),text:"Add action"}));
+      links.appendChild(h("a",{class:"rowbtn",href:SWPAGE+"?risk="+encodeURIComponent(r.id)+"&hazard="+encodeURIComponent(r.hazard.slice(0,140))+"&sev="+r.s,text:"Layer analysis"}));}
+    else links.appendChild(h("span",{class:"sm",text:risks.length?"Link this to a register risk to compare severity and jump between tools.":"No risks found in the register on this device. Open the Risk Register first, then reload."}));}
+  drawLinks();
+  box.appendChild(h("div",{class:"card"},h("h2",{text:"The bow-tie"}),h("div",{class:"f"},
+    lab("Name",inp(bt,"name",{max:80})),lab("Severity of the worst credible outcome",sel(bt,"sev",SEVL.map(function(t,i){return [i,t];}),true)),
+    lab("Hazard (the thing that could cause harm)",inp(bt,"hazard")),lab("Top event (control is lost)",inp(bt,"top")),
+    lab("Owner",inp(bt,"owner",{max:60})),lab("Competent reviewer (not the owner)",inp(bt,"reviewer",{max:60})),
+    lab("Next review date",inp(bt,"review",{type:"date"})),lab("Linked register risk",riskSel),links)));
+
+  function pathBlock(list,kind,p,i){
+    var wrapEl=h("div",{class:"path"}),bars=h("div");
+    var delBtn=h("button",{class:"btn danger small",type:"button",onclick:function(){if(!confirm("Remove this "+kind+" and its barriers?"))return;list.splice(i,1);changed();drawEdit();},text:"Remove "+kind});
+    wrapEl.appendChild(h("div",{class:"head"},lab(kind==="threat"?"Threat "+(i+1)+" (how the top event could happen)":"Consequence "+(i+1)+" (what could follow)",inp(p,"text",{max:120})),delBtn));
+    p.barriers.forEach(function(b,j){bars.appendChild(barBlock(p,b,j,kind));});
+    wrapEl.appendChild(bars);
+    wrapEl.appendChild(h("p",null,h("button",{class:"btn sec small",type:"button",onclick:function(){if(p.barriers.length>=6){alert("Six barriers is the limit for one path.");return;}p.barriers.push({text:"",type:"",status:"proposed",vdate:"",vnote:"",shared:"",fail:"",failCtl:""});changed();drawEdit();},text:"Add "+(kind==="threat"?"preventive":"mitigating")+" barrier"})));
+    return wrapEl;
+  }
+  function barBlock(p,b,j,kind){
+    var d=h("details",{class:"bar"});if(!b.text)d.open=true;
+    var sum=h("summary",null,h("b",{text:b.text||"New barrier"})," ",h("span",{class:"sm",text:(b.type||"type not set")+", "+(STATUS.filter(function(x){return x[0]===b.status;})[0][1])}));
+    var dateIn=inp(b,"vdate",{type:"date"}),noteIn=inp(b,"vnote",{max:200});
+    var verWrap=h("div",{class:"bf full",style:"padding:0;grid-template-columns:1fr 1fr"},lab("Date verified",dateIn),lab("What was checked (required)",noteIn));
+    function vis(){verWrap.hidden=b.status!=="verified";}
+    var stSel=sel(b,"status",STATUS.map(function(x){return [x[0],x[1]];}));stSel.addEventListener("change",function(){vis();});
+    vis();
+    d.appendChild(sum);
+    d.appendChild(h("div",{class:"bf"},lab("Barrier",inp(b,"text",{max:120}),"full"),lab("Type of control",sel(b,"type",[["","Choose"]].concat(HOC.map(function(x){return [x,x];})))),lab("Status",stSel),verWrap,
+      lab("Shared cause (same words on barriers that fail together)",inp(b,"shared",{max:60})),lab("",h("span")),
+      lab("What could make this barrier fail?",inp(b,"fail",{max:160})),lab("What protects the barrier from that?",inp(b,"failCtl",{max:160})),
+      h("div",{class:"full"},h("button",{class:"btn danger small",type:"button",onclick:function(){p.barriers.splice(j,1);changed();drawEdit();},text:"Remove barrier"}))));
+    return d;
+  }
+  var tc=h("div",{class:"card"},h("h2",{text:"Threats and preventive barriers"}),h("p",{class:"sm",text:"Left of the top event. Ask the people who do the job what could go wrong. Missing threats are the usual weakness."}));
+  bt.threats.forEach(function(p,i){tc.appendChild(pathBlock(bt.threats,"threat",p,i));});
+  tc.appendChild(h("p",null,h("button",{class:"btn sec small",type:"button",onclick:function(){if(bt.threats.length>=12){alert("Twelve threats is the limit.");return;}bt.threats.push({text:"",barriers:[]});changed();drawEdit();},text:"Add threat"})));
+  var cc=h("div",{class:"card"},h("h2",{text:"Consequences and mitigating barriers"}),h("p",{class:"sm",text:"Right of the top event. Mitigating barriers limit the harm once the top event has happened."}));
+  bt.cons.forEach(function(p,i){cc.appendChild(pathBlock(bt.cons,"consequence",p,i));});
+  cc.appendChild(h("p",null,h("button",{class:"btn sec small",type:"button",onclick:function(){if(bt.cons.length>=10){alert("Ten consequences is the limit.");return;}bt.cons.push({text:"",barriers:[]});changed();drawEdit();},text:"Add consequence"})));
+  var tg=h("div",{class:"toggle",role:"group","aria-label":"View"});
+  var b1=h("button",{type:"button","aria-pressed":view==="diagram"?"true":"false",text:"Diagram"}),b2=h("button",{type:"button","aria-pressed":view==="list"?"true":"false",text:"Barrier list"});
+  b1.onclick=function(){view="diagram";uiSet("view",view);b1.setAttribute("aria-pressed","true");b2.setAttribute("aria-pressed","false");recalc();};
+  b2.onclick=function(){view="list";uiSet("view",view);b2.setAttribute("aria-pressed","true");b1.setAttribute("aria-pressed","false");recalc();};
+  tg.appendChild(b1);tg.appendChild(b2);
+  box.appendChild(h("div",{class:"card"},h("h2",{text:"The bow-tie picture"}),tg,out));
+  box.appendChild(tc);box.appendChild(cc);
+  recalc();
+}
+function drawOut(out,bt,a){
+  clear(out);
+  if(view==="diagram"){
+    var w=h("div",{class:"dwrap",tabindex:"0","aria-label":"Bow-tie diagram, scrolls sideways"});w.appendChild(diagram(bt));out.appendChild(w);
+    out.appendChild(h("div",{class:"legend"},h("span",null,h("i",{class:"sw v"}),"Verified working"),h("span",null,h("i",{class:"sw i"}),"In place, not verified"),h("span",null,h("i",{class:"sw p"}),"Proposed"),h("span",null,h("i",{class:"sw x"}),"Check out of date or incomplete")));
+    out.appendChild(h("p",{class:"sm",text:"Scroll sideways if the picture is wider than your screen. Long text is shortened in the picture. The Barrier list shows everything in full."}));
+    return;
+  }
+  var rows=[];
+  function sect(title,list,pa){
+    list.forEach(function(p,i){
+      var an=null;pa.forEach(function(x){if(x.side===(title==="Threat"?"threat":"cons")&&x.i===i)an=x;});
+      p.barriers.forEach(function(b,j){
+        var st=barrierState(b),lbl=st==="current"?"Verified "+fmt(b.vdate):st==="implemented"?"In place, not verified":st==="proposed"?"Proposed":st==="stale"?"Check out of date ("+fmt(b.vdate)+")":"Marked verified, date or note missing";
+        rows.push(h("tr",null,h("td",{"data-l":title},h("div",{class:"v"},p.text)),h("td",{"data-l":"Barrier"},h("div",{class:"v"},b.text,b.vnote&&st==="current"?h("div",{class:"sm",text:"Checked: "+b.vnote}):null,b.shared?h("div",{class:"sm",text:"Shared cause: "+b.shared}):null)),
+          h("td",{"data-l":"Control type"},h("div",{class:"v"},b.type||"Not set")),h("td",{"data-l":"Status"},h("div",{class:"v"},lbl)),
+          h("td",{"data-l":"Could fail because"},h("div",{class:"v"},b.fail?b.fail+(b.failCtl?". Protected by: "+b.failCtl:""):"Not considered"))));
+      });
+      if(!p.barriers.length)rows.push(h("tr",null,h("td",{"data-l":title},h("div",{class:"v"},p.text)),h("td",{colspan:4},h("div",{class:"v"},h("b",{text:"No barriers recorded"})))));
+      if(an&&(an.gapFlags.length||an.weak.length))rows.push(h("tr",null,h("td",{colspan:5},h("ul",{class:"pf"},an.gapFlags.concat(an.weak).map(function(t){return h("li",{text:t});})))));
+    });
+  }
+  sect("Threat",bt.threats,a.paths);sect("Consequence",bt.cons,a.paths);
+  out.appendChild(h("div",{class:"tablewrap"},h("table",{class:"bl"},h("thead",null,h("tr",null,["Path","Barrier","Control type","Status","Could fail because"].map(function(t){return h("th",{text:t});}))),h("tbody",null,rows))));
+}
+
+/* ---------- tabs and controls ---------- */
+function showTab(t){
+  document.querySelectorAll("nav button").forEach(function(x){x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false");});
+  ["list","edit","guide"].forEach(function(id){$(id).hidden=id!==t;});
+  uiSet("tab",t);
+}
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){showTab(b.dataset.tab);if(b.dataset.tab==="list")drawList();if(b.dataset.tab==="edit")drawEdit();};});
+$("newBt").onclick=newBT;
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+$("json").onclick=function(){download("bowties.json",JSON.stringify({app:"bowtie-builder",version:1,saved:new Date().toISOString(),bowties:bts},null,2),"application/json");uiSet("fileSaved",Date.now());renderSave();};
+$("load").onclick=function(){$("file").click();};
+$("file").onchange=function(){
+  var f=this.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{var d=JSON.parse(rd.result),l=cleanAll(d&&d.bowties);
+    if(!l.length){alert("No bow-ties were found in that file.");return;}
+    if(!confirm("Replace the "+bts.length+" bow-ties here with "+l.length+" from the file?"))return;
+    bts=l;curId=null;save();drawList();showTab("list");}catch(e){alert("That file could not be read.");}};
+  rd.readAsText(f);this.value="";
+};
+$("csv").onclick=function(){
+  var head=["Bow-tie","Hazard","Top event","Severity","Side","Path","Barrier","Control type","Status","Counted as verified","Date verified","What was checked","Shared cause","Could fail because","Protected by","Example data"];
+  var rows=[];
+  bts.forEach(function(bt){[["Threat",bt.threats],["Consequence",bt.cons]].forEach(function(sd){sd[1].forEach(function(p){
+    if(!p.barriers.length)rows.push([bt.name,bt.hazard,bt.top,bt.sev,sd[0],p.text,"","","","","","","","","",bt.example?"Yes":"No"]);
+    p.barriers.forEach(function(b){rows.push([bt.name,bt.hazard,bt.top,bt.sev,sd[0],p.text,b.text,b.type,b.status,barrierState(b)==="current"?"Yes":"No",b.vdate,b.vnote,b.shared,b.fail,b.failCtl,bt.example?"Yes":"No"]);});});});});
+  var csv=[head].concat(rows).map(function(r){return r.map(function(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
+  download("bowtie-barriers.csv",csv,"text/csv");
+};
+window.addEventListener("storage",function(e){if(e.key===RKEY){risks=readRisks();if(!$("list").hidden)drawList();}});
+
+/* ---------- start ---------- */
+(function init(){
+  risks=readRisks();
+  var l=load();if(l===null){bts=seed();saveNow();uiSet("edit",0);}else bts=l;
+  var o=uiGet();if(o.view==="list"||o.view==="diagram")view=o.view;
+  if(window.matchMedia&&window.matchMedia("(max-width:760px)").matches&&!o.view)view="list";
+  renderSave();drawList();
+  var m=/^#open=(\d+)$/.exec(location.hash||"");
+  if(m){var id=parseInt(m[1],10);if(bts.some(function(b){return b.id===id;})){try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}openBT(id);}}
+})();
+})();
+</script>
+</body>
+</html>
