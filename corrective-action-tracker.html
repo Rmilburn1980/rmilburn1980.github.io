@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corrective Action Tracker</title>
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:720px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1240px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,.rowbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-weak{border-color:var(--high)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.status .rs{margin:8px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .n{font-size:1.9rem;font-weight:700;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:.82rem;margin-top:4px}
+.kpi.crit .n{color:var(--crit)}.kpi.high .n{color:var(--high)}.kpi.ok .n{color:var(--low)}.kpi.warn .n{color:var(--med)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:1rem;margin:0 0 12px}
+.bars .row{display:grid;grid-template-columns:minmax(80px,140px) 1fr 34px;gap:10px;align-items:center;margin-bottom:10px;font-size:.86rem}
+.bars .track{background:var(--panel2);border-radius:6px;height:16px;overflow:hidden}
+.bars .fill{height:100%;border-radius:6px;background:var(--accent)}
+.bars .fill.warn{background:var(--high)}
+.list{margin:0;padding:0;list-style:none}
+.list li{padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:.88rem}
+.list li:last-child{border-bottom:none}
+.sm{color:var(--muted);font-size:.78rem}
+.badge{display:inline-block;flex-shrink:0;padding:2px 10px;border-radius:999px;font-weight:700;font-size:.75rem;color:var(--ink);white-space:nowrap}
+.b-low{background:var(--low)}.b-med{background:var(--med)}.b-high{background:var(--high)}.b-crit{background:var(--crit)}.b-none{background:#a9b8cf}
+.s-open{background:#a9b8cf}.s-progress{background:#7dd3fc}.s-done{background:var(--med)}.s-closed{background:var(--low)}.s-cancelled{background:#64748b;color:#fff}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center}
+.tools input[type=search]{flex:1;min-width:180px}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2)}
+tr:last-child td{border-bottom:none}
+.over{color:var(--high);font-weight:700}
+.fl{margin:6px 0 0;padding-left:16px;color:var(--muted);font-size:.78rem}
+.info{color:var(--muted);font-size:.76rem;margin:4px 0 0}
+.rowbtn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem;margin:0 4px 4px 0;text-decoration:none;display:inline-block}
+.rowbtn:hover{border-color:var(--accent)}
+@media (max-width:760px){
+  .tablewrap{border:0;background:transparent}
+  table thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  #rows tr{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;padding:6px 0}
+  #rows td{display:flex;justify-content:space-between;gap:12px;border-bottom:0;padding:6px 12px}
+  #rows td::before{content:attr(data-l);color:var(--muted);font-size:.74rem;text-transform:uppercase;flex:0 0 30%}
+  #rows td > div.v{flex:1;text-align:right}
+}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;width:min(820px,96vw);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(5,10,20,.7)}
+.f{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f h2{grid-column:1/-1;margin:0;font-size:1.1rem}
+.f h3{grid-column:1/-1;margin:8px 0 0;font-size:.9rem;border-top:1px solid var(--line);padding-top:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+.f textarea{min-height:60px;resize:vertical}
+.f .blk{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f .actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.f .help{grid-column:1/-1;color:var(--muted);font-size:.8rem;margin:0}
+.err{grid-column:1/-1;color:#ff8f8f;font-weight:700;font-size:.88rem;margin:0}
+.logl{list-style:none;margin:6px 0 0;padding:0;font-size:.82rem;grid-column:1/-1}
+.logl li{border-top:1px solid var(--line);padding:5px 0}
+@media (max-width:700px){.f,.f .blk{grid-template-columns:1fr}}
+.guide p,.guide li{font-size:.9rem}
+.guide td,.guide th{cursor:default}
+.ts{display:flex;gap:12px;flex-wrap:wrap;align-items:end}
+.ts label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.ts input{width:90px}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+.sr{position:absolute;left:-9999px}
+@media (max-width:560px){main{padding:14px}}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  .tools,.hub,.btn,.banner,nav,.rowbtn,.savebar{display:none!important}
+  section[hidden]{display:block!important}
+  .kpi .n,.over{color:#000!important}
+  .card,.kpi,.status,tr{break-inside:avoid}.tablewrap{overflow:visible}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Corrective Action Tracker</h1>
+    <p>Follow every action from raised to closed. An action is only closed when someone other than its owner has checked, in practice, that it was done and that it works. Actions can link to a risk in the Risk Register, so a flagged risk becomes tracked work.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Tracker sections">
+  <button role="tab" aria-selected="true" data-tab="overview">Overview</button>
+  <button role="tab" aria-selected="false" data-tab="actions">Actions</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and Guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+
+<section id="overview">
+  <div class="banner" id="banner" hidden>Actions tagged Example hold made up details so you can see how the rules work. Do not use them for real decisions. Edit or delete the examples and add your own.</div>
+  <div id="status" class="status st-empty"></div>
+  <p class="disc">This tracker shows whether actions are being completed and checked. A closed action does not prove the risk is controlled. After closing an action, update the control status and re-score in the Risk Register. A competent person must judge the result.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid2">
+    <div class="card"><h2>Open actions by owner</h2><div class="bars" id="byOwner"></div></div>
+    <div class="card"><h2>Actions by type of control</h2><div class="bars" id="byHoc"></div><p class="sm" id="hocNote"></p></div>
+  </div>
+  <div class="card"><h2>Needs attention</h2><ul class="list" id="attn"></ul></div>
+</section>
+
+<section id="actions" hidden>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Search actions, owners or risks" aria-label="Search actions">
+    <select id="fStatus" aria-label="Filter by status">
+      <option value="active">Active (not closed or cancelled)</option><option value="all">All statuses</option>
+      <option value="open">Open</option><option value="progress">In progress</option><option value="done">Done, waiting for check</option><option value="closed">Closed</option><option value="cancelled">Cancelled</option>
+    </select>
+    <select id="fRating" aria-label="Filter by linked risk rating"><option value="">Any risk rating</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option><option value="none">Not linked</option></select>
+    <label><input type="checkbox" id="fFlag"> Needs attention only</label>
+    <button class="btn" id="add">Add action</button>
+    <button class="btn sec" id="csv">Export CSV</button>
+    <button class="btn sec" id="json">Save data file</button>
+    <button class="btn sec" id="load">Load data file</button>
+    <button class="btn sec" id="print">Print</button>
+    <input type="file" id="file" accept="application/json,.json" class="sr" tabindex="-1" aria-label="Load data file">
+  </div>
+  <p class="sm" id="count"></p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Action</th><th>Linked risk</th><th>Owner</th><th>Due</th><th>Control type</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <p class="sm">Entries save in this browser only, so use Save data file to keep a copy and to move work between devices. Anything on a public GitHub Pages site is visible to everyone, so keep names, photos and sensitive details out of anything you type here.</p>
+</section>
+
+<section id="guide" class="guide" hidden>
+  <div class="card">
+    <h2>How an action moves</h2>
+    <table>
+      <thead><tr><th>Status</th><th>Meaning</th><th>What the tool requires</th></tr></thead>
+      <tbody>
+        <tr><td>Open</td><td>Raised, work not started</td><td>Title, owner and a due date.</td></tr>
+        <tr><td>In progress</td><td>Being worked on</td><td>As above.</td></tr>
+        <tr><td>Done, waiting for check</td><td>The owner says it is complete</td><td>Completion date (not in the future) and a note of what was done.</td></tr>
+        <tr><td>Closed</td><td>Someone else has checked it was done and that it works</td><td>A named checker who is not the owner, a check date on or after the completion date, a note of what they saw, and a result of "works".</td></tr>
+        <tr><td>Cancelled</td><td>No longer needed</td><td>A written reason.</td></tr>
+      </tbody>
+    </table>
+    <p>If the check finds the action does not work, the tool reopens it automatically and keeps the record of the failed check in the change log.</p>
+  </div>
+  <div class="card">
+    <h2>Rules the tool applies</h2>
+    <ul>
+      <li>Moving a due date needs a written reason. The move is recorded, and an action moved twice or more is flagged.</li>
+      <li>The change log records creation, status changes and due date moves. It cannot be edited in the tool. It lives in this browser, so it is a working record and not tamper proof. For a record that cannot be altered, use the multi-user Safety Risk Platform.</li>
+      <li>An action is overdue when it is open or in progress after its due date.</li>
+      <li>An action that is done but unchecked for more than the check window below is flagged.</li>
+      <li>If the linked risk has severity 4 or 5 and the action relies on procedures or PPE, the tool asks you to look higher in the hierarchy of controls (eliminate, substitute, engineering).</li>
+      <li>If the due date is later than the default timescale for the linked risk's rating, the tool flags it.</li>
+      <li>Linked risks are read from the Risk Register stored in this browser. This tool never changes the register.</li>
+      <li>The rating shown for a linked risk counts residual scores only when a control is verified working within the last 12 months, the same rule as the register.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Default timescales</h2>
+    <p>These are this tool's own defaults, not a legal or published standard. Set them to match your organisation's policy. They only create flags and do not stop you saving.</p>
+    <div class="ts">
+      <label>Critical (days)<input type="number" min="1" max="730" id="tsCritical"></label>
+      <label>High (days)<input type="number" min="1" max="730" id="tsHigh"></label>
+      <label>Medium (days)<input type="number" min="1" max="730" id="tsMedium"></label>
+      <label>Low (days)<input type="number" min="1" max="730" id="tsLow"></label>
+      <label>Check window after done (days)<input type="number" min="1" max="365" id="tsVerify"></label>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Limits</h2>
+    <p>Decision support only. It does not replace a suitable and sufficient risk assessment, or the judgement of a competent person. Data stays in this browser unless you save a data file. It has no sign-in, so it cannot prove who did what.</p>
+  </div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form class="f" id="form" method="dialog" novalidate>
+    <h2 id="dlgTitle">Action</h2>
+    <label class="full">Action (what will be done)<input id="fTitle" maxlength="140"></label>
+    <label class="full">More detail (optional)<textarea id="fDetail" maxlength="400"></textarea></label>
+    <h3>Where it came from</h3>
+    <label>Source<select id="fSource"></select></label>
+    <label>Type of control<select id="fHoc"></select></label>
+    <label>Linked risk in the register<select id="fRisk"></select></label>
+    <label>Or name the hazard (if not in the register)<input id="fRiskText" maxlength="120"></label>
+    <p class="help" id="riskHelp"></p>
+    <h3>Ownership</h3>
+    <label>Owner<input id="fOwner" maxlength="60" placeholder="One named person"></label>
+    <label>Raised on<input type="date" id="fRaised"></label>
+    <label>Due date<input type="date" id="fDue"></label>
+    <label>Status<select id="fStatusSel"></select></label>
+    <label class="full" id="moveWrap" hidden>Reason for moving the due date (required)<input id="fMove" maxlength="200"></label>
+    <div class="blk" id="doneBlk" hidden>
+      <h3 class="full" style="grid-column:1/-1">Completion</h3>
+      <label>Completed on<input type="date" id="fDoneDate"></label>
+      <label class="full" style="grid-column:1/-1">What was done<textarea id="fDoneNote" maxlength="300"></textarea></label>
+    </div>
+    <div class="blk" id="verBlk" hidden>
+      <h3 class="full" style="grid-column:1/-1">Independent check</h3>
+      <label>Checked by (not the owner)<input id="fVerifier" maxlength="60"></label>
+      <label>Checked on<input type="date" id="fVerDate"></label>
+      <label>Result<select id="fResult"><option value="">Not checked yet</option><option value="yes">Checked in practice, and it works</option><option value="no">Checked, and it does not work</option></select></label>
+      <label class="full" style="grid-column:1/-1">What the checker saw<textarea id="fVerNote" maxlength="300"></textarea></label>
+    </div>
+    <label class="full" id="cancelWrap" hidden>Reason for cancelling (required)<input id="fCancel" maxlength="200"></label>
+    <div class="full" id="logWrap" hidden><h3 style="margin-top:0">Change log</h3><ul class="logl" id="logl"></ul></div>
+    <p class="err" id="err" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="del" hidden>Delete example</button>
+      <button type="button" class="btn sec" id="cancelBtn">Close</button>
+      <button type="submit" class="btn" id="saveBtn">Save action</button>
+    </div>
+  </form>
+</dialog>
+<footer>Decision support only, not a substitute for a suitable and sufficient risk assessment by a competent person. Corrective Action Tracker. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-action-tracker-v1", RKEY="rmilburn-risk-register-v2", UIK="rmilburn-action-tracker-ui", SUMK="rmilburn-action-tracker-summary", STALE=365, RISKPAGE="risk-assessment-dashboard.html";
+var SOURCES=["Audit","Inspection","Incident","Near miss","Risk register review","Swiss cheese layer analysis","Worker concern","Other"];
+var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
+var STATUSES=[["open","Open"],["progress","In progress"],["done","Done, waiting for check"],["closed","Closed"],["cancelled","Cancelled"]];
+var SL={};STATUSES.forEach(function(s){SL[s[0]]=s[1];});
+var RANK={Low:0,Medium:1,High:2,Critical:3};
+var DEFTS={Critical:7,High:30,Medium:90,Low:180,verify:14};
+var actions=[], TS=clone(DEFTS), editId=null, orig=null, risks=[];
+
+function $(id){return document.getElementById(id);}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function esc(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function todayStr(){return dstr(new Date());}
+function off(days){var d=new Date();d.setDate(d.getDate()+days);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function days(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((Date.UTC(y[0],y[1]-1,y[2])-Date.UTC(x[0],x[1]-1,x[2]))/86400000);}
+function newId(){return Date.now()+Math.floor(Math.random()*1000);}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+
+/* ---------- save status ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return (o&&typeof o==="object")?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function stampTxt(ms){var d=new Date(ms);return d.toLocaleDateString("en-GB")+" at "+d.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});}
+function renderSave(){
+  var el=$("saveNote"),o=uiGet(),fs=+o.fileSaved||0,ed=+o.edit||0,t,dirty=false;
+  if(!fs&&!ed){t="Your data stays only in this browser. Use Save data file to keep a copy you can move or restore.";}
+  else if(!fs){t="You have not saved a data file yet. Your entries live only in this browser and can be lost if its data is cleared. Press Save data file.";dirty=true;}
+  else if(ed>fs){t="Changes since your last data file save on "+stampTxt(fs)+". Press Save data file.";dirty=true;}
+  else{t="Data file last saved on "+stampTxt(fs)+". No changes since.";}
+  el.textContent=t;el.className="savebar"+(dirty?" dirty":"");
+}
+
+/* ---------- risks from the register (read only) ---------- */
+function readRisks(){
+  var out=[],cut=off(-STALE);
+  try{
+    var d=JSON.parse(localStorage.getItem(RKEY));
+    (Array.isArray(d)?d:[]).forEach(function(r){
+      if(!r||typeof r!=="object"||!r.hazard)return;
+      var l=+r.l||3,s=+r.s||3,rl=+r.rl||l,rs=+r.rs||s;
+      var demo=(Array.isArray(r.controls)?r.controls:[]).some(function(c){return c&&c.status==="verified"&&c.vdate&&c.vdate>=cut&&c.vdate<=todayStr();});
+      var el=demo?rl:l,es=demo?rs:s,sc=el*es,b=sc>=17?"Critical":sc>=10?"High":sc>=5?"Medium":"Low",f=s===5?"High":s===4?"Medium":"Low";
+      if(RANK[f]>RANK[b])b=f;
+      out.push({id:r.id,hazard:String(r.hazard).slice(0,120),name:b,s:s});
+    });
+  }catch(e){}
+  return out;
+}
+function riskOf(a){if(!a.riskId)return null;for(var i=0;i<risks.length;i++)if(String(risks[i].id)===String(a.riskId))return risks[i];return null;}
+function bcls(n){return n==="Critical"?"b-crit":n==="High"?"b-high":n==="Medium"?"b-med":n==="Low"?"b-low":"b-none";}
+
+/* ---------- sanitising ---------- */
+function cleanAction(a){
+  if(!a||typeof a!=="object")return null;
+  var o={id:parseInt(a.id,10)||newId(),example:!!a.example};
+  o.title=str(a.title,140).trim();o.detail=str(a.detail,400);
+  o.source=SOURCES.indexOf(a.source)>-1?a.source:"Other";
+  o.hoc=HOC.indexOf(a.hoc)>-1?a.hoc:"";
+  o.riskId=a.riskId?parseInt(a.riskId,10)||null:null;o.riskText=str(a.riskText,120);
+  o.owner=str(a.owner,60).trim();o.raised=dOk(a.raised);o.due=dOk(a.due);
+  o.status=STATUSES.some(function(s){return s[0]===a.status;})?a.status:"open";
+  o.doneDate=dOk(a.doneDate);o.doneNote=str(a.doneNote,300);
+  o.verifier=str(a.verifier,60).trim();o.verDate=dOk(a.verDate);o.verNote=str(a.verNote,300);
+  o.result=(a.result==="yes"||a.result==="no")?a.result:"";
+  o.cancel=str(a.cancel,200);
+  o.log=(Array.isArray(a.log)?a.log:[]).slice(0,200).map(function(e){e=e||{};return {date:dOk(e.date),note:str(e.note,300),kind:e.kind==="move"?"move":""};}).filter(function(e){return e.date&&e.note.trim();});
+  return o.title?o:null;
+}
+function cleanAll(l){return (Array.isArray(l)?l:[]).slice(0,500).map(cleanAction).filter(Boolean);}
+function cleanTS(t){var o=clone(DEFTS);if(t&&typeof t==="object")Object.keys(o).forEach(function(k){var n=parseInt(t[k],10);if(n>=1&&n<=730)o[k]=n;});return o;}
+
+/* ---------- seed (all labelled example) ---------- */
+function seed(){
+  function find(name){for(var i=0;i<risks.length;i++)if(norm(risks[i].hazard)===norm(name))return risks[i].id;return null;}
+  function A(t,src,hz,hoc,own,raised,due,st,x){
+    var a={id:newId(),example:true,title:t,detail:"",source:src,hoc:hoc,riskId:find(hz),riskText:hz,owner:own,raised:off(raised),due:off(due),status:st,log:[{date:off(raised),note:"Action raised (example).",kind:""}]};
+    for(var k in (x||{}))a[k]=x[k];return a;
+  }
+  return cleanAll([
+    A("Fit a barrier and gated crossing at the unprotected walkway","Swiss cheese layer analysis","Pedestrian and forklift interface","Engineering","Logistics Manager (example)",-40,-5,"progress"),
+    A("Refit the removed guard on the bench saw and add an interlock","Inspection","Unguarded cutting machinery","Engineering","Maintenance Lead (example)",-20,10,"open"),
+    A("Re-inspect the roof platform and verify the edge protection","Audit","Working at height on roof fitting","Engineering","Production Manager (example)",-70,-30,"done",{doneDate:off(-33),doneNote:"Platform re-inspected, one toe board replaced (example)."}),
+    A("Provide a hoist assist for panel lifts","Risk register review","Manual handling of panels at assembly stage","Engineering","Team Leader (example)",-10,60,"open"),
+    A("Issue hearing protection and train staff on fitting it","Audit","Noise from powered hand tools","PPE","EHS Lead (example)",-60,-40,"closed",{doneDate:off(-50),doneNote:"Issued and fitting briefing given to all bench staff (example).",verifier:"Safety Advisor (example)",verDate:off(-45),result:"yes",verNote:"Observed correct fitting on a walk round (example)."}),
+    A("Brief every visitor before they enter the shared walkway","Near miss","Pedestrian and forklift interface","Administrative","Logistics Manager (example)",-90,-2,"progress",{log:[{date:off(-90),note:"Action raised (example).",kind:""},{date:off(-60),note:"Due date moved from "+fmt(off(-45))+" to "+fmt(off(-20))+". Reason: reception rota changed (example).",kind:"move"},{date:off(-25),note:"Due date moved from "+fmt(off(-20))+" to "+fmt(off(-2))+". Reason: waiting for new signage (example).",kind:"move"}]}),
+    A("Update the housekeeping inspection form","Other","","Administrative","Team Leader (example)",-5,14,"open")
+  ]);
+}
+
+/* ---------- load and save ---------- */
+function load(){
+  try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.actions)){TS=cleanTS(d.timescales);return cleanAll(d.actions);}}catch(e){}
+  return null;
+}
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify({actions:actions,timescales:TS}));}catch(e){}
+  try{
+    var by={},open=0,over=0;
+    actions.forEach(function(a){var st=statsOf(a);if(!st.active)return;open++;if(st.overdue)over++;if(a.riskId){var b=by[a.riskId]||(by[a.riskId]={open:0,overdue:0});b.open++;if(st.overdue)b.overdue++;}});
+    localStorage.setItem(SUMK,JSON.stringify({saved:Date.now(),open:open,overdue:over,byRisk:by}));
+  }catch(e){}
+  uiSet("edit",Date.now());renderSave();
+}
+
+/* ---------- per action calculations ---------- */
+function statsOf(a){
+  var t=todayStr(),active=a.status==="open"||a.status==="progress"||a.status==="done";
+  var overdue=(a.status==="open"||a.status==="progress")&&a.due&&a.due<t;
+  var waiting=a.status==="done"&&a.doneDate?days(a.doneDate,t):0;
+  var moves=a.log.filter(function(e){return e.kind==="move";}).length;
+  return {active:active,overdue:!!overdue,daysOver:overdue?days(a.due,t):0,waiting:waiting,moves:moves};
+}
+function flagsOf(a){
+  var f=[],info=[],st=statsOf(a),r=riskOf(a);
+  if(a.status==="cancelled")return {flags:f,info:info};
+  if(st.overdue)f.push("Overdue by "+plural(st.daysOver,"day")+".");
+  if(a.status==="done"){f.push(st.waiting>TS.verify?"Done "+plural(st.waiting,"day")+" ago and still not checked by someone else. The check window is "+TS.verify+" days.":"Done, waiting for an independent check before it can close.");}
+  if(a.status==="closed"&&(!a.verifier||norm(a.verifier)===norm(a.owner)||!a.verDate||a.result!=="yes"))f.push("Closed without a valid independent check. Re-check it.");
+  if(st.moves>=2)f.push("Due date moved "+st.moves+" times.");
+  if(!a.owner)f.push("No owner named.");
+  if(!a.due&&a.status!=="closed")f.push("No due date.");
+  if(!a.hoc)f.push("No type of control chosen.");
+  if(a.riskId&&!r)f.push("The linked risk was not found in the register on this device.");
+  if(!a.riskId)info.push("Not linked to a register risk."+(a.riskText?"":" Link it so it feeds the risk picture."));
+  if(r&&a.status!=="closed"){
+    var lim=TS[r.name];
+    if(a.raised&&a.due&&days(a.raised,a.due)>lim)f.push("Due "+plural(days(a.raised,a.due),"day")+" after it was raised. The default timescale for a "+r.name+" risk is "+lim+" days.");
+    if(r.s>=4&&(a.hoc==="Administrative"||a.hoc==="PPE"))f.push("The linked risk is severity "+r.s+" and this action relies on "+(a.hoc==="PPE"?"PPE":"procedures")+". Look higher in the hierarchy of controls.");
+  }
+  return {flags:f,info:info};
+}
+
+/* ---------- rendering ---------- */
+function statusBadge(a){return '<span class="badge s-'+a.status+'">'+esc(SL[a.status])+'</span>';}
+function riskCell(a){
+  var r=riskOf(a);
+  if(r)return '<span class="badge '+bcls(r.name)+'">'+r.name+'</span> <a href="'+RISKPAGE+'#open='+encodeURIComponent(r.id)+'">'+esc(r.hazard)+'</a>';
+  if(a.riskId)return '<span class="badge b-none">Not found</span>';
+  return a.riskText?esc(a.riskText)+' <span class="sm">(not linked)</span>':'<span class="sm">Not linked</span>';
+}
+function render(){
+  risks=readRisks();
+  var ex=actions.some(function(a){return a.example;});$("banner").hidden=!ex;
+  renderOverview();renderTable();
+}
+function renderOverview(){
+  var t=todayStr(),act=0,over=0,wait=0,late=0,mv=0,unl=0,hiOver=0,closedOk=0,closedAll=0,all=0,fl=0;
+  var owners={},hoc={};
+  actions.forEach(function(a){
+    var s=statsOf(a),x=flagsOf(a),r=riskOf(a);
+    if(a.status!=="cancelled"){all++;hoc[a.hoc||"None chosen"]=(hoc[a.hoc||"None chosen"]||0)+1;}
+    if(s.active){act++;var o=a.owner||"No owner";var b=owners[o]||(owners[o]={n:0,over:0});b.n++;if(s.overdue){b.over++;over++;if(r&&(r.name==="High"||r.name==="Critical"))hiOver++;}}
+    if(a.status==="done"){wait++;if(s.waiting>TS.verify)late++;}
+    if(s.moves>=2&&s.active)mv++;
+    if(s.active&&!a.riskId)unl++;
+    if(x.flags.length&&s.active)fl++;
+    if(a.status==="closed"){closedAll++;if(a.doneDate&&a.due&&a.doneDate<=a.due)closedOk++;}
+  });
+  var st=$("status"),h,cls,rs=[];
+  if(!actions.length){cls="st-empty";h="No actions yet. Add one on the Actions tab.";}
+  else if(hiOver){cls="st-over";h=plural(hiOver,"overdue action")+" linked to High or Critical risks. Action needed.";}
+  else if(over||late||fl){cls="st-weak";h="Some actions need attention.";}
+  else{cls="st-ok";h="No overdue actions and nothing flagged. Closing an action does not by itself show the risk is controlled. Check the Risk Register.";}
+  if(over)rs.push(plural(over,"action")+" overdue.");
+  if(late)rs.push(plural(late,"action")+" done but unchecked for more than "+TS.verify+" days.");
+  if(mv)rs.push(plural(mv,"action")+" with the due date moved twice or more.");
+  if(fl&&!over)rs.push(plural(fl,"active action")+" with at least one flag. See the list below.");
+  if(unl)rs.push(plural(unl,"active action")+" not linked to a register risk.");
+  st.className="status "+cls;
+  st.innerHTML='<strong>'+esc(h)+'</strong>'+(rs.length?'<ul class="rs">'+rs.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+'</ul>':"");
+  var pc=closedAll?Math.round(100*closedOk/closedAll)+"%":"None closed";
+  $("kpis").innerHTML=
+    '<div class="kpi"><div class="n">'+act+'</div><div class="l">Active actions</div></div>'+
+    '<div class="kpi '+(over?"crit":"ok")+'"><div class="n">'+over+'</div><div class="l">Overdue</div></div>'+
+    '<div class="kpi '+(wait?"warn":"ok")+'"><div class="n">'+wait+'</div><div class="l">Done, waiting for an independent check</div></div>'+
+    '<div class="kpi"><div class="n">'+pc+'</div><div class="l">Closed on or before the due date (of '+closedAll+' closed)</div></div>'+
+    '<div class="kpi '+(mv?"high":"ok")+'"><div class="n">'+mv+'</div><div class="l">Due date moved twice or more</div></div>';
+  var ob=Object.keys(owners).sort(function(a,b){return owners[b].n-owners[a].n;}),mx=1;ob.forEach(function(k){if(owners[k].n>mx)mx=owners[k].n;});
+  $("byOwner").innerHTML=ob.length?ob.map(function(k){var o=owners[k];return '<div class="row"><span>'+esc(k)+'</span><div class="track"><div class="fill'+(o.over?" warn":"")+'" style="width:'+Math.round(100*o.n/mx)+'%"></div></div><b>'+o.n+'</b></div>';}).join("")+'<p class="sm">Orange bars have at least one overdue action.</p>':'<p class="sm">No active actions.</p>';
+  var hk=HOC.concat(["None chosen"]),hm=1;hk.forEach(function(k){if((hoc[k]||0)>hm)hm=hoc[k];});
+  $("byHoc").innerHTML=hk.map(function(k){var n=hoc[k]||0;return '<div class="row"><span>'+esc(k)+'</span><div class="track"><div class="fill'+((k==="PPE"||k==="Administrative"||k==="None chosen")&&n?" warn":"")+'" style="width:'+Math.round(100*n/hm)+'%"></div></div><b>'+n+'</b></div>';}).join("");
+  var hi=(hoc.PPE||0)+(hoc.Administrative||0);
+  $("hocNote").textContent=all?(Math.round(100*hi/all)+"% of actions rely on procedures or PPE. These depend on people getting it right every time, so look higher where you can."):"";
+  var items=[];
+  actions.slice().sort(cmp).forEach(function(a){
+    if(a.status==="cancelled")return;var x=flagsOf(a);if(!x.flags.length)return;
+    items.push('<li><div><a href="#" data-open="'+a.id+'">'+esc(a.title)+'</a>'+(a.example?' <span class="sm">(example)</span>':"")+'<div class="sm">'+esc(x.flags.join(" "))+'</div></div>'+statusBadge(a)+'</li>');
+  });
+  $("attn").innerHTML=items.length?items.slice(0,15).join(""):'<li>Nothing flagged.</li>';
+}
+function cmp(a,b){
+  var sa=statsOf(a),sb=statsOf(b);
+  if(sa.active!==sb.active)return sa.active?-1:1;
+  if(sa.overdue!==sb.overdue)return sa.overdue?-1:1;
+  return (a.due||"9999").localeCompare(b.due||"9999");
+}
+function renderTable(){
+  var q=norm($("q").value),fs=$("fStatus").value,fr=$("fRating").value,ff=$("fFlag").checked,n=0,html=[];
+  actions.slice().sort(cmp).forEach(function(a){
+    var s=statsOf(a),r=riskOf(a),x=flagsOf(a);
+    if(fs==="active"&&!s.active)return;if(fs!=="active"&&fs!=="all"&&a.status!==fs)return;
+    if(fr==="none"&&a.riskId)return;if(fr&&fr!=="none"&&(!r||r.name!==fr))return;
+    if(ff&&!x.flags.length)return;
+    if(q&&norm([a.title,a.detail,a.owner,a.riskText,r?r.hazard:"",a.source].join(" ")).indexOf(q)<0)return;
+    n++;
+    var due=a.due?fmt(a.due)+(s.overdue?' <span class="over">('+plural(s.daysOver,"day")+' late)</span>':""):'<span class="sm">None</span>';
+    html.push('<tr><td data-l="Action"><div class="v"><b>'+esc(a.title)+'</b>'+(a.example?' <span class="sm">(example)</span>':"")+'<div class="sm">'+esc(a.source)+', raised '+fmt(a.raised)+'</div>'+
+      (x.flags.length?'<ul class="fl">'+x.flags.map(function(t){return "<li>"+esc(t)+"</li>";}).join("")+'</ul>':"")+(x.info.length?'<p class="info">'+esc(x.info.join(" "))+'</p>':"")+'</div></td>'+
+      '<td data-l="Linked risk"><div class="v">'+riskCell(a)+'</div></td><td data-l="Owner"><div class="v">'+esc(a.owner||"None")+'</div></td><td data-l="Due"><div class="v">'+due+'</div></td>'+
+      '<td data-l="Control type"><div class="v">'+esc(a.hoc||"Not chosen")+'</div></td><td data-l="Status"><div class="v">'+statusBadge(a)+'</div></td>'+
+      '<td data-l=""><div class="v"><button class="rowbtn" data-open="'+a.id+'">Open</button></div></td></tr>');
+  });
+  $("rows").innerHTML=html.length?html.join(""):'<tr><td colspan="7">No actions match.</td></tr>';
+  $("count").textContent=n+" of "+actions.length+" actions shown.";
+}
+
+/* ---------- dialog ---------- */
+function fillSelects(){
+  $("fSource").innerHTML=SOURCES.map(function(s){return "<option>"+esc(s)+"</option>";}).join("");
+  $("fHoc").innerHTML='<option value="">Choose</option>'+HOC.map(function(s){return "<option>"+esc(s)+"</option>";}).join("");
+  $("fStatusSel").innerHTML=STATUSES.map(function(s){return '<option value="'+s[0]+'">'+esc(s[1])+'</option>';}).join("");
+}
+function riskOptions(sel){
+  var h='<option value="">Not linked</option>';
+  risks.slice().sort(function(a,b){return RANK[b.name]-RANK[a.name];}).forEach(function(r){h+='<option value="'+esc(r.id)+'"'+(String(r.id)===String(sel)?" selected":"")+'>'+r.name+": "+esc(r.hazard)+"</option>";});
+  $("fRisk").innerHTML=h;
+  $("riskHelp").textContent=risks.length?"The register on this device has "+risks.length+" risks. The rating shown follows the register's rules.":"No risks found in the register on this device. Open the Risk Register on this device first, then reload this page, to link actions to risks.";
+}
+function vis(){
+  var s=$("fStatusSel").value;
+  $("doneBlk").hidden=!(s==="done"||s==="closed");
+  $("verBlk").hidden=!(s==="done"||s==="closed");
+  $("cancelWrap").hidden=s!=="cancelled";
+  $("moveWrap").hidden=!(orig&&orig.due&&$("fDue").value&&$("fDue").value!==orig.due);
+}
+function openDlg(id,preRisk){
+  risks=readRisks();fillSelects();
+  var a=null;if(id){actions.forEach(function(x){if(x.id===id)a=x;});}
+  editId=a?a.id:null;orig=a?clone(a):null;
+  if(!a)a={title:"",detail:"",source:"Audit",hoc:"",riskId:preRisk||null,riskText:"",owner:"",raised:todayStr(),due:"",status:"open",doneDate:"",doneNote:"",verifier:"",verDate:"",result:"",verNote:"",cancel:"",log:[],example:false};
+  $("dlgTitle").textContent=editId?"Edit action":"Add action";
+  $("fTitle").value=a.title;$("fDetail").value=a.detail;$("fSource").value=a.source;$("fHoc").value=a.hoc;
+  riskOptions(a.riskId);$("fRiskText").value=a.riskText;
+  $("fOwner").value=a.owner;$("fRaised").value=a.raised;$("fDue").value=a.due;$("fStatusSel").value=a.status;
+  $("fMove").value="";$("fDoneDate").value=a.doneDate;$("fDoneNote").value=a.doneNote;
+  $("fVerifier").value=a.verifier;$("fVerDate").value=a.verDate;$("fResult").value=a.result;$("fVerNote").value=a.verNote;$("fCancel").value=a.cancel;
+  $("err").textContent="";$("del").hidden=!(a.example&&editId);
+  $("logWrap").hidden=!a.log.length;
+  $("logl").innerHTML=a.log.slice().reverse().map(function(e){return "<li>"+fmt(e.date)+": "+esc(e.note)+"</li>";}).join("");
+  vis();
+  var d=$("dlg");if(!d.open)d.showModal();
+}
+function fail(msg){$("err").textContent=msg;return false;}
+function saveDlg(){
+  var t=todayStr(),a={
+    id:editId||newId(),example:orig?orig.example:false,title:$("fTitle").value.trim(),detail:$("fDetail").value,source:$("fSource").value,hoc:$("fHoc").value,
+    riskId:$("fRisk").value||null,riskText:$("fRiskText").value.trim(),owner:$("fOwner").value.trim(),raised:$("fRaised").value,due:$("fDue").value,status:$("fStatusSel").value,
+    doneDate:$("fDoneDate").value,doneNote:$("fDoneNote").value.trim(),verifier:$("fVerifier").value.trim(),verDate:$("fVerDate").value,result:$("fResult").value,verNote:$("fVerNote").value.trim(),cancel:$("fCancel").value.trim(),
+    log:orig?clone(orig.log):[]
+  };
+  if(a.riskId){var r=null;risks.forEach(function(x){if(String(x.id)===String(a.riskId))r=x;});if(r)a.riskText=r.hazard;}
+  if(!a.title)return fail("Describe what will be done.");
+  if(!a.owner)return fail("Name one person as the owner.");
+  if(!isDate(a.raised))return fail("Enter the date the action was raised.");
+  if(!isDate(a.due))return fail("Enter a due date. An action without a date will not get done.");
+  if(a.due<a.raised)return fail("The due date cannot be before the date it was raised.");
+  var log=a.log,moved=orig&&orig.due&&a.due!==orig.due;
+  if(moved){var why=$("fMove").value.trim();if(!why)return fail("Say why the due date is moving.");log.push({date:t,kind:"move",note:"Due date moved from "+fmt(orig.due)+" to "+fmt(a.due)+". Reason: "+why});}
+  var reopened=false;
+  if(a.status==="done"||a.status==="closed"){
+    if(!isDate(a.doneDate))return fail("Enter the date the work was completed.");
+    if(a.doneDate>t)return fail("The completion date cannot be in the future.");
+    if(!a.doneNote)return fail("Say what was done.");
+  }
+  if((a.status==="done"||a.status==="closed")&&a.result==="no"){
+    if(!a.verifier||!isDate(a.verDate))return fail("To record a failed check, enter who checked and the date.");
+    log.push({date:t,kind:"",note:"Check by "+a.verifier+" on "+fmt(a.verDate)+" found the action does not work"+(a.verNote?": "+a.verNote:"")+". Reopened."});
+    a.status="open";a.doneDate="";a.doneNote="";a.verifier="";a.verDate="";a.result="";a.verNote="";reopened=true;
+  }else if(a.status==="closed"){
+    if(!a.verifier)return fail("Name the person who checked it.");
+    if(norm(a.verifier)===norm(a.owner))return fail("The checker must be someone other than the owner. Nobody can close their own action.");
+    if(!isDate(a.verDate))return fail("Enter the date of the check.");
+    if(a.verDate<a.doneDate)return fail("The check cannot be before the work was completed.");
+    if(a.verDate>t)return fail("The check date cannot be in the future.");
+    if(a.result!=="yes")return fail("Set the result to 'Checked in practice, and it works' to close the action.");
+    if(!a.verNote)return fail("Say what the checker saw.");
+  }else if(a.status==="cancelled"){
+    if(!a.cancel)return fail("Say why the action is being cancelled.");
+  }
+  var from=orig?orig.status:null;
+  if(!orig)log.push({date:t,kind:"",note:"Action raised."});
+  else if(from!==a.status&&!reopened)log.push({date:t,kind:"",note:"Status changed from "+SL[from]+" to "+SL[a.status]+"."+(a.status==="cancelled"?" Reason: "+a.cancel:"")});
+  a.log=log;
+  var c=cleanAction(a);if(!c)return fail("Check the details and try again.");
+  if(editId){for(var i=0;i<actions.length;i++)if(actions[i].id===editId)actions[i]=c;}else actions.push(c);
+  save();$("dlg").close();render();
+  if(reopened)alert("The check found the action does not work, so it has been reopened. The failed check is kept in the change log.");
+  return true;
+}
+
+/* ---------- events ---------- */
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){
+  document.querySelectorAll("nav button").forEach(function(x){x.setAttribute("aria-selected",x===b?"true":"false");});
+  ["overview","actions","guide"].forEach(function(id){$(id).hidden=id!==b.dataset.tab;});uiSet("tab",b.dataset.tab);
+};});
+function showTab(t){var b=document.querySelector('nav button[data-tab="'+t+'"]');if(b)b.click();}
+document.addEventListener("click",function(e){var o=e.target.closest&&e.target.closest("[data-open]");if(o){e.preventDefault();openDlg(parseInt(o.getAttribute("data-open"),10));}});
+$("add").onclick=function(){openDlg(null);};
+$("cancelBtn").onclick=function(){$("dlg").close();};
+$("form").addEventListener("submit",function(e){e.preventDefault();saveDlg();});
+$("fStatusSel").onchange=vis;$("fDue").oninput=vis;$("fDue").onchange=vis;
+$("fRisk").onchange=function(){if($("fRisk").value)$("fRiskText").value="";};
+$("del").onclick=function(){if(editId&&confirm("Delete this example action? Real actions cannot be deleted, only cancelled with a reason.")){actions=actions.filter(function(a){return a.id!==editId;});save();$("dlg").close();render();}};
+["q","fStatus","fRating","fFlag"].forEach(function(id){$(id).oninput=renderTable;$(id).onchange=renderTable;});
+$("print").onclick=function(){window.print();};
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+$("json").onclick=function(){download("corrective-actions.json",JSON.stringify({app:"corrective-action-tracker",version:1,saved:new Date().toISOString(),timescales:TS,actions:actions},null,2),"application/json");uiSet("fileSaved",Date.now());renderSave();};
+$("load").onclick=function(){$("file").click();};
+$("file").onchange=function(){
+  var f=this.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){
+    try{var d=JSON.parse(rd.result),l=cleanAll(d&&d.actions);
+      if(!l.length){alert("No actions were found in that file.");return;}
+      if(!confirm("Replace the "+actions.length+" actions here with "+l.length+" from the file?"))return;
+      actions=l;TS=cleanTS(d.timescales);save();render();setTS();
+    }catch(e){alert("That file could not be read.");}
+  };rd.readAsText(f);this.value="";
+};
+$("csv").onclick=function(){
+  var head=["ID","Action","Source","Linked risk","Risk rating now","Control type","Owner","Raised","Due","Status","Completed","What was done","Checked by","Checked on","Check result","What the checker saw","Due date moves","Flags","Example data"];
+  var rows=actions.map(function(a){var r=riskOf(a),x=flagsOf(a),s=statsOf(a);return [a.id,a.title,a.source,r?r.hazard:a.riskText,r?r.name:"",a.hoc,a.owner,a.raised,a.due,SL[a.status],a.doneDate,a.doneNote,a.verifier,a.verDate,a.result==="yes"?"Works":a.result==="no"?"Does not work":"",a.verNote,s.moves,x.flags.join(" "),a.example?"Yes":"No"];});
+  var csv=[head].concat(rows).map(function(row){return row.map(function(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}).join(",");}).join("\r\n");
+  download("corrective-actions.csv",csv,"text/csv");
+};
+var TSF={tsCritical:"Critical",tsHigh:"High",tsMedium:"Medium",tsLow:"Low",tsVerify:"verify"};
+function setTS(){Object.keys(TSF).forEach(function(id){$(id).value=TS[TSF[id]];});}
+Object.keys(TSF).forEach(function(id){$(id).onchange=function(){var n=parseInt(this.value,10);if(n>=1){TS[TSF[id]]=n;save();render();}setTS();};});
+window.addEventListener("storage",function(e){if(e.key===RKEY&&!$("dlg").open)render();});
+
+/* ---------- start ---------- */
+(function init(){
+  risks=readRisks();
+  var l=load();
+  if(l===null){actions=seed();save();}else actions=l;
+  setTS();render();renderSave();
+  var o=uiGet();if(o.tab==="actions"||o.tab==="guide")showTab(o.tab);
+  handleHash();
+  window.addEventListener("hashchange",handleHash);
+})();
+function handleHash(){
+  var m=/^#(new|open)=(\d+)$/.exec(location.hash||"");
+  if(!m)return;
+  showTab("actions");try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}
+  if(m[1]==="new")openDlg(null,parseInt(m[2],10));else openDlg(parseInt(m[2],10));
+}
+})();
+</script>
+</body>
+</html>
