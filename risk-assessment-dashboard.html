@@ -223,6 +223,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <p class="calc"><b>Verified controls only.</b> A control reduces residual risk only if its status is Verified working and it was last checked less than 12 months ago. Otherwise the risk is treated at its inherent level, however low the claimed residual score is.</p>
     <p class="calc"><b>Weak assurance.</b> A risk is flagged Weak for any of these: no controls recorded, a claimed reduction that is not demonstrated, verification or evidence over 12 months old, a severity 4 or 5 risk resting on procedures or PPE only, reliance on PPE alone, missing senior sign-off on a severity 4 or 5 risk, no owner or competent reviewer, no second reviewer on a High or Critical risk, or no review date or an overdue review.</p>
     <p class="calc"><b>Layer analysis.</b> Each risk can be linked to a Swiss cheese analysis of its layers of defence. The register reads that analysis (it never changes it) and shows its best and cautious estimates beside your scores. It flags a linked analysis that is incomplete, stale, above its own tolerable level, based on weak evidence, uses a different severity, or suggests the event happens at least once a year while the likelihood is scored 1 or 2. It never changes a score for you. Both dashboards must sit in the same folder on the same site, and saved data stays in one browser, so use Save data file and Load data file to move both between devices.</p>
+    <p class="calc"><b>Corrective actions.</b> Each risk has an Add action button that opens the Corrective Action Tracker with that risk selected. The register reads the tracker (it never changes it), shows how many actions are open or overdue for each risk, and flags a risk when a linked action is overdue. Closing an action does not lower a risk. Verify the control and update the control status here.</p>
     <p class="calc"><b>Reviewers and change log.</b> Each risk needs a named owner and a named competent reviewer. A risk rated High or Critical after controls should also name a second reviewer. Missing names make a risk Weak. The change log records why scores, evidence or controls changed. Entries can be added but not edited or removed in this tool.</p>
     <p class="calc"><b>Your risk criteria.</b> The band cut-offs (1 to 4 Low, 5 to 9 Medium, 10 to 16 High, 17 to 25 Critical), the severity floors (severity 5 never below High, severity 4 never below Medium) and the 12 month limits on verification and evidence are this dashboard's defaults. They are not taken from HSE, ISO or any standard, and no study tests them. The floors exist because multiplying two 1 to 5 scores can give a rare fatal event the same rating as a frequent trivial one. Treat all of them as your organisation's own risk criteria: have a competent person adopt or change them, and record that decision in the change log.</p>
     <p class="calc"><b>Severity wording.</b> Choose severity from the worst outcome that could credibly happen, not the usual one. 1 minor, 2 first aid, 3 lost time injury, 4 major injury, 5 fatality or multiple serious injuries. Likelihood: 1 rare, 2 unlikely, 3 possible, 4 likely, 5 almost certain.</p>
@@ -284,6 +285,8 @@ var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
 var CST=[["proposed","Proposed"],["implemented","In place, not yet checked"],["verified","Verified working"]];
 var NAMES=["Low","Medium","High","Critical"], RANK={Low:0,Medium:1,High:2,Critical:3};
 var SWKEY="rmilburn-swiss-cheese-v2", SWPAGE="swiss-cheese-dashboard.html";
+var ACTKEY="rmilburn-action-tracker-summary", ACTPAGE="corrective-action-tracker.html", AC={};
+function readActions(){var m={};try{var d=JSON.parse(localStorage.getItem(ACTKEY));var b=d&&d.byRisk;if(b&&typeof b==="object")Object.keys(b).forEach(function(k){var o=b[k]||{},n=parseInt(o.open,10)||0,v=parseInt(o.overdue,10)||0;if(n>0)m[k]={open:n,overdue:Math.min(v,n)};});}catch(e){}return m;}
 var risks=[], view="res", editId=null, draft=null, sortK="res", sortDir=-1, A={}, SW={};
 
 /* ---------- helpers ---------- */
@@ -430,6 +433,7 @@ function analyse(r){
   var effB=rating(el,es);
   if((effB==="High"||effB==="Critical")&&!(r.second||"").trim())F.push("A "+effB+" risk should have a second reviewer named.");
   if(!r.review)F.push("No review date set.");else if(r.review<today)F.push("Review overdue since "+fmt(r.review)+".");
+  var ACT=AC[r.id];if(ACT&&ACT.overdue)F.push(ACT.overdue+(ACT.overdue===1?" corrective action linked to this risk is":" corrective actions linked to this risk are")+" overdue. Open the Corrective Action Tracker.");
   var LA=SW[r.id];
   if(LA){
     var sm2=LA.summary;
@@ -540,10 +544,10 @@ function renderRows(){
      '<td data-l="Assurance"><div class="v">'+abadge(a)+(fl?'<ul class="fl">'+fl+'</ul>':'')+'</div></td>'+
      '<td data-l="Owner"><div class="v">'+esc(r.owner||"Not set")+'</div></td>'+
      '<td data-l="Review due"><div class="v'+(od?' over':'')+'">'+(r.review?fmt(r.review):"Not set")+(od?'<div class="sm over">Overdue</div>':'')+'</div></td>'+
-     '<td data-l="Actions"><div class="v"><button class="rowbtn" data-e="'+r.id+'">Open or edit</button><a class="rowbtn" data-layer="'+r.id+'" href="'+esc(SWPAGE+"?risk="+r.id+"&hazard="+encodeURIComponent(r.hazard.slice(0,140))+"&sev="+r.s)+'">'+(SW[r.id]?"Open layer analysis":"Create layer analysis")+'</a><button class="rowbtn" data-d="'+r.id+'">Delete</button></div></td></tr>';
+     '<td data-l="Actions"><div class="v"><button class="rowbtn" data-e="'+r.id+'">Open or edit</button><a class="rowbtn" data-layer="'+r.id+'" href="'+esc(SWPAGE+"?risk="+r.id+"&hazard="+encodeURIComponent(r.hazard.slice(0,140))+"&sev="+r.s)+'">'+(SW[r.id]?"Open layer analysis":"Create layer analysis")+'</a><a class="rowbtn" href="'+ACTPAGE+'#new='+r.id+'">Add action</a><button class="rowbtn" data-d="'+r.id+'">Delete</button>'+(AC[r.id]?'<div class="sm"><a href="'+ACTPAGE+'">'+AC[r.id].open+(AC[r.id].open===1?' open action':' open actions')+'</a>'+(AC[r.id].overdue?' <span class="over">('+AC[r.id].overdue+' overdue)</span>':'')+'</div>':'')+'</div></td></tr>';
   }).join("")||'<tr><td colspan="8">No risks match.</td></tr>';
 }
-function renderAll(){SW=readSwiss();recompute();$("banner").hidden=!risks.some(function(r){return r.example;});renderStatus();renderKpis();renderMatrix();renderBars();renderTop();renderRows();}
+function renderAll(){SW=readSwiss();AC=readActions();recompute();$("banner").hidden=!risks.some(function(r){return r.example;});renderStatus();renderKpis();renderMatrix();renderBars();renderTop();renderRows();}
 
 /* ---------- tabs and controls ---------- */
 document.querySelectorAll("nav button").forEach(function(b){
@@ -696,7 +700,7 @@ risks=load();renderSave();renderAll();
     if(r){document.querySelector("nav button[data-tab=register]").click();openDlg(r);}
     try{history.replaceState(null,"",location.pathname+location.search);}catch(e){}}
 })();
-window.addEventListener("storage",function(e){if(e.key===SWKEY&&!$("dlg").open)renderAll();});
+window.addEventListener("storage",function(e){if((e.key===SWKEY||e.key===ACTKEY)&&!$("dlg").open)renderAll();});
 window.addEventListener("pageshow",function(e){if(e.persisted)renderAll();});
 })();
 </script>
