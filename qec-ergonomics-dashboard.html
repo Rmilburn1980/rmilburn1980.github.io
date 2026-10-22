@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0920">
+<title>Quick Exposure Check Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: dark indigo glow, form on the left, live scoring panel on the right (bottom bar on phones), saved history below, one page print record. */
+:root{
+  --bg:#0a0920;
+  --surface:#15133a;
+  --surface-2:#1d1a4a;
+  --field:#0e0c2b;
+  --line:#2f2b6b;
+  --text:#eceaff;
+  --muted:#b4b1e2;
+  --faint:#9390cc;
+  --accent:#8b9bff;
+  --accent-ink:#0a0920;
+  --glow:rgba(139,155,255,.38);
+  --low:#3fe0a0;
+  --mod:#ffd54a;
+  --high:#ff9b42;
+  --vhigh:#ff5c7a;
+  --ink:#07061a;
+  --font-display:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
+  --font-body:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(900px 520px at 88% -8%,rgba(124,112,255,.24),transparent 62%),
+    radial-gradient(760px 460px at -8% 6%,rgba(60,92,255,.16),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font:400 15px/1.5 var(--font-body);
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+[hidden]{display:none!important}
+.wrap{
+  max-width:1280px;margin:0 auto;
+  padding-block:20px 120px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+.top{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.titleblock{min-width:0;flex:1 1 360px}
+.hub{
+  display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;margin-bottom:14px;
+  border:1px solid var(--line);border-radius:999px;background:rgba(29,26,74,.6);
+  color:var(--accent);text-decoration:none;font-weight:500;font-size:14px;
+}
+.hub:hover{border-color:var(--accent);box-shadow:0 0 18px -4px var(--glow)}
+.eyebrow{margin:0 0 4px;font:500 12px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+h1{margin:0;font:600 clamp(30px,5.4vw,48px)/1.05 var(--font-display);letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:8px 0 0;max-width:62ch;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.btn{
+  font:500 14px var(--font-body);min-height:40px;padding:9px 14px;border-radius:10px;
+  background:var(--surface-2);border:1px solid var(--line);color:var(--text);cursor:pointer;
+}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{box-shadow:0 0 20px -2px var(--glow)}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:13.5px}
+.btn.danger{border-color:#7a2e4a}
+.btn.danger.armed{background:var(--vhigh);color:var(--ink);border-color:var(--vhigh);font-weight:600}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.note{
+  margin:0 0 18px;padding:12px 14px;border:1px dashed var(--accent);border-radius:12px;
+  background:rgba(139,155,255,.08);color:var(--text);
+}
+
+/* Layout */
+.layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+.inputs{display:grid;gap:20px;min-width:0}
+.results{min-width:0;display:grid;gap:16px;align-content:start}
+#resultsBody{display:grid;gap:16px;min-width:0}
+@media (min-width:980px){
+  .layout{grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);align-items:start}
+  .results{
+    position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;overflow-x:hidden;
+    padding:2px 6px 2px 2px;scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+  }
+  .bar{display:none!important}
+  .wrap{padding-bottom:48px}
+}
+.card{
+  background:linear-gradient(180deg,var(--surface),#12103a);
+  border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0;
+}
+.card h2{margin:0 0 4px;font:600 24px/1.15 var(--font-display);letter-spacing:.005em}
+.card .lead{margin:0 0 6px;color:var(--muted);font-size:14px}
+
+/* Details fields */
+.fields{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));margin-top:12px}
+.field{display:grid;gap:5px;min-width:0}
+.field.wide{grid-column:1 / -1}
+.field label,.tag-label{font:500 12px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+input[type=text],input[type=date],textarea,select{
+  width:100%;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--field);color:var(--text);font:400 16px/1.4 var(--font-body);
+}
+textarea{min-height:76px;resize:vertical}
+::placeholder{color:var(--faint);opacity:1}
+input[type=text]:hover,input[type=date]:hover,textarea:hover,select:hover{border-color:#4a45a0}
+.help{margin:0;color:var(--faint);font-size:12.5px}
+
+/* Questions */
+.grp{margin-top:16px}
+.gh{margin:0 0 2px;font:500 12px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.q{padding-block:14px;border-top:1px solid var(--line)}
+.grp .q:first-of-type{border-top:0;padding-top:8px}
+.qh{display:flex;gap:10px;align-items:baseline;min-width:0}
+.qt{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.hint{margin:4px 0 0 0;color:var(--faint);font-size:13px}
+.opts{display:grid;gap:8px;margin-top:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,168px),1fr))}
+.opt{position:relative;display:block;min-width:0}
+.opt input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.face{
+  position:relative;display:flex;gap:10px;align-items:flex-start;height:100%;
+  padding:10px 12px 10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--field);
+  overflow:hidden;transition:border-color .15s,box-shadow .15s,background .15s;
+}
+.face::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--accent);
+  opacity:calc(.18 + var(--g,0) * .82);
+}
+.otxt{min-width:0;font-size:14.5px;line-height:1.35;overflow-wrap:anywhere}
+.otxt small{display:block;margin-top:2px;color:var(--muted);font-size:12.5px;line-height:1.35}
+.opt:hover .face{border-color:#5a55b8}
+.opt input:checked + .face{
+  border-color:var(--accent);background:rgba(139,155,255,.16);
+  box-shadow:0 0 0 1px var(--accent),0 0 20px -4px var(--glow);
+}
+.opt input:focus-visible + .face{outline:2px solid var(--accent);outline-offset:2px}
+.toggle{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.toggle label{position:relative;display:block;min-width:0;flex:1 1 200px}
+.toggle input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.toggle span{
+  display:block;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--field);
+  text-align:center;font-size:14px;font-weight:500;color:var(--muted);
+}
+.toggle input:checked + span{border-color:var(--accent);color:var(--text);background:rgba(139,155,255,.16);box-shadow:0 0 18px -6px var(--glow)}
+.toggle input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.bq{margin:12px 0 0;font-weight:500;color:var(--muted);font-size:14px}
+
+.notes-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));margin-top:12px}
+.tag-label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.need{
+  display:inline-block;padding:1px 8px;border-radius:999px;background:var(--mod);color:var(--ink);
+  font:600 11px var(--font-body);letter-spacing:.04em;text-transform:uppercase;
+}
+
+/* Results */
+.hero{display:grid;gap:18px;box-shadow:0 0 54px -18px var(--glow);border-color:#3b3688}
+.hero-top{display:flex;flex-wrap:wrap;gap:14px 20px;align-items:flex-end;justify-content:space-between}
+.big{font:700 clamp(60px,12vw,84px)/1 var(--font-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big sup{font-size:.42em;font-weight:600;vertical-align:top;margin-left:2px;color:var(--muted)}
+.hero-meta{display:grid;gap:6px;justify-items:start;min-width:0;flex:1 1 200px}
+.hero-meta .of{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.hero-meta .say{font-weight:500;overflow-wrap:anywhere}
+.pill{
+  display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;background:var(--c);color:var(--ink);
+  font:600 12px/1.4 var(--font-body);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
+}
+.lv0{--c:var(--low)}.lv1{--c:var(--mod)}.lv2{--c:var(--high)}.lv3{--c:var(--vhigh)}
+.gauge{min-width:0}
+.track{position:relative;display:flex;gap:3px;height:12px}
+.seg{display:block;min-width:0;border-radius:4px;background:var(--c);opacity:.38}
+.mark{
+  position:absolute;top:-6px;bottom:-6px;width:4px;border-radius:2px;background:var(--text);
+  transform:translateX(-50%);box-shadow:0 0 12px 1px var(--glow);transition:left .35s ease;
+}
+.ticks{position:relative;height:18px;margin-top:9px}
+.ticks span{position:absolute;top:0;transform:translateX(-50%);font:400 11px/1.4 var(--font-mono);color:var(--faint)}
+.cap{margin:0;font-size:12.5px;color:var(--faint)}
+
+.sec-h{margin:0;font:500 12px var(--font-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.areas{display:grid;gap:14px;margin-top:12px}
+.area{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(14,12,43,.55)}
+.area-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:space-between}
+.area-head h3{margin:0;font:600 19px/1.1 var(--font-display);min-width:0}
+.area-head h3 small{font:400 12.5px var(--font-body);color:var(--faint);margin-left:6px}
+.area-right{display:flex;align-items:center;gap:10px}
+.score{font:600 26px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.score span{font:400 12.5px var(--font-body);color:var(--faint);margin-left:5px}
+
+.facs{display:grid;gap:10px;margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+.fac{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(14,12,43,.55)}
+.fac b{font-weight:500}
+.fac .fs{font:600 20px var(--font-display);font-variant-numeric:tabular-nums}
+
+.first{display:grid;gap:8px;margin:12px 0 0;padding:0;list-style:none}
+.first li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(14,12,43,.55)}
+.badge{min-width:34px;text-align:center;padding:3px 8px;border-radius:8px;background:var(--c);color:var(--ink);font:700 15px var(--font-display);font-variant-numeric:tabular-nums}
+.first .what{min-width:0;overflow-wrap:anywhere}
+.first .what small{display:block;color:var(--muted);font:400 12.5px var(--font-body)}
+.empty{margin:12px 0 0;color:var(--muted)}
+.prog{height:10px;border-radius:6px;background:var(--field);border:1px solid var(--line);overflow:hidden;margin-top:12px}
+.prog i{display:block;height:100%;background:var(--accent);box-shadow:0 0 14px var(--glow)}
+
+details{margin-top:12px}
+summary{cursor:pointer;font-weight:500;min-height:36px;display:flex;align-items:center;color:var(--accent)}
+.brk{display:grid;gap:4px;margin-top:8px}
+.brk h4{margin:12px 0 2px;font:600 15px var(--font-display);color:var(--text)}
+.brow{display:grid;grid-template-columns:minmax(0,1fr) 84px 28px;gap:10px;align-items:center;padding:3px 0}
+.brow .nm{min-width:0;font-size:13.5px;overflow-wrap:anywhere}
+.brow .nm i{display:block;font:400 12px var(--font-body);color:var(--faint);font-style:normal}
+.mini{height:8px;border-radius:5px;background:var(--field);border:1px solid var(--line);overflow:hidden}
+.mini i{display:block;height:100%;background:var(--accent)}
+.brow.w .mini i{background:var(--high)}.brow.u .mini i{background:var(--vhigh)}
+.brow .v{font:600 14px var(--font-display);text-align:right;font-variant-numeric:tabular-nums}
+
+.tbl-wrap{overflow-x:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font:500 12px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.d-good{color:var(--low);font-weight:600}.d-bad{color:var(--vhigh);font-weight:600}.d-same{color:var(--muted)}
+.meta{margin:10px 0 0;font-size:13px;color:var(--faint);overflow-wrap:anywhere}
+.cmp-pick{display:grid;gap:5px;margin-top:12px}
+.cmp-pick label{font:500 12px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* Saved history */
+.hist-head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between}
+.hist-tools{display:flex;flex-wrap:wrap;gap:8px}
+.hist{display:grid;gap:12px;margin-top:14px;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr))}
+.rec{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:rgba(14,12,43,.55);min-width:0;align-content:start}
+.rec.is-loaded{border-color:var(--accent);box-shadow:0 0 22px -8px var(--glow)}
+.rec-title{font-weight:600;overflow-wrap:anywhere}
+.rec-meta{margin:0;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.rec-score{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.rec-big{font:700 34px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.rec-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rec-actions{display:flex;flex-wrap:wrap;gap:8px}
+.tagex{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;border:1px solid var(--faint);color:var(--muted);font:500 11px var(--font-body);letter-spacing:.05em;text-transform:uppercase;vertical-align:middle}
+.storage-warn{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:rgba(255,213,74,.12);border:1px solid var(--mod);color:var(--text);font-size:14px}
+
+.foot{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);color:var(--faint);font-size:13px;display:grid;gap:6px;max-width:90ch}
+.foot p{margin:0}
+
+/* Phone bar */
+.bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;gap:8px;
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:rgba(12,10,36,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);box-shadow:0 -10px 30px -12px var(--glow);
+}
+.bar-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.bar-main{display:flex;align-items:center;gap:10px;min-width:0}
+.bar-big{font:700 28px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.bar-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bchip{display:inline-flex;gap:6px;align-items:center;padding:2px 9px;border-radius:999px;border:1px solid var(--c);font:500 12.5px var(--font-body);color:var(--text)}
+.bchip b{font:600 13px var(--font-display);font-variant-numeric:tabular-nums}
+.bar a.go{display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;text-decoration:none;font-size:14px}
+.toast{
+  position:fixed;left:50%;bottom:calc(120px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;
+  padding:10px 16px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;
+  max-width:calc(100% - 32px);
+}
+@media (min-width:980px){.toast{bottom:24px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Print record (hidden on screen) */
+#printRecord{display:none}
+@media print{
+  @page{size:A4;margin:14mm}
+  html,body{background:#fff!important;color:#000!important;min-height:0!important}
+  body{background-image:none!important}
+  body > *:not(#printRecord){display:none!important}
+  #printRecord{display:block;color:#000;font:400 10pt/1.4 var(--font-body);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #printRecord h1{font:700 22pt/1.1 var(--font-display);margin:0 0 2mm;color:#000;text-wrap:balance}
+  #printRecord h2{font:700 12pt/1.2 var(--font-display);margin:5mm 0 2mm;color:#000;letter-spacing:.02em;text-transform:uppercase;border-bottom:1.5pt solid #000;padding-bottom:1mm}
+  #printRecord p{margin:0 0 2mm}
+  .pr-sub{color:#333}
+  .pr-example{display:inline-block;margin:0 0 3mm;padding:1mm 3mm;border:1.5pt solid #000;font-weight:700;letter-spacing:.04em}
+  .pr-sec{break-inside:avoid}
+  #printRecord table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:0}
+  #printRecord th,#printRecord td{padding:1.6mm 2mm;border:.75pt solid #777;text-align:left;vertical-align:top;white-space:normal;color:#000}
+  #printRecord th{background:#e6e6ee;font:700 8.5pt var(--font-body);letter-spacing:.04em;text-transform:uppercase}
+  #printRecord td.n,#printRecord th.n{text-align:right}
+  .pr-big{display:flex;gap:6mm;align-items:center;margin:2mm 0}
+  .pr-big b{font:700 34pt/1 var(--font-display)}
+  .pr-lv{display:inline-block;padding:.6mm 2.4mm;border:.75pt solid #000;border-radius:2mm;font-weight:700;font-size:8.5pt;text-transform:uppercase;letter-spacing:.03em;color:#000}
+  .pr-lv.lv0{background:#bff0d9}.pr-lv.lv1{background:#ffe9a0}.pr-lv.lv2{background:#ffd0a0}.pr-lv.lv3{background:#ffb3c0}
+  .pr-notes div{margin:0 0 2.5mm;break-inside:avoid}
+  .pr-notes b{display:block;font-size:8.5pt;text-transform:uppercase;letter-spacing:.04em}
+  .pr-notes span{white-space:pre-wrap;overflow-wrap:anywhere}
+  .pr-sign{display:grid;grid-template-columns:1fr 1fr;gap:10mm;margin-top:16mm;break-inside:avoid}
+  .pr-sign div{border-top:.75pt solid #000;padding-top:1mm;font-size:9pt}
+  .pr-foot{margin-top:8mm;font-size:8pt;color:#333;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+      <p class="eyebrow">Ergonomics</p>
+      <h1>Quick Exposure Check</h1>
+      <p class="sub">Observer and worker assessment of back, shoulder and arm, wrist and hand, and neck exposure. Scores update as you answer.</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" id="btnSave" type="button">Save assessment</button>
+      <button class="btn primary" id="btnUpdate" type="button" hidden>Update saved</button>
+      <button class="btn" id="btnPrint" type="button">Print record</button>
+      <button class="btn" id="btnCopy" type="button">Copy summary</button>
+      <button class="btn" id="btnExample" type="button">Load example</button>
+      <button class="btn" id="btnClear" type="button">Clear form</button>
+    </div>
+  </header>
+
+  <p class="note" id="exampleNote" hidden>Example data is loaded so you can see how the scoring works. It is not a real assessment. Press Clear form to start your own.</p>
+
+  <main class="layout">
+    <section class="inputs" aria-label="Assessment form">
+      <div class="card" id="detailsCard">
+        <h2>Assessment details</h2>
+        <div class="fields">
+          <div class="field"><label for="fDate">Date</label><input type="date" id="fDate"></div>
+          <div class="field"><label for="fWorker">Worker</label><input type="text" id="fWorker" autocomplete="off"><p class="help">Use initials or a job number for saved records.</p></div>
+          <div class="field"><label for="fObserver">Observer(s)</label><input type="text" id="fObserver" autocomplete="off"></div>
+          <div class="field wide"><label for="fTask">Area and task</label><input type="text" id="fTask" autocomplete="off"></div>
+        </div>
+      </div>
+
+      <div class="card" id="obsCard">
+        <h2>Observer assessment</h2>
+        <p class="lead">Observe the task for 20 to 30 cycles before answering. Score the worst case for each body area. If in doubt, choose the higher exposure category.</p>
+        <div id="obsQs"></div>
+      </div>
+
+      <div class="card" id="wrkCard">
+        <h2>Worker assessment</h2>
+        <p class="lead">The worker answers from their own experience of the task. If the worker is in doubt, choose the higher category.</p>
+        <div id="wrkQs"></div>
+      </div>
+
+      <div class="card" id="notesCard">
+        <h2>Details and actions</h2>
+        <div class="notes-grid">
+          <div class="field"><span class="tag-label" id="lblK"><label for="nK">Visual demand details</label></span><textarea id="nK"></textarea></div>
+          <div class="field"><span class="tag-label" id="lblN"><label for="nN">Keeping up details</label></span><textarea id="nN"></textarea></div>
+          <div class="field"><span class="tag-label" id="lblO"><label for="nO">Stress details</label></span><textarea id="nO"></textarea></div>
+          <div class="field"><span class="tag-label"><label for="nAdd">Additional details</label></span><textarea id="nAdd"></textarea></div>
+          <div class="field"><span class="tag-label"><label for="nSug">Worker suggestions for improvement</label></span><textarea id="nSug"></textarea></div>
+          <div class="field"><span class="tag-label"><label for="nAct">Actions required</label></span><textarea id="nAct"></textarea></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="results" id="results" aria-label="Scores and exposure levels">
+      <div id="resultsBody"></div>
+      <div class="card" id="compareCard">
+        <h2>Before and after</h2>
+        <p class="lead">Pick a saved assessment to compare with the answers on screen. Save the before position first, change the answers to reflect the intervention, then compare.</p>
+        <div class="cmp-pick"><label for="cmpSel">Compare with</label><select id="cmpSel"></select></div>
+        <div id="compareBody"></div>
+      </div>
+    </aside>
+  </main>
+
+  <section class="card" id="historyCard" style="margin-top:20px" aria-label="Saved assessments">
+    <div class="hist-head">
+      <div>
+        <h2>Saved assessments</h2>
+        <p class="lead" style="margin:0">Kept in this browser only. Nothing is uploaded. Use Back up to keep a copy or move assessments to another device.</p>
+      </div>
+      <div class="hist-tools">
+        <button class="btn sm" id="btnCsv" type="button">Export CSV</button>
+        <button class="btn sm" id="btnBackup" type="button">Back up</button>
+        <button class="btn sm" id="btnRestore" type="button">Restore</button>
+        <input type="file" id="fileRestore" accept="application/json,.json" hidden>
+      </div>
+    </div>
+    <p class="storage-warn" id="storageWarn" hidden>This browser is not keeping saved data, so assessments last only until you close this page. Use Back up to keep a copy.</p>
+    <div class="hist" id="histList"></div>
+  </section>
+
+  <footer class="foot">
+    <p>Method: Quick Exposure Check, Li, G. and Buckle, P. (1999), Evaluating Change in Exposure to Risk for Musculoskeletal Disorders, a Practical Tool, HSE Books CRR251. Scoring grids and body area levels follow the QEC reference guide.</p>
+    <p>Overall exposure is the sum of the four body area scores as a percentage of the maximum possible: 162 for a static back task, 176 for a manual handling back task. Interactions scoring 8 or more are flagged, and 10 or 12 should be addressed urgently.</p>
+    <p>Scores support comparison before and after an intervention and help set priorities. They do not predict injury for an individual.</p>
+    <p><a href="https://rmilburn1980.github.io/">Back to portfolio hub</a></p>
+  </footer>
+</div>
+
+<div id="printRecord" aria-hidden="true"></div>
+<div class="bar" id="bar" aria-label="Live exposure summary"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Scoring grids (from the QEC workbook) ---------- */
+var W3=[[2,4,6],[4,6,8],[6,8,10],[8,10,12]];   /* rows weight 1-4, three columns */
+var T3=[[2,4,6],[4,6,8],[6,8,10]];             /* rows time or force 1-3, three columns */
+var T2=[[2,4],[4,6],[6,8]];                    /* rows time or force 1-3, two columns */
+
+var LV=['Low','Moderate','High','Very high'];
+var OVERALL=[
+  {pill:'Acceptable',text:'Acceptable'},
+  {pill:'Investigate',text:'Investigate further'},
+  {pill:'Change soon',text:'Investigate further and change the work situation as soon as possible, within 1 to 6 months'},
+  {pill:'Change now',text:'Investigate and change the work situation immediately, within 1 month'}
+];
+var AREA_DEF={
+  backStatic:{name:'Back',sub:'static task',max:42,cuts:[15,22,29]},
+  backMoving:{name:'Back',sub:'manual handling',max:56,cuts:[20,30,40]},
+  shoulder:{name:'Shoulder and arm',sub:'',max:56,cuts:[20,30,40]},
+  wrist:{name:'Wrist and hand',sub:'',max:46,cuts:[20,30,40]},
+  neck:{name:'Neck',sub:'',max:18,cuts:[6,10,14]}
+};
+var FACTOR_DEF={
+  driving:{name:'Driving',cuts:[1,4,9]},
+  vibration:{name:'Vibrating tools',cuts:[1,4,9]},
+  pace:{name:'Work pace',cuts:[1,4,9]},
+  stress:{name:'Stress',cuts:[1,4,9]}
+};
+var FACTOR_VALUES={driving:[1,4,9],vibration:[1,4,9],pace:[1,4,9],stress:[1,4,9,16]};
+
+/* ---------- Questions: [code, label, detail, short label] ---------- */
+var Q={
+ A:{name:'Back posture',text:'When performing the task, is the back:',hint:'Assess the worst case, at the moment the back is most heavily loaded.',opts:[
+   ['A1','Almost neutral','Less than 20 degrees of flexion, twisting or side bending','Almost neutral'],
+   ['A2','Moderately flexed or twisted or side bent','20 to 60 degrees','Moderately flexed'],
+   ['A3','Excessively flexed or twisted or side bent','More than 60 degrees','Excessively flexed']]},
+ C:{name:'Hand height',text:'When the task is performed, are the hands:',hint:'Assess the hand position when the shoulder and arm are most heavily loaded.',opts:[
+   ['C1','At or below waist height','','Hands at waist or below'],['C2','At about chest height','','Hands at chest height'],['C3','At or above shoulder height','','Hands at shoulder or above']]},
+ D:{name:'Shoulder and arm movement',text:'Is the shoulder and arm movement:',opts:[
+   ['D1','Infrequent','Some intermittent movement','Infrequent arm movement'],['D2','Frequent','Regular movement with some pauses','Frequent arm movement'],['D3','Very frequent','Almost continuous movement','Very frequent arm movement']]},
+ E:{name:'Wrist posture',text:'Is the task performed with:',hint:'Assess the most awkward wrist posture during the task.',opts:[
+   ['E1','An almost straight wrist','Within about 15 degrees of neutral','Straight wrist'],['E2','A deviated or bent wrist','','Bent wrist']]},
+ F:{name:'Wrist repeats',text:'Are similar motion patterns repeated:',hint:'Wrist, hand and forearm movement, not finger movement.',opts:[
+   ['F1','10 times per minute or less','','Up to 10 a minute'],['F2','11 to 20 times per minute','','11 to 20 a minute'],['F3','More than 20 times per minute','','Over 20 a minute']]},
+ G:{name:'Neck posture',text:'When performing the task, is the head and neck bent or twisted?',hint:'Bent or twisted means more than 20 degrees relative to the torso.',opts:[
+   ['G1','No','','Neck neutral'],['G2','Yes, occasionally','','Neck bent sometimes'],['G3','Yes, continuously','','Neck bent continuously']]},
+ H:{name:'Weight handled',text:'Is the maximum weight handled manually by you in this task?',hint:'The weight borne by the worker, not the weight handled with equipment.',opts:[
+   ['H1','Light','5 kg or less','Light load'],['H2','Moderate','6 to 10 kg','Moderate load'],['H3','Heavy','11 to 20 kg','Heavy load'],['H4','Very heavy','More than 20 kg','Very heavy load']]},
+ I:{name:'Time on task',text:'On average, how much time do you spend per day on this task?',opts:[
+   ['I1','Less than 2 hours','','Under 2 hours'],['I2','2 to 4 hours','','2 to 4 hours'],['I3','More than 4 hours','','Over 4 hours']]},
+ J:{name:'Hand force',text:'When performing this task, is the maximum force level exerted by one hand?',hint:'Answer for one hand, even if the task uses two.',opts:[
+   ['J1','Low','For example less than 1 kg','Low force'],['J2','Medium','For example 1 to 4 kg','Medium force'],['J3','High','For example more than 4 kg','High force']]},
+ K:{name:'Visual demand',text:'Is the visual demand of this task:',opts:[
+   ['K1','Low','Almost no need to view fine details','Low visual demand'],['K2','High','Need to view some fine details. Give details below.','High visual demand']]},
+ L:{name:'Driving',text:'At work do you drive a vehicle for:',hint:'Driving at work only. Choose the first answer if you do not drive.',opts:[
+   ['L1','Less than one hour per day, or never','','Little or no driving'],['L2','Between 1 and 4 hours per day','','Driving 1 to 4 hours'],['L3','More than 4 hours per day','','Driving over 4 hours']]},
+ M:{name:'Vibrating tools',text:'At work do you use vibrating tools for:',hint:'Choose the first answer if you do not use vibrating tools.',opts:[
+   ['M1','Less than one hour per day, or never','','Little or no vibration'],['M2','Between 1 and 4 hours per day','','Vibration 1 to 4 hours'],['M3','More than 4 hours per day','','Vibration over 4 hours']]},
+ N:{name:'Keeping up',text:'Do you have difficulty keeping up with this task?',opts:[
+   ['N1','Never','','Keeps up'],['N2','Sometimes','','Sometimes struggles'],['N3','Often','Give details below.','Often struggles']]},
+ O:{name:'Stress',text:'In general, how do you find this job?',opts:[
+   ['O1','Not at all stressful','','Not stressful'],['O2','Mildly stressful','','Mildly stressful'],['O3','Moderately stressful','Give details below.','Moderately stressful'],['O4','Very stressful','Give details below.','Very stressful']]}
+};
+var B_STATIC=[['B1','No','','Not static'],['B2','Yes','Static for most of the time','Static']];
+var B_MOVING=[['B3','Infrequent','Around 3 times per minute or less','Infrequent back movement'],['B4','Frequent','Around 8 times per minute','Frequent back movement'],['B5','Very frequent','Around 12 times per minute or more','Very frequent back movement']];
+var KEYS=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
+var SHORT={},FULL={},VALID={};
+(function(){
+  function reg(list){list.forEach(function(o){SHORT[o[0]]=o[3];FULL[o[0]]=o[1]+(o[2]?' ('+o[2]+')':'');});}
+  Object.keys(Q).forEach(function(k){reg(Q[k].opts);VALID[k]=Q[k].opts.map(function(o){return o[0];});});
+  reg(B_STATIC);reg(B_MOVING);
+  VALID.B=['B1','B2','B3','B4','B5'];
+})();
+var QNAME={A:'Back posture',B:'Back movement',C:'Hand height',D:'Shoulder and arm movement',E:'Wrist posture',F:'Wrist repeats',G:'Neck posture',H:'Weight handled',I:'Time on task',J:'Hand force',K:'Visual demand',L:'Driving',M:'Vibrating tools',N:'Keeping up',O:'Stress'};
+
+function levelOf(v,cuts){return v<=cuts[0]?0:v<=cuts[1]?1:v<=cuts[2]?2:3;}
+function ix(c){return parseInt(String(c).slice(1),10)-1;}
+function bix(c,mode){return mode==='static'?ix(c):ix(c)-2;}
+function sum(a){var s=0;for(var i=0;i<a.length;i++)s+=a[i].score;return s;}
+function item(area,name,codes,v){return {area:area,name:name,codes:codes,labels:codes.map(function(c){return SHORT[c]||c;}),score:v};}
+
+function compute(ans,mode){
+  for(var n=0;n<KEYS.length;n++){if(!ans[KEYS[n]])return null;}
+  var Bc=ans.B;
+  if(mode==='static'&&!(Bc==='B1'||Bc==='B2'))return null;
+  if(mode==='moving'&&!(Bc==='B3'||Bc==='B4'||Bc==='B5'))return null;
+  var A=ix(ans.A),B=bix(Bc,mode),C=ix(ans.C),D=ix(ans.D),E=ix(ans.E),F=ix(ans.F),G=ix(ans.G),
+      H=ix(ans.H),I=ix(ans.I),J=ix(ans.J),K=ix(ans.K);
+
+  var back=[
+    item('Back','Back posture and weight',[ans.A,ans.H],W3[H][A]),
+    item('Back','Back posture and duration',[ans.A,ans.I],T3[I][A]),
+    item('Back','Duration and weight',[ans.I,ans.H],W3[H][I])
+  ];
+  if(mode==='static'){
+    back.push(item('Back','Static posture and duration',[ans.B,ans.I],T2[I][B]));
+  }else{
+    back.push(item('Back','Movement frequency and weight',[ans.B,ans.H],W3[H][B]));
+    back.push(item('Back','Movement frequency and duration',[ans.B,ans.I],T3[I][B]));
+  }
+  var shoulder=[
+    item('Shoulder and arm','Height and weight',[ans.C,ans.H],W3[H][C]),
+    item('Shoulder and arm','Height and duration',[ans.C,ans.I],T3[I][C]),
+    item('Shoulder and arm','Duration and weight',[ans.I,ans.H],W3[H][I]),
+    item('Shoulder and arm','Movement frequency and weight',[ans.D,ans.H],W3[H][D]),
+    item('Shoulder and arm','Movement frequency and duration',[ans.D,ans.I],T3[I][D])
+  ];
+  var wrist=[
+    item('Wrist and hand','Wrist posture and force',[ans.E,ans.J],T2[J][E]),
+    item('Wrist and hand','Wrist posture and duration',[ans.E,ans.I],T2[I][E]),
+    item('Wrist and hand','Repeated motion and force',[ans.F,ans.J],T3[J][F]),
+    item('Wrist and hand','Repeated motion and duration',[ans.F,ans.I],T3[I][F]),
+    item('Wrist and hand','Duration and force',[ans.I,ans.J],T3[J][I])
+  ];
+  var neck=[
+    item('Neck','Neck posture and duration',[ans.G,ans.I],T3[I][G]),
+    item('Neck','Visual demand and duration',[ans.K,ans.I],T2[I][K])
+  ];
+  var bd=mode==='static'?AREA_DEF.backStatic:AREA_DEF.backMoving;
+  var areas={
+    back:{def:bd,items:back},
+    shoulder:{def:AREA_DEF.shoulder,items:shoulder},
+    wrist:{def:AREA_DEF.wrist,items:wrist},
+    neck:{def:AREA_DEF.neck,items:neck}
+  };
+  var order=['back','shoulder','wrist','neck'],X=0,flagged=[];
+  order.forEach(function(k){
+    var a=areas[k];
+    a.total=sum(a.items);
+    a.level=levelOf(a.total,a.def.cuts);
+    X+=a.total;
+    a.items.forEach(function(it){if(it.score>=8)flagged.push(it);});
+  });
+  flagged.sort(function(p,q){return q.score-p.score;});
+  var factors={};
+  Object.keys(FACTOR_DEF).forEach(function(k){
+    var codeKey={driving:'L',vibration:'M',pace:'N',stress:'O'}[k];
+    var v=FACTOR_VALUES[k][ix(ans[codeKey])];
+    factors[k]={name:FACTOR_DEF[k].name,score:v,level:levelOf(v,FACTOR_DEF[k].cuts),code:ans[codeKey]};
+  });
+  var Xmax=mode==='static'?162:176;
+  var pct=Math.round(X/Xmax*100);
+  var ol=pct<=40?0:pct<=50?1:pct<=70?2:3;
+  return {mode:mode,areas:areas,factors:factors,X:X,Xmax:Xmax,pct:pct,overallLevel:ol,flagged:flagged};
+}
+window.QEC={compute:compute};
+
+var OBS=[{g:'Back',qs:['A','B']},{g:'Shoulder and arm',qs:['C','D']},{g:'Wrist and hand',qs:['E','F']},{g:'Neck',qs:['G']}];
+var WRK=[{g:'Load, time and force',qs:['H','I','J']},{g:'Visual demand',qs:['K']},{g:'Driving and vibrating tools',qs:['L','M']},{g:'Pace and stress',qs:['N','O']}];
+
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function optsHTML(name,list){
+  var n=list.length;
+  return '<div class="opts">'+list.map(function(o,i){
+    var g=n>1?(i/(n-1)).toFixed(2):'0';
+    return '<label class="opt"><input type="radio" name="'+name+'" value="'+o[0]+'">'+
+      '<span class="face" style="--g:'+g+'"><span class="otxt">'+esc(o[1])+(o[2]?'<small>'+esc(o[2])+'</small>':'')+'</span></span></label>';
+  }).join('')+'</div>';
+}
+function qHTML(k){
+  if(k==='B'){
+    return '<div class="q" id="q-B"><div class="qh"><span class="qt">Back movement. Select only one of the two task options.</span></div>'+
+      '<div class="toggle" role="radiogroup" aria-label="Back task type">'+
+      '<label><input type="radio" name="bmode" value="static"><span>Seated or standing, stationary</span></label>'+
+      '<label><input type="radio" name="bmode" value="moving"><span>Lifting, pushing or pulling, carrying</span></label></div>'+
+      '<div class="bgroup" data-mode="static"><p class="bq">Does the back remain in a static position most of the time?</p>'+optsHTML('q-B',B_STATIC)+'</div>'+
+      '<div class="bgroup" data-mode="moving"><p class="bq">Is the movement of the back:</p>'+optsHTML('q-B',B_MOVING)+'</div></div>';
+  }
+  var q=Q[k];
+  return '<div class="q" id="q-'+k+'" role="radiogroup" aria-labelledby="q-'+k+'-t"><div class="qh"><span class="qt" id="q-'+k+'-t">'+esc(q.text)+'</span></div>'+
+    (q.hint?'<p class="hint">'+esc(q.hint)+'</p>':'')+optsHTML('q-'+k,q.opts)+'</div>';
+}
+function groupsHTML(groups){
+  return groups.map(function(g){return '<section class="grp"><h3 class="gh">'+esc(g.g)+'</h3>'+g.qs.map(qHTML).join('')+'</section>';}).join('');
+}
+$('#obsQs').innerHTML=groupsHTML(OBS);
+$('#wrkQs').innerHTML=groupsHTML(WRK);
+
+/* ---------- State ---------- */
+var state={ans:{},mode:'moving',isExample:false,loadedId:null,cmpId:'',history:[]};
+var HKEY='qec-history-v1';
+var memHistory=null,storageOK=true;
+
+var EXAMPLE={
+  ans:{A:'A2',B:'B4',C:'C2',D:'D2',E:'E2',F:'F2',G:'G2',H:'H2',I:'I3',J:'J2',K:'K2',L:'L1',M:'M1',N:'N2',O:'O2'},
+  mode:'moving',
+  worker:'Example operative',observer:'Example observer',task:'Example: locker fitting',
+  nK:'Example: fine alignment of fixings by eye.',nN:'',nO:'',nAdd:'Example data only.',nSug:'Example: raise the work height with a lift table.',nAct:''
+};
+function todayStr(){var d=new Date();var m=('0'+(d.getMonth()+1)).slice(-2),day=('0'+d.getDate()).slice(-2);return d.getFullYear()+'-'+m+'-'+day;}
+
+function syncInputs(){
+  $$('#obsQs input[type=radio], #wrkQs input[type=radio]').forEach(function(r){
+    if(r.name==='bmode'){r.checked=(r.value===state.mode);}
+    else{var k=r.name.slice(2);r.checked=(state.ans[k]===r.value);}
+  });
+  $$('.bgroup').forEach(function(g){g.hidden=(g.getAttribute('data-mode')!==state.mode);});
+  $('#exampleNote').hidden=!state.isExample;
+  updateNeeds();
+}
+function updateNeeds(){
+  function set(id,on,txt){
+    var el=$(id);var tag=$('.need',el);
+    if(on&&!tag){var s=document.createElement('span');s.className='need';s.textContent=txt;el.appendChild(s);}
+    if(!on&&tag){tag.remove();}
+  }
+  set('#lblK',state.ans.K==='K2','Asked for');
+  set('#lblN',state.ans.N==='N3','Asked for');
+  set('#lblO',state.ans.O==='O3'||state.ans.O==='O4','Asked for');
+}
+
+/* ---------- Rendering ---------- */
+function gauge(value,max,cuts,label){
+  var edges=[0].concat(cuts,[max]),segs='',ticks='',i;
+  for(i=0;i<4;i++){segs+='<span class="seg lv'+i+'" style="flex:'+(edges[i+1]-edges[i])+' 1 0"></span>';}
+  var pos=Math.min(99.5,Math.max(0.5,value/max*100));
+  cuts.forEach(function(c){ticks+='<span style="left:'+(c/max*100).toFixed(2)+'%">'+c+'</span>';});
+  return '<div class="gauge" role="img" aria-label="'+esc(label)+'"><div class="track">'+segs+'<span class="mark" style="left:'+pos.toFixed(2)+'%"></span></div><div class="ticks">'+ticks+'</div></div>';
+}
+function answeredCount(){
+  var n=0;KEYS.forEach(function(k){if(state.ans[k])n++;});
+  return n;
+}
+function renderResults(res){
+  var el=$('#resultsBody');
+  if(!res){
+    var n=answeredCount();
+    el.innerHTML='<div class="card hero"><h2>Exposure results</h2><p class="empty">Answer all 15 questions to see the exposure scores. '+n+' of 15 answered.</p>'+
+      '<div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="15" aria-valuenow="'+n+'"><i style="width:'+(n/15*100).toFixed(1)+'%"></i></div></div>';
+    return;
+  }
+  var o=OVERALL[res.overallLevel];
+  var html='<div class="card hero lv'+res.overallLevel+'">'+
+    '<h2>Overall exposure</h2>'+
+    '<div class="hero-top"><div class="big">'+res.pct+'<sup>%</sup></div>'+
+    '<div class="hero-meta"><span class="pill lv'+res.overallLevel+'">'+o.pill+'</span>'+
+    '<span class="say">'+esc(o.text)+'</span>'+
+    '<span class="of">'+res.X+' of '+res.Xmax+' possible, '+(res.mode==='static'?'static back task':'manual handling back task')+'</span></div></div>'+
+    gauge(res.pct,100,[40,50,70],'Overall exposure '+res.pct+' percent, '+o.text)+
+    '<p class="cap">Percentage of maximum. Zones: acceptable to 40, investigate 41 to 50, change soon 51 to 70, change now above 70.</p></div>';
+
+  html+='<div class="card"><h2 style="margin-bottom:0">Body areas</h2><div class="areas">';
+  ['back','shoulder','wrist','neck'].forEach(function(k){
+    var a=res.areas[k];
+    html+='<article class="area"><div class="area-head"><h3>'+esc(a.def.name)+(a.def.sub?'<small>'+esc(a.def.sub)+'</small>':'')+'</h3>'+
+      '<div class="area-right"><span class="score">'+a.total+'<span>of '+a.def.max+'</span></span><span class="pill lv'+a.level+'">'+LV[a.level]+'</span></div></div>'+
+      gauge(a.total,a.def.max,a.def.cuts,a.def.name+' score '+a.total+', '+LV[a.level])+'</article>';
+  });
+  html+='</div>';
+  html+='<h3 class="sec-h" style="margin-top:20px">Other factors</h3><div class="facs">';
+  ['driving','vibration','pace','stress'].forEach(function(k){
+    var f=res.factors[k];
+    html+='<div class="fac"><b>'+esc(f.name)+'</b><span><span class="fs">'+f.score+'</span> <span class="pill lv'+f.level+'">'+LV[f.level]+'</span></span></div>';
+  });
+  html+='</div></div>';
+
+  html+='<div class="card"><h2 style="margin-bottom:0">Where to act first</h2>';
+  if(res.flagged.length){
+    html+='<p class="lead" style="margin-top:6px">'+res.flagged.length+' interaction'+(res.flagged.length===1?' scores':'s score')+' 8 or more. Scores of 10 or 12 should be addressed urgently.</p><ul class="first">';
+    res.flagged.slice(0,8).forEach(function(it){
+      var lv=it.score>=10?3:2;
+      html+='<li><span class="badge lv'+lv+'">'+it.score+'</span><span class="what">'+esc(it.area)+': '+esc(it.name.toLowerCase())+'<small>'+esc(it.labels.join(' with '))+'</small></span></li>';
+    });
+    html+='</ul>';
+  }else{
+    html+='<p class="empty">No single interaction scores 8 or more.</p>';
+  }
+  html+='<details><summary>Full score breakdown</summary><div class="brk">';
+  ['back','shoulder','wrist','neck'].forEach(function(k){
+    var a=res.areas[k];
+    html+='<h4>'+esc(a.def.name)+'</h4>';
+    a.items.forEach(function(it){
+      var cls=it.score>=10?'u':it.score>=8?'w':'';
+      html+='<div class="brow '+cls+'"><span class="nm">'+esc(it.name)+'<i>'+esc(it.labels.join(' with '))+'</i></span><span class="mini"><i style="width:'+(it.score/12*100).toFixed(0)+'%"></i></span><span class="v">'+it.score+'</span></div>';
+    });
+  });
+  html+='</div></details></div>';
+  el.innerHTML=html;
+}
+
+/* ---------- Scores for a record or the current form ---------- */
+function snap(res){
+  return {mode:res.mode,pct:res.pct,X:res.X,level:res.overallLevel,
+    back:res.areas.back.total,shoulder:res.areas.shoulder.total,wrist:res.areas.wrist.total,neck:res.areas.neck.total,
+    driving:res.factors.driving.score,vibration:res.factors.vibration.score,pace:res.factors.pace.score,stress:res.factors.stress.score};
+}
+function fmtDate(d){
+  if(!d)return '';
+  try{return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch(e){return d;}
+}
+function fmtStamp(iso){
+  try{return new Date(iso).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});}catch(e){return iso;}
+}
+
+/* ---------- Saved history: storage ---------- */
+function str(v,max){return typeof v==='string'?v.slice(0,max):'';}
+function cleanRecord(r){
+  if(!r||typeof r!=='object')return null;
+  var mode=r.mode;
+  if(mode!=='static'&&mode!=='moving')return null;
+  if(!r.ans||typeof r.ans!=='object')return null;
+  var ans={};
+  for(var i=0;i<KEYS.length;i++){
+    var k=KEYS[i],v=r.ans[k];
+    if(typeof v!=='string'||VALID[k].indexOf(v)<0)return null;
+    ans[k]=v;
+  }
+  if(compute(ans,mode)===null)return null;
+  var n=r.notes&&typeof r.notes==='object'?r.notes:{};
+  var saved=(typeof r.saved==='string'&&!isNaN(Date.parse(r.saved)))?r.saved:new Date().toISOString();
+  return {
+    id:(typeof r.id==='string'&&/^[A-Za-z0-9_-]{1,40}$/.test(r.id))?r.id:newId(),
+    saved:saved,
+    date:(typeof r.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(r.date))?r.date:'',
+    worker:str(r.worker,200),observer:str(r.observer,200),task:str(r.task,300),
+    mode:mode,ans:ans,
+    notes:{K:str(n.K,2000),N:str(n.N,2000),O:str(n.O,2000),add:str(n.add,2000),sug:str(n.sug,2000),act:str(n.act,2000)},
+    example:r.example===true
+  };
+}
+function newId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function readHistory(){
+  var list=[];
+  try{
+    var raw=window.localStorage.getItem(HKEY);
+    storageOK=true;
+    if(raw){var arr=JSON.parse(raw);if(Array.isArray(arr)){arr.forEach(function(x){var c=cleanRecord(x);if(c)list.push(c);});}}
+  }catch(e){storageOK=false;list=memHistory||[];}
+  return list;
+}
+function writeHistory(){
+  memHistory=state.history;
+  try{window.localStorage.setItem(HKEY,JSON.stringify(state.history));storageOK=true;}catch(e){storageOK=false;}
+  $('#storageWarn').hidden=storageOK;
+}
+function sortHistory(){state.history.sort(function(a,b){return Date.parse(b.saved)-Date.parse(a.saved);});}
+function findIdx(id){for(var i=0;i<state.history.length;i++){if(state.history[i].id===id)return i;}return -1;}
+
+function getNotes(){return {K:$('#nK').value,N:$('#nN').value,O:$('#nO').value,add:$('#nAdd').value,sug:$('#nSug').value,act:$('#nAct').value};}
+function currentRecord(){
+  var n=getNotes();
+  return cleanRecord({
+    id:newId(),saved:new Date().toISOString(),date:$('#fDate').value,
+    worker:$('#fWorker').value,observer:$('#fObserver').value,task:$('#fTask').value,
+    mode:state.mode,ans:state.ans,notes:n,example:state.isExample
+  });
+}
+function fillForm(rec){
+  state.ans=JSON.parse(JSON.stringify(rec.ans));state.mode=rec.mode;state.isExample=!!rec.example;
+  $('#fDate').value=rec.date||'';$('#fWorker').value=rec.worker;$('#fObserver').value=rec.observer;$('#fTask').value=rec.task;
+  $('#nK').value=rec.notes.K;$('#nN').value=rec.notes.N;$('#nO').value=rec.notes.O;
+  $('#nAdd').value=rec.notes.add;$('#nSug').value=rec.notes.sug;$('#nAct').value=rec.notes.act;
+}
+
+/* ---------- Saved history: rendering ---------- */
+function recTitle(r){return r.task||'Untitled task';}
+function renderHistory(){
+  var box=$('#histList');
+  $('#storageWarn').hidden=storageOK;
+  $('#btnCsv').disabled=!state.history.length;
+  $('#btnBackup').disabled=!state.history.length;
+  if(!state.history.length){
+    box.innerHTML='<p class="empty" style="grid-column:1 / -1">No saved assessments yet. Complete an assessment and press Save assessment.</p>';
+    renderCompareSelect();
+    return;
+  }
+  box.innerHTML=state.history.map(function(r){
+    var res=compute(r.ans,r.mode),s=snap(res),o=OVERALL[res.overallLevel];
+    var chips=[['Back','back'],['Arm','shoulder'],['Wrist','wrist'],['Neck','neck']].map(function(c){
+      var a=res.areas[c[1]];return '<span class="bchip lv'+a.level+'">'+c[0]+' <b>'+a.total+'</b></span>';
+    }).join('');
+    var meta=[fmtDate(r.date),r.worker,r.observer?('Observer: '+r.observer):''].filter(Boolean).join(', ');
+    return '<article class="rec'+(r.id===state.loadedId?' is-loaded':'')+'" data-id="'+esc(r.id)+'">'+
+      '<div class="rec-title">'+esc(recTitle(r))+(r.example?'<span class="tagex">Example</span>':'')+'</div>'+
+      '<p class="rec-meta">'+esc(meta||'No date or worker recorded')+'<br>Saved '+esc(fmtStamp(r.saved))+'</p>'+
+      '<div class="rec-score"><span class="rec-big">'+s.pct+'%</span><span class="pill lv'+res.overallLevel+'">'+o.pill+'</span></div>'+
+      '<div class="rec-chips">'+chips+'</div>'+
+      '<div class="rec-actions"><button class="btn sm" type="button" data-act="load" aria-label="Load '+esc(recTitle(r))+'">Load</button>'+
+      '<button class="btn sm" type="button" data-act="compare" aria-label="Compare '+esc(recTitle(r))+' with the form">Compare</button>'+
+      '<button class="btn sm danger" type="button" data-act="delete" aria-label="Delete '+esc(recTitle(r))+'">Delete</button></div></article>';
+  }).join('');
+  renderCompareSelect();
+}
+function renderCompareSelect(){
+  var sel=$('#cmpSel');
+  var opts='<option value="">Choose a saved assessment</option>'+state.history.map(function(r){
+    var res=compute(r.ans,r.mode);
+    return '<option value="'+esc(r.id)+'">'+esc((fmtDate(r.date)||'No date')+', '+recTitle(r)+', '+res.pct+'%')+'</option>';
+  }).join('');
+  sel.innerHTML=opts;
+  if(state.cmpId&&findIdx(state.cmpId)<0)state.cmpId='';
+  sel.value=state.cmpId;
+}
+function renderCompare(res){
+  var body=$('#compareBody');
+  var idx=state.cmpId?findIdx(state.cmpId):-1;
+  if(idx<0){body.innerHTML='<p class="empty">'+(state.history.length?'Choose a saved assessment to compare.':'Save an assessment first, then compare it here.')+'</p>';return;}
+  var rec=state.history[idx],b=snap(compute(rec.ans,rec.mode));
+  var now=res?snap(res):null;
+  var rows=[['Overall exposure %','pct'],['Back','back'],['Shoulder and arm','shoulder'],['Wrist and hand','wrist'],['Neck','neck'],['Driving','driving'],['Vibrating tools','vibration'],['Work pace','pace'],['Stress','stress']];
+  var html='<div class="tbl-wrap"><table><thead><tr><th>Measure</th><th class="n">Saved</th><th class="n">Now</th><th class="n">Change</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    var bv=b[r[1]],nv=now?now[r[1]]:null,ch='',cls='d-same';
+    if(nv!==null&&nv!==undefined){
+      var d=nv-bv;
+      if(d<0){ch=d+' better';cls='d-good';}else if(d>0){ch='+'+d+' worse';cls='d-bad';}else{ch='no change';}
+    }
+    html+='<tr><td>'+r[0]+'</td><td class="n">'+bv+(r[1]==='pct'?'%':'')+'</td><td class="n">'+(nv===null||nv===undefined?'n/a':nv+(r[1]==='pct'?'%':''))+'</td><td class="n '+cls+'">'+(ch||'n/a')+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  var warn=(now&&now.mode!==b.mode)?' The back task type differs, so back scores are not like for like.':'';
+  html+='<p class="meta">Saved '+esc(fmtStamp(rec.saved))+'. Task: '+esc(recTitle(rec))+'.'+warn+(now?'':' Answer all questions to see the comparison.')+'</p>';
+  body.innerHTML=html;
+}
+function renderBar(res){
+  var bar=$('#bar');
+  if(!res){bar.innerHTML='<div class="bar-row"><div class="bar-main"><span>'+answeredCount()+' of 15 answered</span></div><a class="go" href="#results">Results</a></div>';return;}
+  var o=OVERALL[res.overallLevel];
+  var chips=[['Back','back'],['Arm','shoulder'],['Wrist','wrist'],['Neck','neck']].map(function(c){
+    var a=res.areas[c[1]];return '<span class="bchip lv'+a.level+'">'+c[0]+' <b>'+a.total+'</b></span>';
+  }).join('');
+  bar.innerHTML='<div class="bar-row"><div class="bar-main"><span class="bar-big">'+res.pct+'%</span><span class="pill lv'+res.overallLevel+'">'+o.pill+'</span></div><a class="go" href="#results">Results</a></div><div class="bar-chips">'+chips+'</div>';
+}
+function renderToolbar(res){
+  $('#btnSave').disabled=!res;
+  $('#btnPrint').disabled=!res;
+  $('#btnUpdate').hidden=!(state.loadedId&&findIdx(state.loadedId)>=0);
+  $('#btnUpdate').disabled=!res;
+}
+
+/* ---------- Print record ---------- */
+function buildPrint(){
+  var el=$('#printRecord'),res=lastRes;
+  if(!res){el.innerHTML='<h1>Quick Exposure Check</h1><p>Assessment incomplete. Answer all 15 questions before printing.</p>';return;}
+  var o=OVERALL[res.overallLevel],n=getNotes();
+  var h='<h1>Quick Exposure Check</h1><p class="pr-sub">Assessment record</p>';
+  if(state.isExample)h+='<p class="pr-example">EXAMPLE DATA, NOT A REAL ASSESSMENT</p>';
+  h+='<div class="pr-sec"><h2>Assessment details</h2><table><tbody>'+
+    '<tr><th>Date</th><td>'+esc(fmtDate($('#fDate').value))+'</td><th>Worker</th><td>'+esc($('#fWorker').value)+'</td></tr>'+
+    '<tr><th>Observer(s)</th><td>'+esc($('#fObserver').value)+'</td><th>Area and task</th><td>'+esc($('#fTask').value)+'</td></tr>'+
+    '</tbody></table></div>';
+  h+='<div class="pr-sec"><h2>Result</h2><div class="pr-big"><b>'+res.pct+'%</b><div><span class="pr-lv lv'+res.overallLevel+'">'+esc(o.pill)+'</span><br>'+esc(o.text)+'<br>'+res.X+' of '+res.Xmax+' possible, '+(res.mode==='static'?'static back task':'manual handling back task')+'</div></div></div>';
+  h+='<div class="pr-sec"><h2>Body areas</h2><table><thead><tr><th>Area</th><th class="n">Score</th><th class="n">Maximum</th><th>Exposure level</th></tr></thead><tbody>';
+  ['back','shoulder','wrist','neck'].forEach(function(k){
+    var a=res.areas[k];
+    h+='<tr><td>'+esc(a.def.name)+(a.def.sub?' ('+esc(a.def.sub)+')':'')+'</td><td class="n">'+a.total+'</td><td class="n">'+a.def.max+'</td><td><span class="pr-lv lv'+a.level+'">'+LV[a.level]+'</span></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="pr-sec"><h2>Other factors</h2><table><thead><tr><th>Factor</th><th class="n">Score</th><th>Exposure level</th></tr></thead><tbody>';
+  ['driving','vibration','pace','stress'].forEach(function(k){
+    var f=res.factors[k];
+    h+='<tr><td>'+esc(f.name)+'</td><td class="n">'+f.score+'</td><td><span class="pr-lv lv'+f.level+'">'+LV[f.level]+'</span></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  h+='<div class="pr-sec"><h2>Interactions scoring 8 or more</h2>';
+  if(res.flagged.length){
+    h+='<table><thead><tr><th class="n">Score</th><th>Area</th><th>Interaction</th><th>Answers</th></tr></thead><tbody>';
+    res.flagged.forEach(function(it){
+      h+='<tr><td class="n">'+it.score+(it.score>=10?' (urgent)':'')+'</td><td>'+esc(it.area)+'</td><td>'+esc(it.name)+'</td><td>'+esc(it.labels.join(' with '))+'</td></tr>';
+    });
+    h+='</tbody></table>';
+  }else{h+='<p>No single interaction scores 8 or more.</p>';}
+  h+='</div>';
+  h+='<div class="pr-sec"><h2>Answers given</h2><table><thead><tr><th>Question</th><th>Answer</th></tr></thead><tbody>';
+  KEYS.forEach(function(k){
+    var code=state.ans[k];
+    var qtext=(k==='B')?(state.mode==='static'?'Back movement: does the back remain in a static position most of the time?':'Back movement: how often does the back move?'):Q[k].name+': '+Q[k].text;
+    h+='<tr><td>'+esc(qtext)+'</td><td>'+esc(FULL[code]||code)+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  var notes=[['Visual demand details',n.K],['Keeping up details',n.N],['Stress details',n.O],['Additional details',n.add],['Worker suggestions for improvement',n.sug],['Actions required',n.act]];
+  h+='<div class="pr-sec pr-notes"><h2>Details and actions</h2>'+notes.map(function(x){return '<div><b>'+esc(x[0])+'</b><span>'+(x[1]?esc(x[1]):'None recorded')+'</span></div>';}).join('')+'</div>';
+  var idx=state.cmpId?findIdx(state.cmpId):-1;
+  if(idx>=0){
+    var rec=state.history[idx],b=snap(compute(rec.ans,rec.mode)),now=snap(res);
+    var rows=[['Overall exposure %','pct'],['Back','back'],['Shoulder and arm','shoulder'],['Wrist and hand','wrist'],['Neck','neck'],['Driving','driving'],['Vibrating tools','vibration'],['Work pace','pace'],['Stress','stress']];
+    h+='<div class="pr-sec"><h2>Comparison with saved assessment</h2><p>Saved '+esc(fmtStamp(rec.saved))+', '+esc(recTitle(rec))+'.'+(now.mode!==b.mode?' The back task type differs, so back scores are not like for like.':'')+'</p><table><thead><tr><th>Measure</th><th class="n">Saved</th><th class="n">Now</th><th class="n">Change</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      var d=now[r[1]]-b[r[1]];
+      h+='<tr><td>'+r[0]+'</td><td class="n">'+b[r[1]]+(r[1]==='pct'?'%':'')+'</td><td class="n">'+now[r[1]]+(r[1]==='pct'?'%':'')+'</td><td class="n">'+(d<0?d+' better':d>0?'+'+d+' worse':'no change')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<div class="pr-sign"><div>Observer signature and date</div><div>Worker signature and date</div></div>';
+  h+='<p class="pr-foot">Method: Quick Exposure Check, Li and Buckle (1999), HSE Books CRR251. Overall exposure is the sum of the four body area scores as a percentage of the maximum possible (162 static back task, 176 manual handling back task). Scores support comparison before and after an intervention. They do not predict injury for an individual. Printed '+esc(new Date().toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}))+'.</p>';
+  el.innerHTML=h;
+}
+
+/* ---------- Refresh ---------- */
+var lastRes=null;
+function refresh(){
+  var res=compute(state.ans,state.mode);
+  lastRes=res;
+  renderResults(res);renderCompare(res);renderBar(res);renderToolbar(res);buildPrint();
+}
+function refreshAll(){renderHistory();refresh();}
+
+/* ---------- Events ---------- */
+function onChange(e){
+  var t=e.target;
+  if(!t||t.type!=='radio')return;
+  if(t.name==='bmode'){
+    state.mode=t.value;
+    var b=state.ans.B;
+    if(b&&((state.mode==='static'&&(b==='B3'||b==='B4'||b==='B5'))||(state.mode==='moving'&&(b==='B1'||b==='B2')))){delete state.ans.B;}
+    syncInputs();
+  }else{
+    state.ans[t.name.slice(2)]=t.value;
+    updateNeeds();
+  }
+  refresh();
+}
+$('#obsQs').addEventListener('change',onChange);
+$('#wrkQs').addEventListener('change',onChange);
+
+var TEXT_IDS={fWorker:'worker',fObserver:'observer',fTask:'task',nK:'nK',nN:'nN',nO:'nO',nAdd:'nAdd',nSug:'nSug',nAct:'nAct'};
+function fillText(src){Object.keys(TEXT_IDS).forEach(function(id){$('#'+id).value=src?src[TEXT_IDS[id]]:'';});$('#fDate').value=todayStr();}
+['fDate','fWorker','fObserver','fTask','nK','nN','nO','nAdd','nSug','nAct'].forEach(function(id){
+  $('#'+id).addEventListener('input',function(){buildPrint();});
+});
+
+$('#btnExample').addEventListener('click',function(){
+  state.ans=JSON.parse(JSON.stringify(EXAMPLE.ans));state.mode=EXAMPLE.mode;state.isExample=true;state.loadedId=null;
+  fillText(EXAMPLE);syncInputs();refreshAll();
+});
+$('#btnClear').addEventListener('click',function(){
+  state.ans={};state.mode='moving';state.isExample=false;state.loadedId=null;
+  fillText(null);syncInputs();refreshAll();
+});
+$('#btnSave').addEventListener('click',function(){
+  if(!lastRes)return;
+  var rec=currentRecord();if(!rec)return;
+  state.history.unshift(rec);sortHistory();writeHistory();
+  state.loadedId=rec.id;
+  refreshAll();toast('Assessment saved');
+});
+$('#btnUpdate').addEventListener('click',function(){
+  if(!lastRes||!state.loadedId)return;
+  var idx=findIdx(state.loadedId);if(idx<0)return;
+  var rec=currentRecord();if(!rec)return;
+  rec.id=state.loadedId;
+  state.history[idx]=rec;sortHistory();writeHistory();
+  refreshAll();toast('Saved assessment updated');
+});
+$('#btnPrint').addEventListener('click',function(){
+  if(!lastRes)return;
+  buildPrint();
+  try{window.print();}catch(e){toast('Printing is not available here');}
+});
+window.addEventListener('beforeprint',buildPrint);
+
+$('#cmpSel').addEventListener('change',function(e){state.cmpId=e.target.value;refresh();});
+
+var armTimer=null;
+$('#histList').addEventListener('click',function(e){
+  var btn=e.target.closest('button[data-act]');if(!btn)return;
+  var card=btn.closest('.rec');var id=card.getAttribute('data-id');var idx=findIdx(id);if(idx<0)return;
+  var act=btn.getAttribute('data-act');
+  if(act==='load'){
+    fillForm(state.history[idx]);state.loadedId=id;syncInputs();refreshAll();
+    toast('Assessment loaded');
+    window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  }else if(act==='compare'){
+    state.cmpId=id;$('#cmpSel').value=id;refresh();
+    var cc=$('#compareCard');cc.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+  }else if(act==='delete'){
+    if(!btn.classList.contains('armed')){
+      $$('#histList .armed').forEach(function(b){b.classList.remove('armed');b.textContent='Delete';});
+      btn.classList.add('armed');btn.textContent='Confirm delete';
+      clearTimeout(armTimer);armTimer=setTimeout(function(){btn.classList.remove('armed');btn.textContent='Delete';},3500);
+    }else{
+      clearTimeout(armTimer);
+      state.history.splice(idx,1);
+      if(state.loadedId===id)state.loadedId=null;
+      if(state.cmpId===id)state.cmpId='';
+      writeHistory();refreshAll();toast('Assessment deleted');
+    }
+  }
+});
+
+/* ---------- Export, backup, restore ---------- */
+function download(name,text,mime){
+  var blob=new Blob([text],{type:mime});var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+}
+function csvCell(v){
+  var s=String(v===null||v===undefined?'':v);
+  if(/^[=+\-@\t\r]/.test(s))s="'"+s;   /* stop spreadsheet formulas in text */
+  return '"'+s.replace(/"/g,'""')+'"';
+}
+$('#btnCsv').addEventListener('click',function(){
+  if(!state.history.length)return;
+  var head=['Saved','Assessment date','Worker','Observer','Area and task','Example data','Back task type','Overall %','Overall action','Back','Shoulder and arm','Wrist and hand','Neck','Driving','Vibrating tools','Work pace','Stress']
+    .concat(KEYS.map(function(k){return QNAME[k];}))
+    .concat(['Visual demand details','Keeping up details','Stress details','Additional details','Worker suggestions','Actions required']);
+  var lines=[head.map(csvCell).join(',')];
+  state.history.forEach(function(r){
+    var res=compute(r.ans,r.mode),s=snap(res);
+    var row=[r.saved,r.date,r.worker,r.observer,r.task,r.example?'Yes':'No',r.mode==='static'?'Static':'Manual handling',s.pct,OVERALL[res.overallLevel].text,s.back,s.shoulder,s.wrist,s.neck,s.driving,s.vibration,s.pace,s.stress]
+      .concat(KEYS.map(function(k){return FULL[r.ans[k]];}))
+      .concat([r.notes.K,r.notes.N,r.notes.O,r.notes.add,r.notes.sug,r.notes.act]);
+    lines.push(row.map(csvCell).join(','));
+  });
+  download('qec-assessments.csv','﻿'+lines.join('\r\n'),'text/csv;charset=utf-8');
+  toast('CSV exported');
+});
+$('#btnBackup').addEventListener('click',function(){
+  if(!state.history.length)return;
+  download('qec-backup.json',JSON.stringify({format:'qec-history',version:1,exported:new Date().toISOString(),records:state.history},null,1),'application/json');
+  toast('Backup saved');
+});
+$('#btnRestore').addEventListener('click',function(){$('#fileRestore').click();});
+$('#fileRestore').addEventListener('change',function(e){
+  var f=e.target.files&&e.target.files[0];e.target.value='';
+  if(!f)return;
+  if(f.size>2000000){toast('That file is too large to be a backup');return;}
+  var rd=new FileReader();
+  rd.onload=function(){
+    var data;
+    try{data=JSON.parse(String(rd.result));}catch(err){toast('That file is not a valid backup');return;}
+    var arr=Array.isArray(data)?data:(data&&Array.isArray(data.records)?data.records:null);
+    if(!arr){toast('That file is not a valid backup');return;}
+    var added=0,skipped=0;
+    arr.forEach(function(x){
+      var c=cleanRecord(x);
+      if(!c){skipped++;return;}
+      if(findIdx(c.id)>=0){skipped++;return;}
+      if(state.history.length>=500){skipped++;return;}
+      state.history.push(c);added++;
+    });
+    sortHistory();writeHistory();refreshAll();
+    toast(added+' restored'+(skipped?', '+skipped+' skipped':''));
+  };
+  rd.onerror=function(){toast('Could not read that file');};
+  rd.readAsText(f);
+});
+
+/* ---------- Summary and toast ---------- */
+function summaryText(){
+  var r=lastRes,L=[];
+  L.push('Quick Exposure Check'+(state.isExample?' (example data)':''));
+  L.push('Date: '+$('#fDate').value);
+  L.push('Worker: '+$('#fWorker').value);
+  L.push('Observer(s): '+$('#fObserver').value);
+  L.push('Area and task: '+$('#fTask').value);
+  if(!r){L.push('Assessment incomplete: '+answeredCount()+' of 15 questions answered.');return L.join('\n');}
+  L.push('Overall exposure: '+r.pct+'% ('+r.X+' of '+r.Xmax+'), '+OVERALL[r.overallLevel].text);
+  ['back','shoulder','wrist','neck'].forEach(function(k){var a=r.areas[k];L.push(a.def.name+(a.def.sub?' ('+a.def.sub+')':'')+': '+a.total+' of '+a.def.max+', '+LV[a.level]);});
+  ['driving','vibration','pace','stress'].forEach(function(k){var f=r.factors[k];L.push(f.name+': '+f.score+', '+LV[f.level]);});
+  if(r.flagged.length){L.push('Interactions scoring 8 or more:');r.flagged.forEach(function(it){L.push('  '+it.score+'  '+it.area+', '+it.name.toLowerCase()+' ('+it.labels.join(' with ')+')');});}
+  var act=$('#nAct').value;if(act){L.push('Actions required: '+act);}
+  return L.join('\n');
+}
+function toast(msg){
+  var t=$('#toast');t.textContent=msg;t.hidden=false;
+  clearTimeout(toast._t);toast._t=setTimeout(function(){t.hidden=true;},2400);
+}
+$('#btnCopy').addEventListener('click',function(){
+  var txt=summaryText();
+  function fallback(){
+    var ta=document.createElement('textarea');ta.value=txt;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);toast(ok?'Summary copied':'Copy not available in this browser');
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(function(){toast('Summary copied');},fallback);}
+  else{fallback();}
+});
+
+/* ---------- Start with the example loaded ---------- */
+state.history=readHistory();sortHistory();
+state.ans=JSON.parse(JSON.stringify(EXAMPLE.ans));state.mode=EXAMPLE.mode;state.isExample=true;
+fillText(EXAMPLE);
+syncInputs();
+refreshAll();
+})();
+</script>
+</body>
+</html>
