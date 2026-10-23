@@ -1,0 +1,13 @@
+/* Extra mapping for the Quick Exposure Check page, loaded after theme.css.
+   On this page .btn is a plain outline button and only .btn.primary is the
+   filled one, so the shared gradient is limited to the primary buttons and the
+   danger and armed states keep their own colours. Risk band colours
+   (--low --mod --high --vhigh) are not touched by the theme. */
+.btn:not(.primary):not(.sec):not(.danger){
+  background-image:none;
+  color:inherit;
+}
+.btn.danger.armed{
+  background-image:none;
+  color:var(--ink);
+}
