@@ -46,7 +46,7 @@ input,select{background:var(--bg);color:var(--text);border:1px solid var(--line)
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
-.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:var(--crit)}.kpi.ok .n{color:var(--low)}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
 .tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
 table{border-collapse:collapse;width:100%;font-size:.86rem}
@@ -95,11 +95,10 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 </nav>
 <main>
 <p class="savebar" id="saveNote" role="status"></p>
-<div class="banner" id="banner" hidden>Example data is loaded. The teams, names and ratings are made up so you can see how the dashboard works. It is not a real company. Press Clear all to start with your own teams.</div>
+<div class="banner" id="banner" hidden>Some teams here are example data, tagged Example. They are made up so you can see how the dashboard works. They are not a real company. Remove them with Clear all, or from Team detail.</div>
 <div class="status st-empty" id="status" role="status" aria-live="polite"></div>
 <div class="toolbar">
   <button class="btn" id="btnAdd">Add team files</button>
-  <button class="btn sec" id="btnLocal">Add the matrix from this browser</button>
   <button class="btn sec" id="btnExample">Load example</button>
   <button class="btn sec" id="btnCsv">Download CSV</button>
   <button class="btn sec" id="btnPrint">Print report</button>
@@ -107,7 +106,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <input type="file" id="file" accept="application/json,.json" multiple style="position:absolute;left:-9999px" tabindex="-1" aria-label="Add team data files">
 </div>
 <p class="sm" id="loadNote" role="status"></p>
-<p class="disc">Each team builds its matrix in the <a href="skills-matrix-builder.html">Skills Matrix Builder</a> and uses Save data file. Add those files here, as many as you have. Adding a file for a team that is already here replaces the old one. Names stay in this browser. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
+<p class="disc">A matrix you build or edit in the <a href="skills-matrix-builder.html">Skills Matrix Builder</a> on this browser appears here by itself, and updates as you type. For other teams, use Save data file in the builder and add those files here. If a team appears both ways, the newest one is used. Adding a file for a team that is already here replaces the old one. Names stay in this browser. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
 
 <section id="tab-over">
   <div class="kpis" id="kpis"></div>
@@ -150,7 +149,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <script>
 (function(){
 "use strict";
-var KEY="rmilburn-company-skills-v1",LOCALKEY="rmilburn-skills-matrix-v1",UIK="rmilburn-company-skills-ui";
+var KEY="rmilburn-company-skills-v1",SHK="rmilburn-skills-shared-v1",UIK="rmilburn-company-skills-ui";
 var MAXT=30,MAXP=60,MAXS=40,STALE=90;
 var T=[],dirty=false,storeOk=true,saveT=null,armed=null,armT=null,example=false;
 function $(id){return document.getElementById(id);}
@@ -192,7 +191,7 @@ function cleanTeams(list){
   var out=[],seen={},names={};
   (Array.isArray(list)?list.slice(0,MAXT):[]).forEach(function(t,i){if(!t||typeof t!=="object")return;var m=cleanM(t.m),id=parseInt(t.id,10)||(i+1);if(seen[id])return;seen[id]=1;
     var nm=str(t.name,80)||m.team||("Team "+(i+1));if(names[norm(nm)])return;names[norm(nm)]=1;
-    out.push({id:id,name:nm,saved:dOk(t.saved),loaded:dOk(t.loaded)||today(),ex:t.ex===true,m:m});});
+    out.push({id:id,name:nm,saved:dOk(t.saved),loaded:dOk(t.loaded)||today(),at:parseInt(t.at,10)||0,ex:t.ex===true,m:m});});
   return out;
 }
 function cellOf(m,p,s){return m.cells[p+":"+s]||{lv:0,by:"",on:"",plan:"",note:""};}
@@ -253,10 +252,10 @@ function download(name,text,type){var a=document.createElement("a");a.href=URL.c
 /* adding teams */
 function upsert(name,m,saved,ex){
   var k=norm(name),found=null;T.forEach(function(t){if(norm(t.name)===k)found=t;});
-  if(found){found.m=m;found.saved=saved;found.loaded=today();found.ex=!!ex;return "replaced";}
+  if(found){found.m=m;found.saved=saved;found.loaded=today();found.at=Date.now();found.ex=!!ex;return "replaced";}
   if(T.length>=MAXT)return "full";
   var id=0;T.forEach(function(t){if(t.id>id)id=t.id;});
-  T.push({id:id+1,name:name,saved:saved,loaded:today(),ex:!!ex,m:m});return "added";
+  T.push({id:id+1,name:name,saved:saved,loaded:today(),at:Date.now(),ex:!!ex,m:m});return "added";
 }
 $("btnAdd").onclick=function(){$("file").click();};
 $("file").addEventListener("change",function(ev){
@@ -277,24 +276,27 @@ $("file").addEventListener("change",function(ev){
     rd.readAsText(f);});
   function done(){$("loadNote").textContent=res.join(" ");touch();renderAll();ev.target.value="";}
 });
-$("btnLocal").onclick=function(){
-  var raw=null;try{raw=JSON.parse(localStorage.getItem(LOCALKEY));}catch(e){}
-  if(!raw||typeof raw!=="object"){$("loadNote").textContent="There is no matrix saved in this browser. Build one in the Skills Matrix Builder first, or add a data file.";return;}
-  var m=cleanM(raw);if(!m.people.length||!m.skills.length){$("loadNote").textContent="The matrix saved in this browser is empty, so it was not added.";return;}
-  if(example){T=[];example=false;}
-  var nm=m.team.trim()||"Team from this browser",r=upsert(nm,m,"",raw.example===true);
-  $("loadNote").textContent=nm+": "+(r==="added"?"added":r==="replaced"?"replaced the earlier copy":"not added, the limit is reached")+". It has no saved date, so its age is unknown.";
-  touch();renderAll();
-};
 $("btnClear").onclick=function(){var b=$("btnClear");
-  if(armed==="clear"){T=[];example=false;armed=null;touch();renderAll();b.textContent="Clear all";b.classList.remove("armed");return;}
-  if(!T.length)return;armed="clear";b.textContent="Confirm: remove all teams";b.classList.add("armed");
+  if(armed==="clear"){T=[];example=false;try{localStorage.setItem(SHK,JSON.stringify({teams:[]}));}catch(e){}armed=null;touch();renderAll();b.textContent="Clear all";b.classList.remove("armed");return;}
+  if(!merged().length)return;armed="clear";b.textContent="Confirm: remove all teams";b.classList.add("armed");
   clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear all";b.classList.remove("armed");},5000);};
 $("btnExample").onclick=function(){T=exampleTeams();example=true;touch();renderAll();$("loadNote").textContent="";};
 
 /* views */
-function all(){return T.map(function(t){return {t:t,x:metrics(t)};});}
-function renderAll(){var A=all();renderStatus(A);renderOver(A);renderSkills();renderDetail(A);$("banner").hidden=!example;}
+function live(){
+  var d;try{d=JSON.parse(localStorage.getItem(SHK));}catch(e){}
+  var l=(d&&Array.isArray(d.teams))?d.teams.slice(0,MAXT):[];
+  return cleanTeams(l.map(function(t,i){t=t||{};return {id:i+1,name:t.name,saved:t.saved,loaded:t.saved,at:t.at,ex:t.ex===true,m:t.m};})).map(function(t){t.live=true;return t;});
+}
+function merged(){
+  var out=[],by={};
+  T.forEach(function(t){by[norm(t.name)]=t;});
+  live().forEach(function(t){var k=norm(t.name),o=by[k];if(!o||t.at>=o.at)by[k]=t;});
+  Object.keys(by).forEach(function(k){out.push(by[k]);});
+  return out.sort(function(a,b){return a.name.localeCompare(b.name);});
+}
+function all(){return merged().map(function(t){return {t:t,x:metrics(t)};});}
+function renderAll(){var A=all();renderStatus(A);renderOver(A);renderSkills();renderDetail(A);$("banner").hidden=!A.some(function(a){return a.t.ex;});}
 function renderStatus(A){
   var el=$("status");el.innerHTML="";
   if(!A.length){el.className="status st-empty";add(el,h("strong",{text:"No teams added yet."}),h("div",{class:"sm",text:"Add team data files from the Skills Matrix Builder, or load the example."}));return;}
@@ -317,7 +319,7 @@ function renderOver(A){
   var hr=h("tr",{});[["Team",""],["People","num"],["Cover against target",""],["Critical covered","num"],["Skills short","num"],["Claimed not counted","num"],["Expiring 90 days","num"],["Gaps","num"],["File",""],["Status",""]].forEach(function(c){hr.appendChild(h("th",{class:c[1],text:c[0]}));});
   t.appendChild(h("thead",{},hr));var tb=h("tbody");
   A.slice().sort(function(a,b){return b.x.gaps.length-a.x.gaps.length||a.t.name.localeCompare(b.t.name);}).forEach(function(a){var x=a.x;
-    var fileTxt=a.t.ex?"Example":(x.age===null?"Age unknown":x.age>STALE?x.age+" days old":x.age+" days");
+    var fileTxt=a.t.live?"Live from the builder":a.t.ex?"Example":(x.age===null?"Age unknown":x.age>STALE?x.age+" days old":x.age+" days");
     tb.appendChild(h("tr",{},h("td",{},h("strong",{text:a.t.name}),a.t.ex?h("span",{class:"chip ex",text:"Example",style:"margin-left:6px"}):null),
       h("td",{class:"num",text:String(x.people)}),
       h("td",{},h("span",{class:"bar","aria-hidden":"true"},h("i",{style:"width:"+x.pct+"%"})),h("span",{class:x.pct>=100?"okc":x.pct>=80?"mid":"bad",text:x.pct+"%"})),
@@ -336,7 +338,7 @@ function renderOver(A){
 }
 function skillRows(){
   var g={};
-  T.forEach(function(t){var x=metrics(t);t.m.skills.forEach(function(s){var k=norm(s.name);if(!k)return;var r=g[k]||(g[k]={name:s.name,crit:false,teams:0,need:0,ok:0,zero:[],short:[],tr:0});
+  merged().forEach(function(t){var x=metrics(t);t.m.skills.forEach(function(s){var k=norm(s.name);if(!k)return;var r=g[k]||(g[k]={name:s.name,crit:false,teams:0,need:0,ok:0,zero:[],short:[],tr:0});
     var c=x.cov[s.id];r.teams++;r.need+=s.need;r.ok+=c.ok;r.tr+=c.tr;if(s.crit)r.crit=true;
     if(c.ok===0)r.zero.push(t.name);if(c.ok<s.need)r.short.push(t.name);});});
   return Object.keys(g).map(function(k){return g[k];}).sort(function(a,b){return (b.crit-a.crit)||(b.zero.length-a.zero.length)||(b.short.length-a.short.length)||a.name.localeCompare(b.name);});
@@ -354,16 +356,16 @@ function renderSkills(){
 function renderDetail(A){
   var box=$("teamDetail");box.innerHTML="";
   if(!A.length){box.appendChild(h("p",{class:"sm",text:"No teams yet."}));return;}
-  A.forEach(function(a){var x=a.t&&a.x,id=a.t.id;
+  A.forEach(function(a){var id=a.t.id;
     var d=h("details",{class:"t"});
     var rm=armed==="t"+id;
-    d.appendChild(h("summary",{},h("strong",{text:a.t.name}),h("span",{class:"chip "+(a.x.gaps.length?"g":"ok"),text:plural(a.x.gaps.length,"gap")}),h("span",{class:"sm",text:plural(a.x.notes.length,"note")+". Cover "+a.x.pct+"%. "+(a.t.saved?"File saved "+fmt(a.t.saved)+".":"File date unknown.")})));
+    d.appendChild(h("summary",{},h("strong",{text:a.t.name}),h("span",{class:"chip "+(a.x.gaps.length?"g":"ok"),text:plural(a.x.gaps.length,"gap")}),h("span",{class:"sm",text:plural(a.x.notes.length,"note")+". Cover "+a.x.pct+"%. "+(a.t.live?"Live from the Skills Matrix Builder.":a.t.saved?"File saved "+fmt(a.t.saved)+".":"File date unknown.")})));
     var b=h("div",{class:"body"});
     if(a.x.gaps.length){b.appendChild(h("h3",{text:"Gaps"}));var u=h("ul",{class:"fl"});a.x.gaps.forEach(function(g){u.appendChild(h("li",{class:"g",text:g}));});b.appendChild(u);}
     if(a.x.notes.length){b.appendChild(h("h3",{text:"Notes"}));var u2=h("ul",{class:"fl"});a.x.notes.forEach(function(g){u2.appendChild(h("li",{class:"o",text:g}));});b.appendChild(u2);}
     if(!a.x.gaps.length&&!a.x.notes.length)b.appendChild(h("p",{class:"sm",text:"No gaps or notes."}));
-    b.appendChild(h("div",{style:"margin-top:12px"},h("button",{class:"btn danger small"+(rm?" armed":""),type:"button",text:rm?"Confirm: remove this team":"Remove this team",onclick:function(){
-      if(rm){T=T.filter(function(t){return t.id!==id;});armed=null;touch();renderAll();}else{armed="t"+id;clearTimeout(armT);armT=setTimeout(function(){armed=null;renderAll();},5000);renderAll();var dd=document.querySelectorAll("details.t");}}})));
+    b.appendChild(h("div",{style:"margin-top:12px"},h("button",{class:"btn danger small"+(rm?" armed":""),type:"button",text:rm?"Confirm: remove this team":(a.t.live?"Remove from this view":"Remove this team"),onclick:function(){
+      if(rm){if(a.t.live){try{var dd=JSON.parse(localStorage.getItem(SHK)),k=norm(a.t.name);dd.teams=dd.teams.filter(function(t){return norm(t&&t.name)!==k;});localStorage.setItem(SHK,JSON.stringify(dd));}catch(e){}}else{T=T.filter(function(t){return t.id!==id;});}armed=null;touch();renderAll();}else{armed="t"+id;clearTimeout(armT);armT=setTimeout(function(){armed=null;renderAll();},5000);renderAll();var dd=document.querySelectorAll("details.t");}}})));
     d.appendChild(b);if(rm)d.open=true;box.appendChild(d);});
 }
 
@@ -410,10 +412,12 @@ function exampleTeams(){
   return [{id:1,name:t1.team,saved:off(-12),loaded:today(),ex:true,m:t1},{id:2,name:t2.team,saved:off(-130),loaded:today(),ex:true,m:t2},{id:3,name:t3.team,saved:off(-5),loaded:today(),ex:true,m:t3}];
 }
 
-var sv=load();if(sv)T=sv;else{T=exampleTeams();example=true;saveNow();}
+var sv=load();if(sv)T=sv;else if(!live().length){T=exampleTeams();example=true;saveNow();}
 renderAll();renderSave();
 var ui=uiGet();showTab(["over","skills","teams","guide"].indexOf(ui.tab)>=0?ui.tab:"over");
-window.__cd={metrics:metrics,teams:function(){return T;},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};
+window.addEventListener("storage",function(e){if(e.key===SHK)renderAll();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")renderAll();});
+window.__cd={metrics:metrics,teams:function(){return merged();},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};
 })();
 </script>
 <!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->

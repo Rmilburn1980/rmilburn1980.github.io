@@ -46,7 +46,7 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visi
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
-.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:var(--crit)}.kpi.ok .n{color:var(--low)}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
 .f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .f label,.row label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
@@ -133,6 +133,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 
 <section id="tab-setup" hidden>
   <div class="card"><h2>Settings</h2>
+    <p class="sm">Whatever you enter here appears in the <a href="company-skills-dashboard.html">Company Skills Dashboard</a> straight away, under the team name below. Give each team a different name.</p>
     <div class="f"><label>Sign-off is valid for (months)<input type="number" id="setMonths" min="1" max="60"></label>
     <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label></div>
   </div>
@@ -298,7 +299,19 @@ function analyse(){
 function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
 function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
 function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
-function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+var SHK="rmilburn-skills-shared-v1";
+/* mirror this matrix into the shared store the Company Skills Dashboard reads, so edits show there at once */
+function publish(){
+  try{
+    var d;try{d=JSON.parse(localStorage.getItem(SHK));}catch(e){}if(!d||!Array.isArray(d.teams))d=[];else d=d.teams;
+    var u=uiGet(),last=norm(u.pub||""),nm=S.team.trim()||"Unnamed team",nk=norm(nm);
+    d=d.filter(function(t){var k=norm(t&&t.name);return k!==last&&k!==nk;});
+    var has=S.people.length&&S.skills.length;
+    if(has)d.push({name:nm,saved:today(),at:Date.now(),ex:S.example===true,m:S});
+    localStorage.setItem(SHK,JSON.stringify({teams:d}));uiSet("pub",has?nm:"");
+  }catch(e){}
+}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}publish();dirty=false;renderSave();}
 function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
 function renderSave(){var el=$("saveNote");
   if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
