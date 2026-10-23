@@ -114,6 +114,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <main>
 <p class="savebar" id="saveNote" role="status"></p>
 <div class="banner" id="banner" hidden>Example data is loaded. Every name and rating is made up so you can see how the checks work. It is not a real team. Press New matrix to start your own.</div>
+<div class="card" id="dpNotice" role="note" style="border-color:var(--med)"><h2>Data protection notice</h2>
+  <p class="sm" style="margin:0 0 6px">This tool records personal information about named employees. It stays in this browser and in files you save. Nothing is sent to this website. Your employer is responsible for this data. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved SharePoint location. Do not email files or store them on personal devices. Notes must describe what the assessor saw on the task only. <strong>Do not record health, injury, disability, adjustments, absence, beliefs, union membership, criminal or disciplinary information.</strong> Employees can ask to see and correct their records. Clear data from this browser when you have finished.</p></div>
 <div class="status st-empty" id="status" role="status" aria-live="polite"></div>
 <div class="banner" id="syncBanner" role="alert" hidden></div>
 <div class="toolbar">
@@ -139,6 +141,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label></div>
   </div>
   <div class="card" id="fsCard"></div>
+  <div class="card"><h2>Clear data from this browser</h2><p class="sm">Removes this matrix, the copy shown in the Company Skills Dashboard, and the link to the shared folder from this browser. Files already saved to a folder or your computer are not touched.</p><button class="btn danger small" id="btnWipe" type="button">Clear all data from this browser</button></div>
   <div class="card"><h2>People</h2><div class="list" id="peopleList"></div><button class="btn small" id="addPerson">Add a person</button></div>
   <div class="card"><h2>Skills</h2>
     <p class="sm">Mark a skill Critical if the work stops or becomes unsafe without it. Set how many signed-off people you need.</p>
@@ -199,7 +202,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 </dialog>
 
 <div id="report" aria-hidden="true"></div>
-<footer>Decision support only, not a substitute for a competent person's assessment of training and competence. Skills Matrix Builder. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+<footer>Decision support only, not a substitute for a competent person's assessment of training and competence. Skills Matrix Builder. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how employee data recorded here is used, stored and deleted. Provided free and as is, without warranty, and not legal, health and safety or HR advice. Part of the portfolio hub.</footer>
 
 <script>
 (function(){
@@ -457,7 +460,7 @@ function openCell(pid,sid){
     h("label",{},"Signed off by",h("input",{type:"text",id:"dBy",value:c.by,maxlength:"60"})),
     h("label",{},"Date of sign-off",h("input",{type:"date",id:"dOn",value:c.on})),
     h("label",{},"Training planned by",h("input",{type:"date",id:"dPlan",value:c.plan})),
-    h("label",{class:"full"},"What did the assessor see?",h("input",{type:"text",id:"dNote",value:c.note,maxlength:"200"}))]);
+    h("label",{class:"full"},"What did the assessor see?",h("input",{type:"text",id:"dNote",value:c.note,maxlength:"200"}),h("span",{class:"sm",text:"Observed task performance only. No health, absence or personal matters. The employee may read this."}))]);
   var d=$("dlg");if(typeof d.showModal==="function")d.showModal();else d.setAttribute("open","");
 }
 $("dlgOk").onclick=function(){
@@ -540,6 +543,11 @@ $("btnNew").onclick=function(){var b=$("btnNew");
   if(!S.people.length&&!S.skills.length){S=blank();touch();rerender();return;}
   armed="new";b.textContent="Confirm: clear everything";b.classList.add("danger","armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="New matrix";b.classList.remove("danger","armed");},5000);};
 $("btnExample").onclick=function(){S=example();armed=null;touch();rerender();showTab("matrix");};
+$("btnWipe").onclick=function(){var b=$("btnWipe");
+  if(armed!=="wipe"){armed="wipe";b.textContent="Confirm: clear everything from this browser";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear all data from this browser";b.classList.remove("armed");},5000);return;}
+  clearTimeout(saveT);try{var d=JSON.parse(localStorage.getItem(SHK));if(d&&Array.isArray(d.teams)){var k=norm(uiGet().pub||""),k2=norm(S.team.trim()||"Unnamed team");d.teams=d.teams.filter(function(t){var n=norm(t&&t.name);return n!==k&&n!==k2;});localStorage.setItem(SHK,JSON.stringify(d));}}catch(e){}
+  try{localStorage.removeItem(KEY);localStorage.removeItem(UIK);}catch(e){}
+  idbSet(null);FS.h=null;FS.on=false;FS.seen="";FS.conflict=null;S=blank();armed=null;dirty=false;b.textContent="Cleared";b.classList.remove("armed");rerender();renderFS();renderSave();};
 $("btnSave").onclick=function(){download("skills-matrix.json",JSON.stringify({app:"skills-matrix-builder",version:1,saved:new Date().toISOString(),data:S},null,2),"application/json");};
 $("btnLoad").onclick=function(){$("file").click();};
 $("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
