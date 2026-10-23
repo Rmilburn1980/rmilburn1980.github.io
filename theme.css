@@ -1,0 +1,68 @@
+/* Portfolio theme: shared look for every dashboard (matches the hub front page).
+   Loaded AFTER each page's own <style>, so it only needs to override colour variables.
+   Status colours (--low --med --high --crit --warn --bad --good) are deliberately NOT touched,
+   so red/amber/green keep their meaning on the safety tools. */
+
+:root{
+  --bg:#070a1a;
+  --panel:#12143a;
+  --panel2:#191c4d;
+  --line:#343a7a;
+  --text:#f2f1ff;
+  --muted:#bcbbdc;
+  --accent:#22d3ee;
+  --accent-ink:#06061a;
+  --rm-violet:#8b5cf6;
+  --rm-display:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",system-ui,sans-serif;
+}
+
+html{background:var(--bg)}
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 88% -6%,rgba(124,58,237,.34),transparent 70%),
+    radial-gradient(800px 500px at -10% 8%,rgba(34,211,238,.14),transparent 70%);
+  background-repeat:no-repeat;
+}
+
+/* thin violet to cyan bar across the very top */
+body::before{
+  content:"";display:block;height:4px;
+  background:linear-gradient(90deg,var(--rm-violet),var(--accent));
+}
+
+/* headings: condensed capitals like the front page */
+h1{
+  font-family:var(--rm-display);
+  text-transform:uppercase;
+  letter-spacing:.01em;
+  font-weight:800;
+}
+
+/* panels: soft violet glow, border colour left alone so status borders keep their meaning */
+.card,.kpi,.status,.tablewrap,details.help summary,details.help .body{
+  box-shadow:0 12px 32px -20px rgba(124,58,237,.65);
+}
+
+/* primary buttons: violet to cyan, dark text (4.7:1 or better on both ends) */
+.btn:not(.sec),
+button.primary,
+.toggle button[aria-pressed="true"]{
+  background-image:linear-gradient(90deg,var(--rm-violet),var(--accent));
+  color:#06061a;
+}
+
+/* links and focus rings */
+a{color:var(--accent)}
+:focus-visible{outline-color:var(--accent)}
+
+/* hub link in each page header */
+.hub,.hub-link,.backlink,.back{
+  background-color:rgba(34,211,238,.08);
+}
+
+@media print{
+  body{background-image:none}
+  body::before{display:none}
+  .card,.kpi,.status,.tablewrap,details.help summary,details.help .body{box-shadow:none}
+}
