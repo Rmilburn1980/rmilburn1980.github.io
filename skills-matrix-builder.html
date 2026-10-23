@@ -75,7 +75,7 @@ tr:last-child td{border-bottom:none}th:last-child,td:last-child{border-right:non
 .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf}
 .chip.crit{background:var(--high)}
 .list .it{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px;display:grid;grid-template-columns:2fr 1.4fr 1fr auto;gap:10px;align-items:end}
-.list .it.sk{grid-template-columns:2fr 1.4fr .8fr .8fr auto}
+.list .it.sk{grid-template-columns:2fr 1.2fr 1fr .8fr .8fr auto}
 @media (max-width:760px){.list .it,.list .it.sk{grid-template-columns:1fr 1fr}}
 .row label input,.row label select{width:100%}
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:520px;width:calc(100% - 32px)}
@@ -168,6 +168,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li>A non-critical skill short of its target is a note.</li>
       <li>A critical skill with no signed-off trainer at level 4 is a note.</li>
       <li>A training date that has passed for someone still below level 3 is a gap.</li>
+      <li>A critical skill with no SOP number recorded is a note. Sign off against the written standard, and put its number in the matrix.</li>
       <li>A person who is the only signed-off cover for three or more skills is listed as a key person risk.</li>
     </ul>
   </div>
@@ -228,6 +229,7 @@ function nid(list){var m=0;list.forEach(function(x){if(x.id>m)m=x.id;});return m
 function P(id){for(var i=0;i<S.people.length;i++)if(S.people[i].id===id)return S.people[i];return null;}
 function K(id){for(var i=0;i<S.skills.length;i++)if(S.skills[i].id===id)return S.skills[i];return null;}
 function ck(p,s){return p+":"+s;}
+function sopL(s){return /^sop/i.test(s.sop.trim())?s.sop.trim():"SOP "+s.sop.trim();}
 function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:""};}
 
 function clean(d){
@@ -236,7 +238,7 @@ function clean(d){
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
-  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
+  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
   var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
   var c=d.cells&&typeof d.cells==="object"?d.cells:{};
   Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
@@ -278,6 +280,7 @@ function analyse(){
       if(s.crit)g("s"+s.id,"Critical skill. "+m+(ok.length===0?" Nobody is signed off, so the work depends on someone who has not been checked.":" "+(ok.length===1?"One absence stops this.":"")));
       else n("s"+s.id,m);
     }
+    if(s.crit&&!s.sop.trim())n("s"+s.id,(s.name||"(no name)")+": critical, and no SOP number is recorded. Sign-offs need a written standard to assess against.");
     if(s.crit&&!tr.length)n("s"+s.id,(s.name||"(no name)")+": critical, and nobody signed off can train others.");
   });
   S.people.forEach(function(p){
@@ -325,7 +328,7 @@ function renderGrid(){
   var t=$("grid");t.innerHTML="";
   if(!S.people.length||!S.skills.length){t.appendChild(h("tbody",{},h("tr",{},h("td",{style:"padding:20px;text-align:left",text:"No matrix yet. Add people and skills on the People and skills tab."}))));return;}
   var A=analyse(),hr=h("tr",{},h("th",{class:"pn",text:"Person"}));
-  S.skills.forEach(function(s){hr.appendChild(h("th",{class:"sk",title:s.area},s.name||"(no name)",s.crit?h("div",{},h("span",{class:"chip crit",text:"Critical"})):null));});
+  S.skills.forEach(function(s){hr.appendChild(h("th",{class:"sk",title:s.area},s.name||"(no name)",s.sop?h("div",{class:"sm",text:sopL(s)}):null,s.crit?h("div",{},h("span",{class:"chip crit",text:"Critical"})):null));});
   t.appendChild(h("thead",{},hr));
   var tb=h("tbody");
   S.people.forEach(function(p){
@@ -381,6 +384,7 @@ function renderSetup(){
     sl.appendChild(h("div",{class:"it sk row"},
       h("label",{},"Skill",txt(s.name,"sk"+s.id,60,function(v){s.name=v;})),
       h("label",{},"Area",txt(s.area,"sa"+s.id,40,function(v){s.area=v;})),
+      h("label",{},"SOP number",txt(s.sop,"so"+s.id,30,function(v){s.sop=v;renderGrid();})),
       h("label",{},"People needed",nd),
       h("label",{style:"flex-direction:row;align-items:center;gap:8px"},cr,"Critical"),
       h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"sd"+s.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.skills=S.skills.filter(function(x){return x!==s;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[1]===String(s.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("s"+s.id);}})));});
@@ -389,7 +393,7 @@ function renderSetup(){
 $("setMonths").addEventListener("input",function(){S.months=Math.max(1,Math.min(60,parseInt(this.value,10)||12));touch();renderStatus();renderGrid();renderCover();});
 $("setTeam").addEventListener("input",function(){S.team=this.value.slice(0,80);touch();});
 $("addPerson").onclick=function(){if(S.people.length>=MAXP)return;var id=nid(S.people);S.people.push({id:id,name:"",role:""});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="pn'+id+'"]');if(q)q.focus();},0);};
-$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
+$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",sop:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
 
 function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
 function renderCover(){
@@ -400,10 +404,11 @@ function renderCover(){
   add(k,kpi(S.people.length+" / "+S.skills.length,"People / skills"),kpi(crit.length?critOk+" of "+crit.length:"0","Critical skills fully covered",crit.length&&critOk<crit.length?"crit":"ok"),
     kpi(short,"Skills short of target",short?"warn":"ok"),kpi(A.gaps.length,"Gaps",A.gaps.length?"crit":"ok"),kpi(keyp,"Key person risks",keyp?"warn":"ok"));
   if(!S.people.length||!S.skills.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));t.appendChild(h("tbody",{},h("tr",{},h("td",{text:"Nothing to show yet."}))));sg.appendChild(h("p",{class:"sm",text:"Nothing to suggest yet."}));return;}
-  var hr=h("tr",{});["Skill","Area","Signed off","Needed","Trainers","Not counted"].forEach(function(x){hr.appendChild(h("th",{text:x,style:"text-align:left"}));});
+  var hr=h("tr",{});["Skill","SOP","Area","Signed off","Needed","Trainers","Not counted"].forEach(function(x){hr.appendChild(h("th",{text:x,style:"text-align:left"}));});
   t.appendChild(h("thead",{},hr));var tb=h("tbody");
   S.skills.forEach(function(s){var c=A.cov[s.id],ok=c.ok.length;
     var tr=h("tr",{},h("td",{style:"text-align:left"},s.name||"(no name)"," ",s.crit?h("span",{class:"chip crit",text:"Critical"}):null),
+      h("td",{style:"text-align:left",text:s.sop||"none"}),
       h("td",{style:"text-align:left",text:s.area||""}),
       h("td",{},h("span",{class:"cov "+(ok>=s.need?"ok":s.crit?"bad":"mid"),text:String(ok)})),h("td",{text:String(s.need)}),h("td",{text:String(c.tr.length)}),h("td",{text:String(c.pend)}));
     tb.appendChild(tr);});
@@ -439,7 +444,7 @@ $("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.targe
   var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;S=clean(d.data);armed=null;touch();rerender();}catch(e){alert("That file could not be read. It is not a skills matrix data file.");}ev.target.value="";};rd.readAsText(f);});
 function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 $("btnCsv").onclick=function(){
-  var head=["Person","Role"].concat(S.skills.map(function(s){return s.name+(s.crit?" (critical)":"");}));
+  var head=["Person","Role"].concat(S.skills.map(function(s){return s.name+(s.sop?" ["+sopL(s)+"]":"")+(s.crit?" (critical)":"");}));
   var rows=S.people.map(function(p){return [p.name,p.role].concat(S.skills.map(function(s){var st=state(p,s);return st.lv+(st.unsigned?" not signed off":st.expired?" expired":"");}));});
   var A=analyse();rows.push(["Signed off",""].concat(S.skills.map(function(s){return A.cov[s.id].ok.length+" of "+s.need;})));
   download("skills-matrix.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
@@ -448,7 +453,7 @@ function buildReport(){var r=$("report"),A=analyse();r.innerHTML="";
   if(S.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real team."}));
   add(r,h("p",{text:(S.team||"Team not named")+". Printed "+fmt(today())+". Sign-offs valid for "+S.months+" months."}));
   add(r,h("p",{class:"gapx",text:A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on this matrix for cover decisions yet.":"No gaps found by the checks. A competent person must still judge the sign-offs."}));
-  var t=h("table",{}),hr=h("tr",{},h("th",{text:"Person"}));S.skills.forEach(function(s){hr.appendChild(h("th",{text:s.name+(s.crit?" (critical)":"")}));});t.appendChild(hr);
+  var t=h("table",{}),hr=h("tr",{},h("th",{text:"Person"}));S.skills.forEach(function(s){hr.appendChild(h("th",{text:s.name+(s.sop?" ["+sopL(s)+"]":"")+(s.crit?" (critical)":"")}));});t.appendChild(hr);
   S.people.forEach(function(p){var tr=h("tr",{},h("td",{text:p.name}));S.skills.forEach(function(s){var st=state(p,s);tr.appendChild(h("td",{text:st.lv+(st.unsigned?" ?":st.expired?" !":"")+(st.late?" T":"")}));});t.appendChild(tr);});
   var fr=h("tr",{},h("td",{text:"Signed off"}));S.skills.forEach(function(s){fr.appendChild(h("td",{text:A.cov[s.id].ok.length+" of "+s.need}));});t.appendChild(fr);add(r,t);
   add(r,h("p",{class:"sm",text:"? not signed off, not counted. ! sign-off expired, not counted. T training date passed."}));
@@ -461,7 +466,7 @@ window.addEventListener("beforeprint",buildReport);
 function example(){
   var o=blank();o.team="Example cell (made up)";o.months=12;o.example=true;
   ["Example Operator A","Example Operator B","Example Operator C","Example Operator D","Example Operator E","Example Operator F"].forEach(function(n,i){o.people.push({id:i+1,name:n,role:i<4?"Operator":"Team member"});});
-  [["Isolate and lock off",  "Safety",true,2],["Clear a conveyor jam","Safety",true,2],["Set up the line","Production",true,2],["Final inspection","Quality",false,2],["Fork truck","Logistics",false,1],["Changeover","Production",false,2]].forEach(function(s,i){o.skills.push({id:i+1,name:s[0],area:s[1],crit:s[2],need:s[3]});});
+  [["Isolate and lock off",  "Safety",true,2],["Clear a conveyor jam","Safety",true,2],["Set up the line","Production",true,2],["Final inspection","Quality",false,2],["Fork truck","Logistics",false,1],["Changeover","Production",false,2]].forEach(function(s,i){o.skills.push({id:i+1,name:s[0],area:s[1],sop:(i===2?"":"EX-"+String(101+i)),crit:s[2],need:s[3]});});
   function C(p,s,lv,by,on,plan,note){o.cells[p+":"+s]={lv:lv,by:by||"",on:on||"",plan:plan||"",note:note||""};}
   var A="Example Supervisor",B="Example Manager";
   C(1,1,4,A,off(-90),"","Watched a full isolation");C(2,1,3,A,off(-60));C(3,1,3,B,off(-420));C(4,1,2,"","",off(20));C(5,1,1,"","",off(-10));C(6,1,0);
