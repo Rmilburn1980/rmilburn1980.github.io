@@ -664,7 +664,7 @@ function example(){
 }
 
 /* ---------- start ---------- */
-var saved=load();if(saved)S=saved;
+var saved=load();if(saved)S=saved;else{S=example();saveNow();}
 var ui=uiGet();
 renderAll();renderSave();
 showTab(["tree","actions","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"tree");

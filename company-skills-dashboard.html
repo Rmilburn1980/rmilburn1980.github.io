@@ -410,7 +410,7 @@ function exampleTeams(){
   return [{id:1,name:t1.team,saved:off(-12),loaded:today(),ex:true,m:t1},{id:2,name:t2.team,saved:off(-130),loaded:today(),ex:true,m:t2},{id:3,name:t3.team,saved:off(-5),loaded:today(),ex:true,m:t3}];
 }
 
-var sv=load();if(sv)T=sv;
+var sv=load();if(sv)T=sv;else{T=exampleTeams();example=true;saveNow();}
 renderAll();renderSave();
 var ui=uiGet();showTab(["over","skills","teams","guide"].indexOf(ui.tab)>=0?ui.tab:"over");
 window.__cd={metrics:metrics,teams:function(){return T;},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};

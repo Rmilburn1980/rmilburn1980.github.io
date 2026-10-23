@@ -478,7 +478,7 @@ function example(){
   C(1,6,3,A,off(-60));C(2,6,3,A,off(-60));C(4,6,2);
   return o;}
 
-var sv=load();if(sv)S=sv;
+var sv=load();if(sv)S=sv;else{S=example();saveNow();}
 renderAll();renderSave();
 var ui=uiGet();showTab(["matrix","setup","cover","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
 window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
