@@ -12,6 +12,13 @@
   --muted:#bcbbdc;
   --accent:#22d3ee;
   --accent-ink:#06061a;
+  /* second family of pages (cycle time, DMAIC, SIPOC, skills matrix) names these differently.
+     --green --red --gold are status colours there, so they are NOT overridden. */
+  --card:#12143a;
+  --surface:#12143a;
+  --border:#343a7a;
+  --teal:#22d3ee;
+  --dim:#a3a2c8;
   --rm-violet:#8b5cf6;
   --rm-display:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",system-ui,sans-serif;
 }
@@ -33,7 +40,7 @@ body::before{
 
 /* headings: condensed capitals like the front page */
 h1{
-  font-family:var(--rm-display);
+  font-family:var(--font-head,var(--rm-display));
   text-transform:uppercase;
   letter-spacing:.01em;
   font-weight:800;
@@ -45,7 +52,7 @@ h1{
 }
 
 /* primary buttons: violet to cyan, dark text (4.7:1 or better on both ends) */
-.btn:not(.sec),
+.btn:not(.sec):not(.danger),
 button.primary,
 .toggle button[aria-pressed="true"]{
   background-image:linear-gradient(90deg,var(--rm-violet),var(--accent));
