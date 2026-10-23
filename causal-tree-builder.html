@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Causal Tree Builder</title>
+<meta name="description" content="Trace an incident back through immediate, underlying and root causes as a tree of facts. Flags missing evidence, branches that stop early and actions nobody has independently checked.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --lv-i:#67e8f9; --lv-u:#c4b5fd; --lv-r:#f0abfc;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:740px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:44px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,.rowbtn:focus-visible,summary:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-weak{border-color:var(--high)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.status strong{font-size:1rem}
+.status .rs{margin:8px 0 0;padding-left:18px;font-size:.85rem;color:var(--muted)}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}
+.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:var(--crit)}.kpi.ok .n{color:var(--low)}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label,.nf label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea,.nf label input,.nf label select,.nf label textarea{width:100%}
+.f .full,.nf .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+/* tree */
+ul.tree,ul.tree ul{list-style:none;margin:0;padding:0}
+ul.tree ul{margin-left:10px;padding-left:20px;border-left:2px solid var(--line)}
+li.n{position:relative;margin:12px 0 0;padding:0}
+ul.tree ul > li.n::before{content:"";position:absolute;left:-20px;top:26px;width:18px;border-top:2px solid var(--line)}
+.nc{background:var(--panel);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px}
+.nc.lv-immediate{border-left-color:var(--lv-i)}.nc.lv-underlying{border-left-color:var(--lv-u)}.nc.lv-root{border-left-color:var(--lv-r)}
+.nc.lv-none{border-left-color:var(--muted)}
+.nc.ev{background:var(--panel2);border-left-color:var(--crit)}
+.nc.hasgap{box-shadow:0 0 0 1px var(--high)}
+.nh{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);white-space:nowrap}
+.c-i{background:var(--lv-i)}.c-u{background:var(--lv-u)}.c-r{background:var(--lv-r)}.c-none{background:#a9b8cf}
+.c-type{background:transparent;color:var(--text);border:1px solid var(--line)}
+.c-v{background:var(--low)}.c-rep{background:var(--med)}.c-as{background:var(--high)}.c-no{background:#a9b8cf}
+.nf{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:8px 0 0}
+@media (max-width:760px){.nf{grid-template-columns:1fr}ul.tree ul{margin-left:4px;padding-left:12px}ul.tree ul > li.n::before{left:-12px;width:10px}}
+.hint{font-size:.78rem;color:var(--muted);margin:6px 0 0}
+.fl{margin:8px 0 0;padding-left:16px;font-size:.8rem}
+.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.na{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:0 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px}
+/* actions */
+.ac{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px}
+.ac .nf{grid-template-columns:1fr 1fr}
+@media (max-width:760px){.ac .nf{grid-template-columns:1fr}}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2)}
+tr:last-child td{border-bottom:none}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:16px 0 6px}
+  #report ul{margin:4px 0 4px 18px;padding:0}#report li{margin:4px 0;font-size:.9rem}
+  #report table{font-size:.8rem}#report th{background:#eee;color:#000}
+  #report .chip{border:1px solid #000;background:#fff;color:#000}
+  #report .gapx{font-weight:700}
+}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Causal Tree Builder</h1>
+    <p>Trace an incident back through its immediate, underlying and root causes as a tree of facts. A cause only counts once there is evidence for it, every branch has to reach a management system cause, and an action only closes when someone other than its owner has checked that it worked.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="tree">Causal tree</button>
+  <button role="tab" aria-selected="false" data-tab="actions">Actions</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks and report</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div class="banner" id="banner" hidden>Example data is loaded. Everything tagged Example is made up so you can see how the checks work. It is not a real investigation. Press New investigation to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+
+<section id="tab-tree">
+  <p class="disc">A causal tree is a picture of how a series of facts led to an event. It shows what the evidence supports. It is not a finding of blame, and a competent person must judge the result. Check whether the event must be reported under your legal duties (for example RIDDOR in Great Britain).</p>
+  <div class="toolbar">
+    <button class="btn" id="btnNew">New investigation</button>
+    <button class="btn sec" id="btnExample">Load example</button>
+    <button class="btn sec" id="btnSave">Save data file</button>
+    <button class="btn sec" id="btnLoad">Load data file</button>
+    <button class="btn sec" id="btnPrint">Print report</button>
+    <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+  </div>
+  <div class="legend" aria-label="Key">
+    <span><i class="sw" style="background:var(--lv-i)"></i>Immediate cause</span>
+    <span><i class="sw" style="background:var(--lv-u)"></i>Underlying cause</span>
+    <span><i class="sw" style="background:var(--lv-r)"></i>Root cause (management system)</span>
+  </div>
+  <div id="tree"></div>
+</section>
+
+<section id="tab-actions" hidden>
+  <p class="disc">Link each action to the cause it deals with. An action only closes once someone other than its owner has checked that it worked. Look higher up the hierarchy of controls before settling for training, procedures or PPE.</p>
+  <div class="toolbar"><button class="btn" id="btnAddAction">Add an action</button> <a class="btn sec" href="corrective-action-tracker.html">Open the Corrective Action Tracker</a></div>
+  <div id="actions"></div>
+</section>
+
+<section id="tab-checks" hidden>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record. They cannot tell whether a fact is true, whether a cause is missing, or whether an action is good enough.</p>
+</section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What a causal tree is</h2>
+    <p>A causal tree is a structured diagram that traces an incident back through its immediate, underlying and root causes. It maps the actions, conditions and system failures that led to the event as a hierarchy of causal factors, so an organisation can find every contributing factor and stop the same thing happening again.</p>
+    <p>Start with the event at the top. Ask what had to be true for it to happen, and write each answer as a fact. For each fact, ask the same question again, until every branch reaches a failure in how the work was planned, resourced, maintained, supervised or checked.</p>
+  </div>
+  <div class="card"><h2>The three levels</h2>
+    <ul>
+      <li><strong>Immediate cause:</strong> what directly happened. The acts and the conditions at the moment of the event.</li>
+      <li><strong>Underlying cause:</strong> why those acts and conditions existed. The job, the workplace, the equipment, the people and the pressures on them.</li>
+      <li><strong>Root cause:</strong> the management system failure behind it. A gap in planning, rules, training, supervision, maintenance, design, or resources, which would let the same event happen again if it were left.</li>
+    </ul>
+    <h3>Three kinds of fact</h3>
+    <ul>
+      <li><strong>Action:</strong> something a person did or did not do. Always ask why it made sense to that person at the time.</li>
+      <li><strong>Condition:</strong> the state of equipment, place or material.</li>
+      <li><strong>System failure:</strong> a gap in how the work is managed.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>How to build one</h2>
+    <ol>
+      <li>Describe the event and its actual outcome, and set the severity.</li>
+      <li>Add the facts that directly led to it. One fact per box, written as something seen, measured or recorded.</li>
+      <li>For each fact, say how you know it: Verified, Reported or Assumed, and what was checked.</li>
+      <li>Ask: would the fact above have happened without this one? If not, it is necessary. Then ask whether the causes you listed are enough together to explain it.</li>
+      <li>Add the next level down. Keep asking why until each branch reaches a root cause.</li>
+      <li>Link actions to the causes, choose the strongest control you can, and have someone else check each one.</li>
+    </ol>
+  </div>
+  <div class="card"><h2>What the checks flag</h2>
+    <ul>
+      <li>A cause with no text, level, type or evidence status. A Verified cause with no note of what was checked.</li>
+      <li>A cause marked Assumed. It counts as a gap until it is supported.</li>
+      <li>A cause that is Reported only is listed as not yet verified.</li>
+      <li>A branch that stops before a root cause. This is the most common failing: stopping at what a person did, instead of asking why.</li>
+      <li>A cause not confirmed as necessary, or causes not confirmed as enough together.</li>
+      <li>Levels out of order, for example a root cause sitting above an immediate cause.</li>
+      <li>Wording that sounds like a judgement ("careless", "failed to", "human error"). Rewrite it as what was seen or recorded.</li>
+      <li>No root cause found at all, or a root cause with no action.</li>
+      <li>An action with no owner or due date, one that is overdue, or one marked done with no independent check.</li>
+      <li>A severity 4 or 5 event with no reviewer, or a reviewer who is the lead investigator.</li>
+      <li>An event where every action is training, procedure or PPE.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>How it differs from the other tools</h2>
+    <ul>
+      <li>The <a href="5-whys-tool.html">5 Whys tool</a> follows one line of cause. A causal tree branches, because most incidents need several things to be true at once.</li>
+      <li>The <a href="swiss-cheese-dashboard.html">Swiss cheese dashboard</a> looks at layers of defence that failed together. A causal tree looks at the chain of facts that led to one event.</li>
+      <li>The <a href="bowtie-builder.html">bow-tie builder</a> looks forward, at barriers before something happens. A causal tree looks back, after it has.</li>
+      <li>Actions can be tracked to closure in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>, and root causes can feed the <a href="risk-assessment-dashboard.html">risk register</a>.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>Limits</h2>
+    <p>No gaps found does not mean the investigation is right or complete. A tree can be tidy and still miss a cause. Ask the people who do the work whether it matches what happens, and have a competent person review it.</p>
+  </div>
+</section>
+</main>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's investigation or for your legal duties. Causal Tree Builder. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-causal-tree-v1", UIK="rmilburn-causal-tree-ui";
+var LEVELS=[["immediate","Immediate cause"],["underlying","Underlying cause"],["root","Root cause"]];
+var TYPES=[["action","Action"],["condition","Condition"],["system","System failure"]];
+var EVS=[["verified","Verified: seen, measured, photographed or recorded"],["reported","Reported: a witness said so, not yet checked"],["assumed","Assumed: not yet supported"]];
+var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
+var SEVL=["Not set","1 Minor","2 Moderate","3 Serious","4 Major","5 Fatal or life changing"];
+var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|did ?n.?t bother|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*)\b/i;
+var MAXN=300, MAXA=100;
+var S=blank(), tab="tree", saveTimer=null, dirty=false, storeOk=true, armed=null, armTimer=null;
+
+function blank(){return {event:{title:"",date:"",place:"",sev:0,lead:"",reviewer:"",suff:"",reported:false,example:false},nodes:[],actions:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function off(days){var d=new Date();d.setDate(d.getDate()+days);return dstr(d);}
+function today(){return dstr(new Date());}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function nid(){var m=0;S.nodes.forEach(function(n){if(n.id>m)m=n.id;});S.actions.forEach(function(a){if(a.id>m)m=a.id;});return m+1;}
+function h(tag,a){
+  var e=document.createElement(tag),i,k;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;
+    else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected"||k==="disabled")e[k]=v;
+    else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add(e,arguments[i]);return e;
+}
+function add(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function pick(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function lvIdx(l){for(var i=0;i<LEVELS.length;i++)if(LEVELS[i][0]===l)return i;return -1;}
+function lvLabel(l){var i=lvIdx(l);return i<0?"No level":LEVELS[i][1];}
+function typeLabel(t){for(var i=0;i<TYPES.length;i++)if(TYPES[i][0]===t)return TYPES[i][1];return "No type";}
+function byId(id){for(var i=0;i<S.nodes.length;i++)if(S.nodes[i].id===id)return S.nodes[i];return null;}
+function kids(id){return S.nodes.filter(function(n){return n.parent===id;});}
+function short(s,n){s=String(s||"").trim();return s.length>n?s.slice(0,n-1)+"…":(s||"(no wording yet)");}
+
+/* ---------- sanitising (used for storage and for loaded files) ---------- */
+function clean(d){
+  var o=blank();
+  if(!d||typeof d!=="object")return o;
+  var e=d.event||{};
+  o.event={title:str(e.title,300),date:dOk(e.date),place:str(e.place,200),sev:Math.max(0,Math.min(5,parseInt(e.sev,10)||0)),lead:str(e.lead,100),reviewer:str(e.reviewer,100),suff:pick(e.suff,[["yes"],["no"],["unsure"]]),reported:e.reported===true,example:e.example===true};
+  var seen={},list=Array.isArray(d.nodes)?d.nodes.slice(0,MAXN):[];
+  list.forEach(function(n){
+    if(!n||typeof n!=="object")return;var id=parseInt(n.id,10);if(!(id>0)||seen[id])return;seen[id]=1;
+    o.nodes.push({id:id,parent:(n.parent===null||n.parent===undefined)?null:parseInt(n.parent,10),text:str(n.text,400),type:pick(n.type,TYPES),level:pick(n.level,LEVELS),
+      ev:pick(n.ev,EVS),evNote:str(n.evNote,400),nec:pick(n.nec,[["yes"],["no"]]),suff:pick(n.suff,[["yes"],["no"],["unsure"]]),ex:n.ex===true,col:n.col===true});
+  });
+  var ids={};o.nodes.forEach(function(n){ids[n.id]=n;});
+  o.nodes=o.nodes.filter(function(n){return n.parent===null||ids[n.parent];});
+  /* drop anything in a loop or deeper than 40 */
+  ids={};o.nodes.forEach(function(n){ids[n.id]=n;});
+  o.nodes=o.nodes.filter(function(n){var p=n.parent,c=0;while(p!==null){if(p===n.id||++c>40||!ids[p])return false;p=ids[p].parent;}return true;});
+  ids={};o.nodes.forEach(function(n){ids[n.id]=1;});
+  (Array.isArray(d.actions)?d.actions.slice(0,MAXA):[]).forEach(function(a){
+    if(!a||typeof a!=="object")return;var id=parseInt(a.id,10);if(!(id>0)||seen[id]&&!ids[parseInt(a.node,10)]&&false)return;
+    var node=parseInt(a.node,10);
+    o.actions.push({id:id,node:ids[node]?node:null,text:str(a.text,400),owner:str(a.owner,100),due:dOk(a.due),hoc:HOC.indexOf(a.hoc)>=0?a.hoc:"",status:a.status==="done"?"done":"open",verBy:str(a.verBy,100),verOn:dOk(a.verOn),ex:a.ex===true});
+  });
+  var aid={};o.actions=o.actions.filter(function(a){if(aid[a.id]||ids[a.id])return false;aid[a.id]=1;return true;});
+  return o;
+}
+
+/* ---------- checks ---------- */
+function flags(){
+  var gaps=[],notes=[],byNode={};
+  function g(ref,msg,type){var f={ref:ref,msg:msg};(type==="note"?notes:gaps).push(f);if(ref!==null&&ref!==undefined){(byNode[ref]=byNode[ref]||[]).push({msg:msg,note:type==="note"});}}
+  var ev=S.event,td=today();
+  if(!S.nodes.length&&!ev.title.trim())return {gaps:gaps,notes:notes,byNode:byNode,empty:true};
+  if(!ev.title.trim())g("e","The event is not described.");
+  if(!ev.sev)g("e","Severity of the actual outcome is not set.");
+  if(!ev.date)g("e","Date of the event is not set.","note");
+  else if(ev.date>td)g("e","The event date is in the future.");
+  if(ev.sev>=4){
+    if(!ev.reviewer.trim())g("e","Severity "+ev.sev+" needs a reviewer who is not the lead investigator. None is named.");
+    else if(norm(ev.reviewer)===norm(ev.lead))g("e","The reviewer is the same person as the lead investigator. Severity "+ev.sev+" needs an independent review.");
+  }else if(!ev.reviewer.trim())g("e","No independent reviewer is named.","note");
+  if(S.nodes.length&&!ev.reported)g("e","Reporting duties (for example RIDDOR) are not marked as checked.","note");
+  var top=kids(null);
+  if(!S.nodes.length)g("e","No causes have been added yet.");
+  else{
+    if(ev.suff!=="yes")g("e",ev.suff==="no"?"You said something is missing from the causes of the event. Add it.":"Not confirmed that the causes listed are enough together to explain the event.");
+  }
+  var roots=0,evCount={verified:0,reported:0,assumed:0,none:0};
+  S.nodes.forEach(function(n){
+    var ch=kids(n.id),par=n.parent===null?null:byId(n.parent),r=n.id;
+    if(!n.text.trim())g(r,"This cause has no wording yet.");
+    if(!n.level)g(r,"Choose a level: immediate, underlying or root.");
+    if(!n.type)g(r,"Choose a type: action, condition or system failure.");
+    if(n.level==="root")roots++;
+    if(n.ev==="verified"){evCount.verified++;if(!n.evNote.trim())g(r,"Marked Verified but no note says what was checked.");}
+    else if(n.ev==="reported"){evCount.reported++;g(r,"Reported only. Not yet checked against a record, measurement or the scene.","note");}
+    else if(n.ev==="assumed"){evCount.assumed++;g(r,"Assumed. There is no evidence for this yet, so it cannot be relied on.");}
+    else{evCount.none++;g(r,"Say how you know this: Verified, Reported or Assumed.");}
+    if(n.nec==="no")g(r,"You marked this as not necessary. Remove it or reword it so it is.");
+    else if(n.nec!=="yes")g(r,"Not confirmed that the fact above would not have happened without this one.");
+    if(ch.length&&n.suff!=="yes")g(r,n.suff==="no"?"You said something is missing under this cause. Add it.":"Not confirmed that the causes below are enough together to explain this one.");
+    if(!ch.length){
+      if(n.level&&n.level!=="root")g(r,n.type==="action"?"This stops at what a person did. Ask why it made sense to them at the time, and keep going.":"This branch stops before a root cause. Keep asking why until you reach a management system failure.");
+      else if(n.level==="root"&&n.type&&n.type!=="system")g(r,"Marked as a root cause but not as a system failure. Check that it is the management failure behind the event, and not another act or condition.","note");
+    }
+    if(n.level==="root"&&n.type==="action"&&ch.length===0)g(r,"A root cause that is a single person's action means the system that allowed it has not been found yet.");
+    var pi=par?lvIdx(par.level):-1,ci=lvIdx(n.level);
+    if(par&&pi>=0&&ci>=0&&ci<pi)g(r,"Levels are out of order: a "+lvLabel(n.level).toLowerCase()+" sits under a "+lvLabel(par.level).toLowerCase()+".");
+    var m=n.text.match(BLAME);
+    if(m)g(r,"The wording \""+m[0]+"\" sounds like a judgement. Rewrite it as what was seen or recorded.","note");
+  });
+  if(S.nodes.length&&!roots)g("e","No root cause has been identified yet.");
+  var rootNodes=S.nodes.filter(function(n){return n.level==="root";});
+  rootNodes.forEach(function(n){
+    var has=S.actions.some(function(a){return a.node===n.id;});
+    if(!has)g(n.id,"This root cause has no action linked to it.");
+  });
+  S.actions.forEach(function(a){
+    var ref="a"+a.id,label="Action: "+short(a.text,50);
+    function ga(msg,t){var f={ref:ref,msg:label+". "+msg};(t==="note"?notes:gaps).push(f);}
+    if(!a.text.trim())ga("It has no wording.");
+    if(!a.node)ga("It is not linked to a cause.","note");
+    if(!a.owner.trim())ga("It has no owner.");
+    if(!a.due)ga("It has no due date.");
+    else if(a.status!=="done"&&a.due<td)ga("It is overdue (due "+fmt(a.due)+").");
+    if(!a.hoc)ga("Choose the type of control.","note");
+    if(a.status==="done"){
+      if(!a.verBy.trim())ga("Marked done with nobody named as having checked it worked.");
+      else if(norm(a.verBy)===norm(a.owner))ga("Marked done, but the owner checked their own work. Someone else must check it.");
+      if(!a.verOn)ga("Marked done with no date for the check.");
+      else if(a.verOn>td)ga("The check date is in the future.");
+    }
+  });
+  if(S.actions.length&&ev.sev>=3){
+    var strong=S.actions.some(function(a){return a.hoc==="Eliminate"||a.hoc==="Substitute"||a.hoc==="Engineering";});
+    if(!strong&&S.actions.every(function(a){return a.hoc==="Administrative"||a.hoc==="PPE"||!a.hoc;}))g("e","Every action is training, procedure or PPE. For a severity "+ev.sev+" event, look for a way to eliminate, substitute or engineer the cause out.","note");
+  }
+  return {gaps:gaps,notes:notes,byNode:byNode,counts:evCount,roots:roots};
+}
+
+/* ---------- storage ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return (o&&typeof o==="object")?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){
+  try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}
+  dirty=false;renderSave();
+}
+function touch(){dirty=true;renderSave();clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,400);}
+function renderSave(){
+  var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}
+}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+
+/* ---------- rendering ---------- */
+function fieldKey(el){return el&&el.getAttribute&&el.getAttribute("data-k");}
+function rerender(){
+  var ae=document.activeElement,key=fieldKey(ae),ss=null,se=null;
+  if(ae&&typeof ae.selectionStart==="number"){ss=ae.selectionStart;se=ae.selectionEnd;}
+  var y=window.scrollY;
+  renderAll();
+  window.scrollTo(0,y);
+  if(key){var n=document.querySelector('[data-k="'+key+'"]');if(n){n.focus();if(ss!==null&&typeof n.setSelectionRange==="function"){try{n.setSelectionRange(ss,se);}catch(e){}}}}
+}
+function renderAll(){renderStatus();renderTree();renderActions();renderChecks();$("banner").hidden=!S.event.example;}
+function sel(list,val,key,onch,blankLabel){
+  var s=h("select",{"data-k":key,"aria-label":blankLabel,onchange:function(){onch(s.value);}});
+  s.appendChild(h("option",{value:"",text:blankLabel}));
+  list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});
+  return s;
+}
+function field(label,ctrl,full){return h("label",{class:full?"full":""},label,ctrl);}
+function inp(type,val,key,onin,extra){var e=h("input",{type:type,value:val,"data-k":key});if(extra)for(var k in extra)e.setAttribute(k,extra[k]);e.addEventListener("input",function(){onin(e.value);});return e;}
+function ta(val,key,onin,rows){var e=h("textarea",{"data-k":key,rows:rows||2});e.value=val;e.addEventListener("input",function(){onin(e.value);});return e;}
+
+function renderStatus(){
+  var F=flags(),el=$("status"),n=F.gaps.length;
+  el.innerHTML="";
+  if(F.empty){el.className="status st-empty";add(el,h("strong",{text:"Nothing to check yet."}),h("div",{class:"sm",text:"Describe the event and add the facts that led to it, or load the example."}));return;}
+  if(n){
+    el.className="status st-over";
+    add(el,h("strong",{text:"Gaps found. Do not treat this investigation as complete."}),h("div",{class:"sm",text:plural(n,"gap")+" and "+plural(F.notes.length,"note")+". Open Checks and report for the full list."}));
+  }else{
+    el.className="status st-ok";
+    add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the investigation is right or complete. A competent person must still judge it. "+plural(F.notes.length,"note")+" to look at."}));
+  }
+}
+
+function nodeCard(n,F){
+  var level=n.level||"none",fl=F.byNode[n.id]||[],hasgap=fl.some(function(x){return !x.note;});
+  var evc={verified:["c-v","Verified"],reported:["c-rep","Reported"],assumed:["c-as","Assumed"]}[n.ev]||["c-no","No evidence status"];
+  var lvc={immediate:"c-i",underlying:"c-u",root:"c-r"}[n.level]||"c-none";
+  var card=h("div",{class:"nc lv-"+level+(hasgap?" hasgap":""),id:"node-"+n.id});
+  add(card,h("div",{class:"nh"},
+    h("span",{class:"chip "+lvc,text:lvLabel(n.level)}),
+    h("span",{class:"chip c-type",text:typeLabel(n.type)}),
+    h("span",{class:"chip "+evc[0],text:evc[1]}),
+    n.ex?h("span",{class:"chip c-no",text:"Example"}):null));
+  add(card,h("label",{class:"sm"},"Fact (what was seen, measured or recorded)",ta(n.text,"t"+n.id,function(v){n.text=v;touch();renderStatusLite();})));
+  var f=h("div",{class:"nf"});
+  add(f,field("Level",sel(LEVELS,n.level,"l"+n.id,function(v){n.level=v;touch();rerender();},"Choose level")));
+  add(f,field("Type",sel(TYPES,n.type,"y"+n.id,function(v){n.type=v;touch();rerender();},"Choose type")));
+  add(f,field("How do you know?",sel(EVS,n.ev,"e"+n.id,function(v){n.ev=v;touch();rerender();},"Choose evidence status")));
+  add(f,field("What was checked, and where is the record?",inp("text",n.evNote,"n"+n.id,function(v){n.evNote=v;touch();renderStatusLite();}),true));
+  add(f,field("Would the fact above have happened without this one?",sel([["yes","No, it needed this (necessary)"],["no","Yes, it would have (not necessary)"]],n.nec,"c"+n.id,function(v){n.nec=v;touch();rerender();},"Not checked"),true));
+  add(card,f);
+  if(n.type==="action")add(card,h("p",{class:"hint",text:"Ask: why did this make sense to the person at the time? The answer is the next cause down."}));
+  var ch=kids(n.id);
+  if(ch.length){
+    add(card,h("div",{class:"nf"},field("Are the causes below enough together to explain this fact?",sel([["yes","Yes, together they are enough"],["no","No, something is missing"],["unsure","Unsure"]],n.suff,"s"+n.id,function(v){n.suff=v;touch();rerender();},"Not checked"),true)));
+  }
+  if(fl.length){var ul=h("ul",{class:"fl"});fl.forEach(function(x){ul.appendChild(h("li",{class:x.note?"o":"g",text:x.msg}));});card.appendChild(ul);}
+  var act=h("div",{class:"na"});
+  add(act,h("button",{class:"btn small",type:"button","data-k":"add"+n.id,text:"Add a cause (why?)",onclick:function(){addNode(n.id);}}));
+  if(ch.length)add(act,h("button",{class:"btn sec small",type:"button","data-k":"col"+n.id,text:n.col?"Show "+plural(ch.length,"branch"):"Hide branches","aria-expanded":n.col?"false":"true",onclick:function(){n.col=!n.col;touch();rerender();}}));
+  var cnt=countSub(n.id),acts=S.actions.filter(function(a){return subtreeHas(n.id,a.node);}).length;
+  var armedHere=armed==="n"+n.id;
+  add(act,h("button",{class:"btn danger small"+(armedHere?" armed":""),type:"button","data-k":"del"+n.id,text:armedHere?"Confirm: remove "+plural(cnt,"cause")+(acts?" and "+plural(acts,"action"):""):"Remove",onclick:function(){if(armedHere){removeNode(n.id);}else{arm("n"+n.id);}}}));
+  card.appendChild(act);
+  return card;
+}
+function countSub(id){var c=1;kids(id).forEach(function(k){c+=countSub(k.id);});return c;}
+function subtreeHas(root,nodeId){if(nodeId===null)return false;if(nodeId===root)return true;var n=byId(nodeId);var d=0;while(n&&d++<50){if(n.parent===root)return true;n=n.parent===null?null:byId(n.parent);}return false;}
+function arm(k){armed=k;clearTimeout(armTimer);armTimer=setTimeout(function(){armed=null;rerender();},5000);rerender();}
+function treeLevel(pid,F){
+  var list=kids(pid);if(!list.length)return null;
+  var ul=h("ul",{});
+  list.forEach(function(n){
+    var li=h("li",{class:"n"});li.appendChild(nodeCard(n,F));
+    if(!n.col){var sub=treeLevel(n.id,F);if(sub)li.appendChild(sub);}
+    ul.appendChild(li);
+  });
+  return ul;
+}
+function renderTree(){
+  var F=flags(),box=$("tree");box.innerHTML="";
+  var e=S.event,fl=F.byNode.e||[];
+  var ec=h("div",{class:"nc ev"+(fl.some(function(x){return !x.note;})?" hasgap":""),id:"node-e"});
+  add(ec,h("div",{class:"nh"},h("span",{class:"chip c-type",text:"Event"}),e.example?h("span",{class:"chip c-no",text:"Example"}):null));
+  add(ec,h("label",{class:"sm"},"What happened, and what was the actual outcome?",ta(e.title,"et",function(v){e.title=v;touch();renderStatusLite();})));
+  var f=h("div",{class:"nf"});
+  add(f,field("Date of the event",inp("date",e.date,"ed",function(v){e.date=dOk(v);touch();renderStatusLite();})));
+  add(f,field("Where",inp("text",e.place,"ep",function(v){e.place=v;touch();})));
+  add(f,field("Severity of the actual outcome",sel(SEVL.slice(1).map(function(s,i){return [String(i+1),s];}),e.sev?String(e.sev):"","es",function(v){e.sev=parseInt(v,10)||0;touch();rerender();},"Not set")));
+  add(f,field("Lead investigator",inp("text",e.lead,"el",function(v){e.lead=v;touch();renderStatusLite();})));
+  add(f,field("Independent reviewer (not the lead)",inp("text",e.reviewer,"er",function(v){e.reviewer=v;touch();renderStatusLite();})));
+  var rc=h("input",{type:"checkbox","data-k":"erc",checked:e.reported});rc.addEventListener("change",function(){e.reported=rc.checked;touch();rerender();});
+  add(f,h("label",{style:"flex-direction:row;align-items:center;gap:8px"},rc,"Reporting duties checked (for example RIDDOR)"));
+  add(ec,f);
+  if(kids(null).length)add(ec,h("div",{class:"nf"},field("Are the causes below enough together to explain the event?",sel([["yes","Yes, together they are enough"],["no","No, something is missing"],["unsure","Unsure"]],e.suff,"esf",function(v){e.suff=v;touch();rerender();},"Not checked"),true)));
+  if(fl.length){var ul=h("ul",{class:"fl"});fl.forEach(function(x){ul.appendChild(h("li",{class:x.note?"o":"g",text:x.msg}));});ec.appendChild(ul);}
+  add(ec,h("div",{class:"na"},h("button",{class:"btn small",type:"button","data-k":"adde",text:"Add a cause of the event (why?)",onclick:function(){addNode(null);}})));
+  var wrap=h("ul",{class:"tree"}),li=h("li",{class:"n"});li.appendChild(ec);
+  var sub=treeLevel(null,F);if(sub)li.appendChild(sub);
+  wrap.appendChild(li);box.appendChild(wrap);
+}
+function renderStatusLite(){renderStatus();renderChecks();}
+
+function addNode(pid){
+  if(S.nodes.length>=MAXN)return;
+  var p=pid===null?null:byId(pid),lv="immediate";
+  if(p){var i=lvIdx(p.level);lv=i<0?"":LEVELS[Math.min(i+1,2)][0];}
+  var n={id:nid(),parent:pid,text:"",type:"",level:lv,ev:"",evNote:"",nec:"",suff:"",ex:false,col:false};
+  if(p&&p.col)p.col=false;
+  S.nodes.push(n);touch();rerender();
+  setTimeout(function(){var t=document.querySelector('[data-k="t'+n.id+'"]');if(t){t.focus();t.scrollIntoView({block:"center"});}},0);
+}
+function removeNode(id){
+  var gone={};(function walk(i){gone[i]=1;kids(i).forEach(function(k){walk(k.id);});})(id);
+  S.nodes=S.nodes.filter(function(n){return !gone[n.id];});
+  S.actions=S.actions.filter(function(a){return !(a.node&&gone[a.node]);});
+  armed=null;touch();rerender();
+}
+
+function renderActions(){
+  var box=$("actions");box.innerHTML="";
+  if(!S.actions.length){box.appendChild(h("p",{class:"sm",text:"No actions yet. Add one for each root cause."}));return;}
+  var F=flags();
+  S.actions.forEach(function(a){
+    var c=h("div",{class:"ac",id:"act-"+a.id}),k="a"+a.id;
+    add(c,h("div",{class:"nh"},h("span",{class:"chip "+(a.status==="done"?"c-v":"c-rep"),text:a.status==="done"?"Marked done":"Open"}),a.ex?h("span",{class:"chip c-no",text:"Example"}):null));
+    add(c,h("label",{class:"sm"},"Action",ta(a.text,k+"t",function(v){a.text=v;touch();renderStatusLite();})));
+    var f=h("div",{class:"nf"});
+    var opts=S.nodes.map(function(n){return [String(n.id),(lvLabel(n.level).replace(" cause","")+": "+short(n.text,60))];});
+    add(f,field("Cause it deals with",sel(opts,a.node?String(a.node):"",k+"n",function(v){a.node=v?parseInt(v,10):null;touch();rerender();},"Not linked"),true));
+    add(f,field("Owner",inp("text",a.owner,k+"o",function(v){a.owner=v;touch();renderStatusLite();})));
+    add(f,field("Due date",inp("date",a.due,k+"d",function(v){a.due=dOk(v);touch();renderStatusLite();})));
+    add(f,field("Type of control",sel(HOC.map(function(x){return [x,x];}),a.hoc,k+"h",function(v){a.hoc=v;touch();rerender();},"Choose control")));
+    add(f,field("Status",sel([["open","Open"],["done","Done, and checked by someone else"]],a.status,k+"s",function(v){a.status=v==="done"?"done":"open";touch();rerender();},"Open")));
+    if(a.status==="done"){
+      add(f,field("Checked by (not the owner)",inp("text",a.verBy,k+"v",function(v){a.verBy=v;touch();renderStatusLite();})));
+      add(f,field("Date checked",inp("date",a.verOn,k+"w",function(v){a.verOn=dOk(v);touch();renderStatusLite();})));
+    }
+    add(c,f);
+    var mine=F.gaps.concat(F.notes).filter(function(x){return x.ref===k;});
+    if(mine.length){var ul=h("ul",{class:"fl"});mine.forEach(function(x){ul.appendChild(h("li",{class:F.gaps.indexOf(x)>=0?"g":"o",text:x.msg.replace(/^Action: [^.]*\.\s*/,"")}));});c.appendChild(ul);}
+    var armedHere=armed==="a"+a.id;
+    add(c,h("div",{class:"na"},h("button",{class:"btn danger small"+(armedHere?" armed":""),type:"button","data-k":k+"x",text:armedHere?"Confirm: remove this action":"Remove",onclick:function(){if(armedHere){S.actions=S.actions.filter(function(z){return z!==a;});armed=null;touch();rerender();}else arm("a"+a.id);}})));
+    box.appendChild(c);
+  });
+}
+
+function kpi(n,l,cls){return h("div",{class:"kpi "+(cls||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderChecks(){
+  var F=flags(),k=$("kpis"),box=$("flagList");k.innerHTML="";box.innerHTML="";
+  var c=S.nodes.length,by={immediate:0,underlying:0,root:0};S.nodes.forEach(function(n){if(by[n.level]!==undefined)by[n.level]++;});
+  var ver=S.nodes.filter(function(n){return n.ev==="verified"&&n.evNote.trim();}).length;
+  var done=S.actions.filter(function(a){return a.status==="done"&&a.verBy.trim()&&norm(a.verBy)!==norm(a.owner)&&a.verOn;}).length;
+  add(k,kpi(c,"Causes in the tree"),kpi(by.immediate+" / "+by.underlying+" / "+by.root,"Immediate, underlying, root"),
+    kpi(c?ver+" of "+c:"0","Verified with a note",c&&ver<c?"warn":"ok"),
+    kpi(F.gaps.length,"Gaps",F.gaps.length?"crit":"ok"),kpi(F.notes.length,"Notes",F.notes.length?"warn":""),
+    kpi(S.actions.length?done+" of "+S.actions.length:"0","Actions independently checked",S.actions.length&&done<S.actions.length?"warn":""));
+  if(F.empty){box.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function group(title,list,cls){
+    if(!list.length)return;
+    add(box,h("h3",{text:title+" ("+list.length+")"}));
+    var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){
+      var li=h("li",{class:cls});li.appendChild(document.createTextNode(where(x.ref)+x.msg+" "));
+      var tgt=x.ref==="e"?"node-e":(String(x.ref).charAt(0)==="a"?"act-"+String(x.ref).slice(1):"node-"+x.ref);
+      li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Go there",onclick:function(){goTo(x.ref,tgt);}}));
+      ul.appendChild(li);
+    });box.appendChild(ul);
+  }
+  group("Gaps",F.gaps,"g");group("Notes",F.notes,"o");
+  if(!F.gaps.length&&!F.notes.length)box.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the investigation."}));
+}
+function where(ref){
+  if(ref==="e")return "Event: ";
+  if(typeof ref==="string"&&ref.charAt(0)==="a")return "";
+  var n=byId(ref);return n?("Cause \""+short(n.text,45)+"\": "):"";
+}
+function goTo(ref,id){
+  var isAct=typeof ref==="string"&&ref.charAt(0)==="a";
+  showTab(isAct?"actions":"tree");
+  setTimeout(function(){var el=$(id);if(el){el.scrollIntoView({block:"center"});var f=el.querySelector("textarea,input,select");if(f)f.focus();}},30);
+}
+
+/* ---------- report (print) ---------- */
+function buildReport(){
+  var r=$("report"),F=flags(),e=S.event;r.innerHTML="";
+  add(r,h("h1",{text:"Causal tree report"}));
+  if(e.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real investigation."}));
+  add(r,h("p",{},h("strong",{text:e.title||"(event not described)"})));
+  add(r,h("p",{text:"Date: "+(e.date?fmt(e.date):"not set")+".  Where: "+(e.place||"not set")+".  Severity: "+SEVL[e.sev||0]+".  Lead: "+(e.lead||"not named")+".  Reviewer: "+(e.reviewer||"not named")+".  Reporting duties checked: "+(e.reported?"yes":"no")+"."}));
+  add(r,h("p",{class:"gapx",text:F.empty?"Nothing to check.":(F.gaps.length?("Gaps found ("+F.gaps.length+"). This investigation should not be treated as complete."):"No gaps found by the checks. A competent person must still judge the investigation.")}));
+  add(r,h("h2",{text:"Causal tree"}));
+  function ul(pid){var l=kids(pid);if(!l.length)return null;var u=h("ul",{});l.forEach(function(n){
+    var li=h("li",{});li.appendChild(h("span",{class:"chip",text:lvLabel(n.level)+", "+typeLabel(n.type)+", "+(n.ev?n.ev:"no evidence status")}));
+    li.appendChild(document.createTextNode(" "+(n.text||"(no wording)")+(n.evNote?" [Checked: "+n.evNote+"]":"")));
+    var s=ul(n.id);if(s)li.appendChild(s);u.appendChild(li);});return u;}
+  var t=ul(null);add(r,t||h("p",{text:"No causes added."}));
+  add(r,h("h2",{text:"Actions"}));
+  if(!S.actions.length)add(r,h("p",{text:"No actions."}));
+  else{var tb=h("table",{}),th=h("tr",{});["Action","Cause","Owner","Due","Control","Status","Checked by"].forEach(function(x){th.appendChild(h("th",{text:x}));});tb.appendChild(th);
+    S.actions.forEach(function(a){var n=a.node?byId(a.node):null;var tr=h("tr",{});[a.text,n?short(n.text,50):"not linked",a.owner,fmt(a.due),a.hoc,a.status==="done"?"Done":"Open",a.status==="done"?(a.verBy+" "+fmt(a.verOn)):""].forEach(function(x){tr.appendChild(h("td",{text:x||"not set"}));});tb.appendChild(tr);});add(r,tb);}
+  add(r,h("h2",{text:"Gaps and notes"}));
+  var all=F.gaps.map(function(x){return "GAP: "+where(x.ref)+x.msg;}).concat(F.notes.map(function(x){return "Note: "+where(x.ref)+x.msg;}));
+  if(!all.length)add(r,h("p",{text:"None."}));else{var u2=h("ul",{});all.forEach(function(x){u2.appendChild(h("li",{text:x}));});add(r,u2);}
+  add(r,h("p",{text:"Decision support only. A competent person must judge the result. Printed "+fmt(today())+"."}));
+}
+
+/* ---------- tabs, files, buttons ---------- */
+function showTab(t){
+  tab=t;uiSet("tab",t);
+  ["tree","actions","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="checks")renderChecks();
+  if(t==="actions")renderActions();
+}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnAddAction").onclick=function(){if(S.actions.length>=MAXA)return;S.actions.push({id:nid(),node:null,text:"",owner:"",due:"",hoc:"",status:"open",verBy:"",verOn:"",ex:false});touch();rerender();setTimeout(function(){var l=S.actions[S.actions.length-1];var t=document.querySelector('[data-k="a'+l.id+'t"]');if(t)t.focus();},0);};
+$("btnNew").onclick=function(){
+  var b=$("btnNew");
+  if(armed==="new"){S=blank();armed=null;touch();rerender();b.textContent="New investigation";b.classList.remove("danger","armed");return;}
+  if(!S.nodes.length&&!S.event.title.trim()&&!S.actions.length){S=blank();touch();rerender();return;}
+  armed="new";b.textContent="Confirm: clear everything";b.classList.add("danger","armed");
+  clearTimeout(armTimer);armTimer=setTimeout(function(){armed=null;b.textContent="New investigation";b.classList.remove("danger","armed");},5000);
+};
+$("btnSave").onclick=function(){download("causal-tree.json",JSON.stringify({app:"causal-tree-builder",version:1,saved:new Date().toISOString(),data:S},null,2),"application/json");uiSet("fileSaved",Date.now());};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){
+  var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>2000000){alert("That file is too large to be a causal tree data file.");ev.target.value="";return;}
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{var d=JSON.parse(rd.result);if(!d||d.app!=="causal-tree-builder"||!d.data)throw new Error("not ours");S=clean(d.data);armed=null;touch();rerender();}
+    catch(e){alert("That file could not be read. It is not a causal tree data file.");}
+    ev.target.value="";
+  };
+  rd.readAsText(f);
+});
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+$("btnExample").onclick=function(){S=example();armed=null;touch();rerender();showTab("tree");window.scrollTo(0,0);};
+
+function example(){
+  var o=blank();
+  o.event={title:"Example: an operative's hand was cut on a conveyor edge while clearing a jam. Four weeks off work.",date:off(-20),place:"Example line, conveyor section 3",sev:4,lead:"Example investigator",reviewer:"",suff:"",reported:false,example:true};
+  function N(id,parent,text,type,level,ev,note,nec,suff){o.nodes.push({id:id,parent:parent,text:text,type:type,level:level,ev:ev,evNote:note||"",nec:nec||"yes",suff:suff||"",ex:true,col:false});}
+  N(1,null,"The operative's hand was inside the guarded area while the conveyor was running.","condition","immediate","verified","Position and running state confirmed from the injury photo and the machine log.","yes","yes");
+  N(11,1,"The access panel interlock had been bypassed with a wedge.","condition","immediate","verified","Wedge photographed in place straight after the incident.","yes","yes");
+  N(111,11,"Jams happened about twice a shift, and clearing them with the line stopped took several minutes longer.","condition","underlying","reported","Operative and supervisor statements. There is no jam log.","yes","yes");
+  N(1111,111,"The machine has no designed way to clear a jam without opening the guarded area.","system","root","verified","Checked the machine drawings and the safe working procedure. Neither has one.","yes","");
+  N(112,11,"The bypass was not found at the start of the shift.","condition","underlying","verified","Start of shift check sheet for the last month reviewed.","yes","yes");
+  N(1121,112,"The start of shift check does not include the interlock.","system","root","verified","Checklist reviewed, interlock not listed.","yes","");
+  N(1122,112,"Checks were written from the machine manual, not from how the line is really used.","system","root","assumed","","yes","");
+  N(2,null,"The operative reached in without isolating the conveyor.","action","immediate","reported","Operative's statement.","yes","yes");
+  N(21,2,"The isolation switch is 12 m from the jam point.","condition","underlying","verified","Measured on site.","yes","yes");
+  N(211,21,"Isolation points were not reviewed when the conveyor was moved last year.","system","root","verified","Layout change record has no isolation review.","yes","");
+  N(22,2,"Clearing jams with the line running was accepted practice when output was behind.","system","underlying","reported","Two operatives said so.","yes","");
+  o.actions.push({id:901,node:1111,text:"Fit a hatch at the jam point with a fixed, interlocked guard, and test it before the line restarts.",owner:"Example engineer",due:off(30),hoc:"Engineering",status:"open",verBy:"",verOn:"",ex:true});
+  o.actions.push({id:902,node:211,text:"Add an isolation review to the procedure for moving or changing a line.",owner:"Example manager",due:off(-5),hoc:"Administrative",status:"done",verBy:"Example manager",verOn:off(-2),ex:true});
+  return o;
+}
+
+/* ---------- start ---------- */
+var saved=load();if(saved)S=saved;
+var ui=uiGet();
+renderAll();renderSave();
+showTab(["tree","actions","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"tree");
+window.__ct={flags:flags,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>
