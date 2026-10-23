@@ -1,0 +1,22 @@
+/* Extra mapping for the EHS Readiness Dashboard, loaded after theme.css.
+   That page was a light theme with its own variable names. --navy is used as
+   TEXT colour for headings and big numbers, so it becomes light here, and the
+   header gradient is set explicitly instead. Status colours (--amber, --crimson)
+   are left alone so amber and red keep their meaning. */
+:root{
+  --navy:#f2f1ff;
+  --navy-light:#1b1e56;
+  --ink:#f2f1ff;
+  --ink-soft:#bcbbdc;
+  --gauge-track:#2a2e68;
+  --amber-dark:#ffd166;
+}
+header.top{
+  background:linear-gradient(135deg,#0e1040 0%,#1b1e56 100%);
+}
+/* cream caution box becomes an amber tinted one, still clearly a caution */
+.disclaimer{
+  background:rgba(252,211,77,.10);
+  border-color:rgba(252,211,77,.55);
+  color:#fcd34d;
+}

@@ -1,0 +1,8 @@
+/* Extra mapping for the 7S audit dashboard, loaded after theme.css.
+   On that page --ink is LIGHT text and --page is the background, so it cannot
+   be set globally. Status colours (--gold, --green, --red) are left alone. */
+:root{
+  --page:#070a1a;
+  --ink:#f2f1ff;
+  --on-accent:#06061a;
+}
