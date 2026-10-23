@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Company Skills Dashboard</title>
+<meta name="description" content="Roll up the skills matrices of every team into one management view. Shows which teams and skills depend on too few signed-off people, which sign-offs are about to expire, and where the paper does not match the checks.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --bar:#3aa7c7;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1280px;margin:0 auto}
+input,select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem}
+.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:var(--crit)}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right}
+.bar{display:inline-block;vertical-align:middle;width:110px;height:10px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin-right:8px}
+.bar i{display:block;height:100%;background:var(--bar)}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.crit{background:var(--high)}.chip.ex{background:#a9b8cf}
+.bad{color:#ff8f8f;font-weight:700}.okc{color:var(--low);font-weight:700}.mid{color:var(--med);font-weight:700}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+details.t{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;margin:0 0 10px}
+details.t summary{cursor:pointer;padding:12px 14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+details.t .body{padding:0 14px 14px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}.bar{width:70px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.78rem;width:100%;border-collapse:collapse}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Company Skills Dashboard</h1>
+    <p>One management view across every team's skills matrix. Load each team's data file from the Skills Matrix Builder. A skill only counts as covered when someone other than the operator has signed it off and the sign-off is in date, so this shows where the paper and the checks disagree.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="over">Overview</button>
+  <button role="tab" aria-selected="false" data-tab="skills">Skills across teams</button>
+  <button role="tab" aria-selected="false" data-tab="teams">Team detail</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div class="banner" id="banner" hidden>Example data is loaded. The teams, names and ratings are made up so you can see how the dashboard works. It is not a real company. Press Clear all to start with your own teams.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add team files</button>
+  <button class="btn sec" id="btnLocal">Add the matrix from this browser</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn danger" id="btnClear">Clear all</button>
+  <input type="file" id="file" accept="application/json,.json" multiple style="position:absolute;left:-9999px" tabindex="-1" aria-label="Add team data files">
+</div>
+<p class="sm" id="loadNote" role="status"></p>
+<p class="disc">Each team builds its matrix in the <a href="skills-matrix-builder.html">Skills Matrix Builder</a> and uses Save data file. Add those files here, as many as you have. Adding a file for a team that is already here replaces the old one. Names stay in this browser. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
+
+<section id="tab-over">
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h2>Teams</h2><div class="tablewrap"><table id="teamTable"></table></div></div>
+  <div class="card"><h2>What needs attention first</h2><div id="priority"></div></div>
+</section>
+
+<section id="tab-skills" hidden>
+  <p class="disc">Skills with the same name in different teams are grouped. The coverage is the number of people signed off in date, against the number each team said it needs.</p>
+  <div class="card"><div class="tablewrap"><table id="skillTable"></table></div></div>
+</section>
+
+<section id="tab-teams" hidden><div id="teamDetail"></div></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it does</h2>
+    <p>It reads the matrices that teams have built and applies the same rules to each one. It does not take anyone's word for a level: a level 3 or 4 counts only when a named assessor other than the operator has signed it off and the date is inside the valid period set in that team's matrix.</p>
+  </div>
+  <div class="card"><h2>The measures</h2>
+    <ul>
+      <li><strong>Cover against target:</strong> for each skill, the signed-off people counted up to the number the team said it needs, added up across the team, as a share of the total needed.</li>
+      <li><strong>Critical skills covered:</strong> critical skills that have at least as many signed-off people as the team needs.</li>
+      <li><strong>Claimed but not counted:</strong> people shown as competent (level 3 or 4) whose sign-off is missing, self-signed, or out of date. A high number means the matrix looks better than the evidence.</li>
+      <li><strong>Expiring in 90 days:</strong> signed-off people whose sign-off runs out within three months. Plan re-checks before cover drops.</li>
+      <li><strong>Key person risks:</strong> people who are the only signed-off cover for three or more skills.</li>
+      <li><strong>File age:</strong> a team file saved more than 90 days ago is flagged, because the figures may be out of date.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>Limits</h2>
+    <p>No gaps found does not mean the company is competent. The dashboard checks the record, not the people. Teams may define skills and targets differently, so compare with care, and have a competent person judge the sign-offs. Check your own legal duties on training and competence.</p>
+  </div>
+  <div class="card"><h2>Related tools</h2>
+    <p><a href="skills-matrix-builder.html">Skills Matrix Builder</a> for each team. <a href="skills-matrix-dashboard.html">Skills Matrix and Cross-Training Dashboard</a> for my own team's results. <a href="corrective-action-tracker.html">Corrective Action Tracker</a> to follow training actions to a checked close.</p>
+  </div>
+</section>
+</main>
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's assessment of training and competence. Company Skills Dashboard. Data stays in this browser. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-company-skills-v1",LOCALKEY="rmilburn-skills-matrix-v1",UIK="rmilburn-company-skills-ui";
+var MAXT=30,MAXP=60,MAXS=40,STALE=90;
+var T=[],dirty=false,storeOk=true,saveT=null,armed=null,armT=null,example=false;
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function addMonths(d,m){var p=d.split("-").map(Number);return dstr(new Date(p[0],p[1]-1+m,p[2]));}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+
+/* same sanitising as the Skills Matrix Builder */
+function cleanM(d){
+  var o={team:"",months:12,people:[],skills:[],cells:{}};if(!d||typeof d!=="object")return o;
+  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));
+  var seen={};
+  (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
+  seen={};
+  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
+  var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
+  var c=d.cells&&typeof d.cells==="object"?d.cells:{};
+  Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
+    var v={lv:Math.max(0,Math.min(4,parseInt(x.lv,10)||0)),by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200)};
+    if(v.lv||v.by||v.on||v.plan||v.note)o.cells[k]=v;});
+  return o;
+}
+function cleanTeams(list){
+  var out=[],seen={},names={};
+  (Array.isArray(list)?list.slice(0,MAXT):[]).forEach(function(t,i){if(!t||typeof t!=="object")return;var m=cleanM(t.m),id=parseInt(t.id,10)||(i+1);if(seen[id])return;seen[id]=1;
+    var nm=str(t.name,80)||m.team||("Team "+(i+1));if(names[norm(nm)])return;names[norm(nm)]=1;
+    out.push({id:id,name:nm,saved:dOk(t.saved),loaded:dOk(t.loaded)||today(),ex:t.ex===true,m:m});});
+  return out;
+}
+function cellOf(m,p,s){return m.cells[p+":"+s]||{lv:0,by:"",on:"",plan:"",note:""};}
+function state(m,p,s){
+  var c=cellOf(m,p.id,s.id),td=today(),r={lv:c.lv,ok:false,unsigned:false,expired:false,late:false,exp:"",why:""};
+  if(c.lv>=3){
+    if(!c.by.trim()){r.unsigned=true;r.why="no assessor named";}
+    else if(norm(c.by)===norm(p.name)){r.unsigned=true;r.why="the operator signed off their own level";}
+    else if(!c.on){r.unsigned=true;r.why="no sign-off date";}
+    else if(c.on>td){r.unsigned=true;r.why="sign-off date is in the future";}
+    else{r.exp=addMonths(c.on,m.months);if(r.exp<td){r.expired=true;r.why="sign-off ran out on "+fmt(r.exp);}else r.ok=true;}
+  }else if(c.plan&&c.plan<td){r.late=true;r.why="training date "+fmt(c.plan)+" has passed";}
+  return r;
+}
+function metrics(t){
+  var m=t.m,gaps=[],notes=[],key={},cov={},claimed=0,counted=0,expSoon=0,needSum=0,okSum=0,critN=0,critOk=0,short=0,td=today();
+  m.people.forEach(function(p){key[p.id]=[];});
+  m.skills.forEach(function(s){
+    var ok=[],tr=0,nm=s.name||"(no name)";
+    m.people.forEach(function(p){var st=state(m,p,s),pn=p.name||"(no name)";
+      if(st.lv>=3)claimed++;
+      if(st.ok){ok.push(p);counted++;if(st.lv===4)tr++;if(daysBetween(td,st.exp)<=90)expSoon++;}
+      if(st.unsigned||st.expired)gaps.push(pn+", "+nm+": level "+st.lv+" not counted, "+st.why+".");
+      if(st.late)gaps.push(pn+", "+nm+": "+st.why+" and the person is still below competent.");});
+    cov[s.id]={ok:ok.length,tr:tr};
+    if(ok.length===1)key[ok[0].id].push(nm);
+    needSum+=s.need;okSum+=Math.min(ok.length,s.need);
+    if(s.crit){critN++;if(ok.length>=s.need)critOk++;}
+    if(ok.length<s.need){short++;
+      if(s.crit)gaps.push("Critical skill "+nm+": "+ok.length+" of "+s.need+" signed-off people."+(ok.length===0?" Nobody is signed off.":""));
+      else notes.push(nm+": "+ok.length+" of "+s.need+" signed-off people.");}
+    if(s.crit&&!tr)notes.push(nm+": critical, and nobody signed off can train others.");
+    if(s.crit&&!s.sop.trim())notes.push(nm+": critical, and no SOP number is recorded.");
+  });
+  var keyp=0;
+  m.people.forEach(function(p){if(key[p.id].length>=3){keyp++;notes.push((p.name||"(no name)")+" is the only signed-off cover for "+plural(key[p.id].length,"skill")+": "+key[p.id].join(", ")+".");}});
+  var age=t.saved?daysBetween(t.saved,td):null;
+  if(age!==null&&age>STALE)notes.push("This team's file was saved "+age+" days ago. The figures may be out of date.");
+  if(!t.saved&&!t.ex)notes.push("This team's file has no saved date, so its age is unknown.");
+  return {gaps:gaps,notes:notes,cov:cov,people:m.people.length,skills:m.skills.length,critN:critN,critOk:critOk,short:short,claimed:claimed,counted:counted,
+    notCounted:claimed-counted,expSoon:expSoon,keyp:keyp,pct:needSum?Math.round(100*okSum/needSum):0,needSum:needSum,age:age,empty:!m.people.length||!m.skills.length};
+}
+
+/* storage */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.teams)){example=d.example===true;return cleanTeams(d.teams);}}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify({teams:T,example:example}));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. The team files are still on your computer, so add them again next time.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. The team files themselves stay with each team.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+
+/* adding teams */
+function upsert(name,m,saved,ex){
+  var k=norm(name),found=null;T.forEach(function(t){if(norm(t.name)===k)found=t;});
+  if(found){found.m=m;found.saved=saved;found.loaded=today();found.ex=!!ex;return "replaced";}
+  if(T.length>=MAXT)return "full";
+  var id=0;T.forEach(function(t){if(t.id>id)id=t.id;});
+  T.push({id:id+1,name:name,saved:saved,loaded:today(),ex:!!ex,m:m});return "added";
+}
+$("btnAdd").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){
+  var files=[].slice.call(ev.target.files||[]).slice(0,MAXT),res=[],left=files.length;if(!left)return;
+  if(example){T=[];example=false;}
+  files.forEach(function(f){
+    if(f.size>2000000){res.push(f.name+": too large to be a skills matrix file.");if(!--left)done();return;}
+    var rd=new FileReader();
+    rd.onload=function(){
+      try{var d=JSON.parse(rd.result);if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;
+        var m=cleanM(d.data),nm=m.team.trim()||f.name.replace(/\.json$/i,"").slice(0,80);
+        var sv=typeof d.saved==="string"?dOk(d.saved.slice(0,10)):"";
+        var r=upsert(nm,m,sv,d.data.example===true);
+        res.push(nm+": "+(r==="added"?"added":r==="replaced"?"replaced the earlier copy":"not added, the limit of "+MAXT+" teams is reached")+".");
+      }catch(e){res.push(f.name+": not a skills matrix data file, so it was skipped.");}
+      if(!--left)done();};
+    rd.onerror=function(){res.push(f.name+": could not be read.");if(!--left)done();};
+    rd.readAsText(f);});
+  function done(){$("loadNote").textContent=res.join(" ");touch();renderAll();ev.target.value="";}
+});
+$("btnLocal").onclick=function(){
+  var raw=null;try{raw=JSON.parse(localStorage.getItem(LOCALKEY));}catch(e){}
+  if(!raw||typeof raw!=="object"){$("loadNote").textContent="There is no matrix saved in this browser. Build one in the Skills Matrix Builder first, or add a data file.";return;}
+  var m=cleanM(raw);if(!m.people.length||!m.skills.length){$("loadNote").textContent="The matrix saved in this browser is empty, so it was not added.";return;}
+  if(example){T=[];example=false;}
+  var nm=m.team.trim()||"Team from this browser",r=upsert(nm,m,"",raw.example===true);
+  $("loadNote").textContent=nm+": "+(r==="added"?"added":r==="replaced"?"replaced the earlier copy":"not added, the limit is reached")+". It has no saved date, so its age is unknown.";
+  touch();renderAll();
+};
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){T=[];example=false;armed=null;touch();renderAll();b.textContent="Clear all";b.classList.remove("armed");return;}
+  if(!T.length)return;armed="clear";b.textContent="Confirm: remove all teams";b.classList.add("armed");
+  clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear all";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){T=exampleTeams();example=true;touch();renderAll();$("loadNote").textContent="";};
+
+/* views */
+function all(){return T.map(function(t){return {t:t,x:metrics(t)};});}
+function renderAll(){var A=all();renderStatus(A);renderOver(A);renderSkills();renderDetail(A);$("banner").hidden=!example;}
+function renderStatus(A){
+  var el=$("status");el.innerHTML="";
+  if(!A.length){el.className="status st-empty";add(el,h("strong",{text:"No teams added yet."}),h("div",{class:"sm",text:"Add team data files from the Skills Matrix Builder, or load the example."}));return;}
+  var g=0,n=0;A.forEach(function(a){g+=a.x.gaps.length;n+=a.x.notes.length;});
+  if(g){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on this picture for cover decisions yet."}),h("div",{class:"sm",text:plural(g,"gap")+" and "+plural(n,"note")+" across "+plural(A.length,"team")+"."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the company is competent. A competent person must still judge the sign-offs. "+plural(n,"note")+" to look at."}));}
+}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function sum(A,f){var s=0;A.forEach(function(a){s+=f(a.x);});return s;}
+function renderOver(A){
+  var k=$("kpis"),t=$("teamTable"),pr=$("priority");k.innerHTML="";t.innerHTML="";pr.innerHTML="";
+  var ct=sum(A,function(x){return x.critN;}),co=sum(A,function(x){return x.critOk;}),nc=sum(A,function(x){return x.notCounted;}),es=sum(A,function(x){return x.expSoon;}),kp=sum(A,function(x){return x.keyp;}),gp=sum(A,function(x){return x.gaps.length;});
+  var ns=sum(A,function(x){return x.needSum;}),okw=0;A.forEach(function(a){okw+=a.x.pct*a.x.needSum/100;});
+  add(k,[kpi(A.length,"Teams"),kpi(sum(A,function(x){return x.people;}),"People"),
+    kpi(ns?Math.round(100*okw/ns)+"%":"0%","Cover against target",ns&&okw/ns<.8?"warn":"ok"),
+    kpi(ct?co+" of "+ct:"0","Critical skills covered",ct&&co<ct?"crit":"ok"),
+    kpi(nc,"Claimed but not counted",nc?"warn":"ok"),kpi(es,"Sign-offs expiring in 90 days",es?"warn":"ok"),
+    kpi(kp,"Key person risks",kp?"warn":"ok"),kpi(gp,"Gaps",gp?"crit":"ok")]);
+  if(!A.length){t.appendChild(h("tbody",{},h("tr",{},h("td",{text:"No teams yet."}))));pr.appendChild(h("p",{class:"sm",text:"Nothing to show yet."}));return;}
+  var hr=h("tr",{});[["Team",""],["People","num"],["Cover against target",""],["Critical covered","num"],["Skills short","num"],["Claimed not counted","num"],["Expiring 90 days","num"],["Gaps","num"],["File",""],["Status",""]].forEach(function(c){hr.appendChild(h("th",{class:c[1],text:c[0]}));});
+  t.appendChild(h("thead",{},hr));var tb=h("tbody");
+  A.slice().sort(function(a,b){return b.x.gaps.length-a.x.gaps.length||a.t.name.localeCompare(b.t.name);}).forEach(function(a){var x=a.x;
+    var fileTxt=a.t.ex?"Example":(x.age===null?"Age unknown":x.age>STALE?x.age+" days old":x.age+" days");
+    tb.appendChild(h("tr",{},h("td",{},h("strong",{text:a.t.name}),a.t.ex?h("span",{class:"chip ex",text:"Example",style:"margin-left:6px"}):null),
+      h("td",{class:"num",text:String(x.people)}),
+      h("td",{},h("span",{class:"bar","aria-hidden":"true"},h("i",{style:"width:"+x.pct+"%"})),h("span",{class:x.pct>=100?"okc":x.pct>=80?"mid":"bad",text:x.pct+"%"})),
+      h("td",{class:"num"},h("span",{class:x.critN&&x.critOk<x.critN?"bad":"okc",text:x.critOk+" of "+x.critN})),
+      h("td",{class:"num",text:String(x.short)}),h("td",{class:"num",text:String(x.notCounted)}),h("td",{class:"num",text:String(x.expSoon)}),
+      h("td",{class:"num"},h("span",{class:x.gaps.length?"bad":"okc",text:String(x.gaps.length)})),
+      h("td",{text:fileTxt}),
+      h("td",{},x.empty?h("span",{class:"chip",text:"Empty"}):x.gaps.length?h("span",{class:"chip g",text:"Gaps"}):h("span",{class:"chip ok",text:"No gaps found"}))));});
+  t.appendChild(tb);
+  var items=[];
+  A.forEach(function(a){a.x.gaps.forEach(function(g){items.push({team:a.t.name,msg:g,crit:/^Critical skill/.test(g)});});});
+  items.sort(function(a,b){return (b.crit?1:0)-(a.crit?1:0);});
+  if(!items.length)pr.appendChild(h("p",{class:"sm",text:"No gaps. A competent person must still judge the sign-offs."}));
+  else{var ul=h("ul",{class:"fl"});items.slice(0,12).forEach(function(i){ul.appendChild(h("li",{class:"g",text:i.team+": "+i.msg}));});pr.appendChild(ul);
+    if(items.length>12)pr.appendChild(h("p",{class:"sm",text:plural(items.length-12,"more gap")+" are listed under Team detail."}));}
+}
+function skillRows(){
+  var g={};
+  T.forEach(function(t){var x=metrics(t);t.m.skills.forEach(function(s){var k=norm(s.name);if(!k)return;var r=g[k]||(g[k]={name:s.name,crit:false,teams:0,need:0,ok:0,zero:[],short:[],tr:0});
+    var c=x.cov[s.id];r.teams++;r.need+=s.need;r.ok+=c.ok;r.tr+=c.tr;if(s.crit)r.crit=true;
+    if(c.ok===0)r.zero.push(t.name);if(c.ok<s.need)r.short.push(t.name);});});
+  return Object.keys(g).map(function(k){return g[k];}).sort(function(a,b){return (b.crit-a.crit)||(b.zero.length-a.zero.length)||(b.short.length-a.short.length)||a.name.localeCompare(b.name);});
+}
+function renderSkills(){
+  var t=$("skillTable");t.innerHTML="";var rows=skillRows();
+  if(!rows.length){t.appendChild(h("tbody",{},h("tr",{},h("td",{text:"No skills to show yet."}))));return;}
+  var hr=h("tr",{});[["Skill",""],["Teams","num"],["Signed off / needed","num"],["Trainers","num"],["Teams with nobody signed off",""],["Teams short",""]].forEach(function(c){hr.appendChild(h("th",{class:c[1],text:c[0]}));});
+  t.appendChild(h("thead",{},hr));var tb=h("tbody");
+  rows.forEach(function(r){tb.appendChild(h("tr",{},h("td",{},r.name," ",r.crit?h("span",{class:"chip crit",text:"Critical"}):null),h("td",{class:"num",text:String(r.teams)}),
+    h("td",{class:"num"},h("span",{class:r.ok>=r.need?"okc":r.crit?"bad":"mid",text:r.ok+" / "+r.need})),h("td",{class:"num",text:String(r.tr)}),
+    h("td",{text:r.zero.length?r.zero.join(", "):"None"}),h("td",{text:r.short.length?r.short.join(", "):"None"})));});
+  t.appendChild(tb);
+}
+function renderDetail(A){
+  var box=$("teamDetail");box.innerHTML="";
+  if(!A.length){box.appendChild(h("p",{class:"sm",text:"No teams yet."}));return;}
+  A.forEach(function(a){var x=a.t&&a.x,id=a.t.id;
+    var d=h("details",{class:"t"});
+    var rm=armed==="t"+id;
+    d.appendChild(h("summary",{},h("strong",{text:a.t.name}),h("span",{class:"chip "+(a.x.gaps.length?"g":"ok"),text:plural(a.x.gaps.length,"gap")}),h("span",{class:"sm",text:plural(a.x.notes.length,"note")+". Cover "+a.x.pct+"%. "+(a.t.saved?"File saved "+fmt(a.t.saved)+".":"File date unknown.")})));
+    var b=h("div",{class:"body"});
+    if(a.x.gaps.length){b.appendChild(h("h3",{text:"Gaps"}));var u=h("ul",{class:"fl"});a.x.gaps.forEach(function(g){u.appendChild(h("li",{class:"g",text:g}));});b.appendChild(u);}
+    if(a.x.notes.length){b.appendChild(h("h3",{text:"Notes"}));var u2=h("ul",{class:"fl"});a.x.notes.forEach(function(g){u2.appendChild(h("li",{class:"o",text:g}));});b.appendChild(u2);}
+    if(!a.x.gaps.length&&!a.x.notes.length)b.appendChild(h("p",{class:"sm",text:"No gaps or notes."}));
+    b.appendChild(h("div",{style:"margin-top:12px"},h("button",{class:"btn danger small"+(rm?" armed":""),type:"button",text:rm?"Confirm: remove this team":"Remove this team",onclick:function(){
+      if(rm){T=T.filter(function(t){return t.id!==id;});armed=null;touch();renderAll();}else{armed="t"+id;clearTimeout(armT);armT=setTimeout(function(){armed=null;renderAll();},5000);renderAll();var dd=document.querySelectorAll("details.t");}}})));
+    d.appendChild(b);if(rm)d.open=true;box.appendChild(d);});
+}
+
+/* csv and print */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Team","People","Skills","Cover against target %","Critical skills","Critical covered","Skills short","Claimed competent","Counted","Claimed not counted","Expiring in 90 days","Key person risks","Gaps","Notes","File saved","Example data"];
+  var rows=all().map(function(a){var x=a.x;return [a.t.name,x.people,x.skills,x.pct,x.critN,x.critOk,x.short,x.claimed,x.counted,x.notCounted,x.expSoon,x.keyp,x.gaps.length,x.notes.length,a.t.saved,a.t.ex?"Yes":"No"];});
+  download("company-skills.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+function buildReport(){var r=$("report"),A=all();r.innerHTML="";
+  add(r,h("h1",{text:"Company skills report"}));
+  if(example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real company."}));
+  add(r,h("p",{text:"Printed "+fmt(today())+". "+plural(A.length,"team")+"."}));
+  var g=sum(A,function(x){return x.gaps.length;});
+  add(r,h("p",{class:"gapx",text:!A.length?"Nothing to check.":g?("Gaps found ("+g+"). Do not rely on this picture for cover decisions yet."):"No gaps found by the checks. A competent person must still judge the sign-offs."}));
+  var t=h("table",{}),hr=h("tr",{});["Team","People","Cover %","Critical covered","Skills short","Claimed not counted","Expiring 90 days","Gaps","File saved"].forEach(function(x){hr.appendChild(h("th",{text:x}));});t.appendChild(hr);
+  A.forEach(function(a){var x=a.x;t.appendChild(h("tr",{},[a.t.name,x.people,x.pct,x.critOk+" of "+x.critN,x.short,x.notCounted,x.expSoon,x.gaps.length,a.t.saved?fmt(a.t.saved):"unknown"].map(function(v){return h("td",{text:String(v)});})));});add(r,t);
+  add(r,h("h2",{text:"Gaps and notes by team"}));
+  A.forEach(function(a){add(r,h("h2",{text:a.t.name}));var l=a.x.gaps.map(function(x){return "GAP: "+x;}).concat(a.x.notes.map(function(x){return "Note: "+x;}));
+    if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}});
+  add(r,h("p",{text:"Decision support only. A competent person must judge the result."}));}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["over","skills","teams","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+
+function exampleTeams(){
+  function mk(team,months,people,skills,cells){var o={team:team,months:months,people:[],skills:[],cells:{}};
+    people.forEach(function(n,i){o.people.push({id:i+1,name:n,role:"Operator"});});
+    skills.forEach(function(s,i){o.skills.push({id:i+1,name:s[0],area:"",sop:s[3]||"",crit:s[1],need:s[2]});});
+    cells.forEach(function(c){o.cells[c[0]+":"+c[1]]={lv:c[2],by:c[3]||"",on:c[4]||"",plan:c[5]||"",note:""};});return o;}
+  var A="Example Supervisor",B="Example Manager";
+  var t1=mk("Example Assembly (made up)",12,["Example Person A1","Example Person A2","Example Person A3","Example Person A4"],
+    [["Isolate and lock off",true,2,"EX-101"],["Set up the line",true,2,"EX-102"],["Final inspection",false,2,"EX-103"]],
+    [[1,1,4,A,off(-60)],[2,1,3,A,off(-40)],[3,1,3,A,off(-30)],[4,1,2],[1,2,3,B,off(-20)],[2,2,3,B,off(-20)],[3,2,2],[1,3,3,A,off(-335)],[2,3,3,A,off(-10)],[3,3,3,A,off(-10)]]);
+  var t2=mk("Example Packing (made up)",12,["Example Person P1","Example Person P2","Example Person P3"],
+    [["Isolate and lock off",true,2,"EX-201"],["Set up the line",true,2],["Fork truck",false,1,"EX-203"]],
+    [[1,1,3,A,off(-350)],[2,1,3,"Example Person P2",off(-30)],[3,1,2],[1,2,3,B,off(-50)],[2,2,2],[3,2,1],[1,3,3,A,off(-20)],[2,3,0]]);
+  var t3=mk("Example Maintenance (made up)",24,["Example Person M1","Example Person M2","Example Person M3"],
+    [["Isolate and lock off",true,2,"EX-301"],["Set up the line",false,1,"EX-302"],["Fork truck",false,1]],
+    [[1,1,4,B,off(-100)],[2,1,3,B,off(-100)],[3,1,3,B,off(-90)],[1,2,3,B,off(-100)],[2,3,3,B,off(-60)],[3,3,3,B,off(-60)],[1,3,3,B,off(-60)]]);
+  return [{id:1,name:t1.team,saved:off(-12),loaded:today(),ex:true,m:t1},{id:2,name:t2.team,saved:off(-130),loaded:today(),ex:true,m:t2},{id:3,name:t3.team,saved:off(-5),loaded:today(),ex:true,m:t3}];
+}
+
+var sv=load();if(sv)T=sv;
+renderAll();renderSave();
+var ui=uiGet();showTab(["over","skills","teams","guide"].indexOf(ui.tab)>=0?ui.tab:"over");
+window.__cd={metrics:metrics,teams:function(){return T;},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>

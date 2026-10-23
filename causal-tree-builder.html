@@ -253,7 +253,8 @@ function h(tag,a){
     else e.setAttribute(k,v===true?"":v);}
   for(i=2;i<arguments.length;i++)add(e,arguments[i]);return e;
 }
-function add(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
 function pick(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
 function lvIdx(l){for(var i=0;i<LEVELS.length;i++)if(LEVELS[i][0]===l)return i;return -1;}
 function lvLabel(l){var i=lvIdx(l);return i<0?"No level":LEVELS[i][1];}

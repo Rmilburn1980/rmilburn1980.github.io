@@ -184,7 +184,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <p>No gaps found does not mean the team is competent. The tool only checks the record. A competent person has to judge whether the sign-offs are fair and whether the skills listed are the ones the job needs. Check your own legal duties on training and competence.</p>
   </div>
   <div class="card"><h2>Related tools</h2>
-    <p><a href="skills-matrix-dashboard.html">Skills Matrix and Cross-Training Dashboard</a> shows my own 11-person team results. <a href="corrective-action-tracker.html">Corrective Action Tracker</a> can follow training actions to a checked close.</p>
+    <p><a href="company-skills-dashboard.html">Company Skills Dashboard</a> rolls up the data files from every team into one management view. <a href="skills-matrix-dashboard.html">Skills Matrix and Cross-Training Dashboard</a> shows my own 11-person team results. <a href="corrective-action-tracker.html">Corrective Action Tracker</a> can follow training actions to a checked close.</p>
   </div>
 </section>
 </main>
@@ -223,8 +223,9 @@ function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
     else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
     else if(k==="value"||k==="checked"||k==="selected")e[k]=v;
     else e.setAttribute(k,v===true?"":v);}
-  for(i=2;i<arguments.length;i++)add(e,arguments[i]);return e;}
-function add(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
 function nid(list){var m=0;list.forEach(function(x){if(x.id>m)m=x.id;});return m+1;}
 function P(id){for(var i=0;i<S.people.length;i++)if(S.people[i].id===id)return S.people[i];return null;}
 function K(id){for(var i=0;i<S.skills.length;i++)if(S.skills[i].id===id)return S.skills[i];return null;}
