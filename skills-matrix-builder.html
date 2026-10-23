@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skills Matrix Builder</title>
+<meta name="description" content="Build a skills matrix for a team. A skill only counts as covered when a named person other than the operator has signed it off, and sign-offs expire. Shows single points of failure and who to cross-train next.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --l0:#16263d; --l1:#1d4a63; --l2:#1f6d8a; --l3:#3aa7c7; --l4:#9fe3f5;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:760px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1280px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,.cell:focus-visible,.linkbtn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:var(--crit)}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label,.row label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:.86rem}
+th,td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.74rem;background:var(--panel2);font-weight:600}
+th.sk{min-width:96px;max-width:130px;white-space:normal}
+th.pn,td.pn{text-align:left;position:sticky;left:0;background:var(--panel2);z-index:1;min-width:130px;max-width:150px}
+tr:last-child td{border-bottom:none}th:last-child,td:last-child{border-right:none}
+.cell{width:44px;height:44px;border-radius:8px;border:2px solid transparent;font-weight:800;font-size:1rem;cursor:pointer;color:var(--text);position:relative}
+.cell.l0{background:var(--l0);border-color:var(--line);color:var(--muted)}.cell.l1{background:var(--l1)}.cell.l2{background:var(--l2)}
+.cell.l3{background:var(--l3);color:var(--ink)}.cell.l4{background:var(--l4);color:var(--ink)}
+.cell.unsigned{border:2px dashed var(--med)}
+.cell.expired{border:2px dashed var(--high)}
+.cell.late{box-shadow:0 0 0 2px var(--crit)}
+.cell .mk{position:absolute;top:-5px;right:-5px;font-size:.62rem;background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:999px;min-width:16px;height:16px;line-height:14px;font-weight:700}
+.cov{font-weight:700}.cov.bad{color:#ff8f8f}.cov.ok{color:var(--low)}.cov.mid{color:var(--med)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin:0 0 12px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-flex;width:22px;height:22px;border-radius:6px;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;color:var(--text)}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf}
+.chip.crit{background:var(--high)}
+.list .it{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px;display:grid;grid-template-columns:2fr 1.4fr 1fr auto;gap:10px;align-items:end}
+.list .it.sk{grid-template-columns:2fr 1.4fr .8fr .8fr auto}
+@media (max-width:760px){.list .it,.list .it.sk{grid-template-columns:1fr 1fr}}
+.row label input,.row label select{width:100%}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:520px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{margin:0 0 4px;font-size:1.05rem}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Skills Matrix Builder</h1>
+    <p>Record who can do what, and show where the team depends on too few people. A level of competent or above only counts once a named person other than the operator has signed it off, and sign-offs expire.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="matrix">Matrix</button>
+  <button role="tab" aria-selected="false" data-tab="setup">People and skills</button>
+  <button role="tab" aria-selected="false" data-tab="cover">Coverage and gaps</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div class="banner" id="banner" hidden>Example data is loaded. Every name and rating is made up so you can see how the checks work. It is not a real team. Press New matrix to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnNew">New matrix</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+
+<section id="tab-matrix">
+  <p class="disc">Press a square to set a level. People's names stay in this browser unless you save a file. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
+  <div class="legend" id="legend"></div>
+  <div class="tablewrap"><table id="grid" aria-label="Skills matrix"></table></div>
+</section>
+
+<section id="tab-setup" hidden>
+  <div class="card"><h2>Settings</h2>
+    <div class="f"><label>Sign-off is valid for (months)<input type="number" id="setMonths" min="1" max="60"></label>
+    <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label></div>
+  </div>
+  <div class="card"><h2>People</h2><div class="list" id="peopleList"></div><button class="btn small" id="addPerson">Add a person</button></div>
+  <div class="card"><h2>Skills</h2>
+    <p class="sm">Mark a skill Critical if the work stops or becomes unsafe without it. Set how many signed-off people you need.</p>
+    <div class="list" id="skillList"></div><button class="btn small" id="addSkill">Add a skill</button></div>
+</section>
+
+<section id="tab-cover" hidden>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h2>Coverage by skill</h2><div class="tablewrap"><table id="covTable"></table></div></div>
+  <div class="card"><h2>Who to cross-train next</h2><div id="suggest"></div></div>
+  <div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record. They cannot tell whether a sign-off was a fair judgement of the person's skill.</p>
+</section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>Levels</h2>
+    <ul>
+      <li><strong>0 Not trained.</strong> Has not been taught the task.</li>
+      <li><strong>1 In training.</strong> Being taught. Always with a trainer.</li>
+      <li><strong>2 Needs supervision.</strong> Can do parts, someone must be nearby.</li>
+      <li><strong>3 Competent alone.</strong> Does the task to standard without help. Needs a sign-off.</li>
+      <li><strong>4 Can train others.</strong> Competent, and has shown they can teach it. Needs a sign-off.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>The rules the tool applies</h2>
+    <ul>
+      <li>A level 3 or 4 counts as covered only when it has an assessor, a date, the assessor is not the operator, and the date is within the valid period.</li>
+      <li>Anything else at level 3 or 4 is shown with a dashed outline and left out of the coverage count.</li>
+      <li>A critical skill with fewer signed-off people than you need is a gap. With none, it says so plainly.</li>
+      <li>A non-critical skill short of its target is a note.</li>
+      <li>A critical skill with no signed-off trainer at level 4 is a note.</li>
+      <li>A training date that has passed for someone still below level 3 is a gap.</li>
+      <li>A person who is the only signed-off cover for three or more skills is listed as a key person risk.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>Good practice</h2>
+    <ul>
+      <li>Sign off by watching the person do the task, not by asking them. Write down what you saw, and the date.</li>
+      <li>Review sign-offs when the process, the equipment or the standard changes, as well as on the date.</li>
+      <li>Train for critical skills first, then spread cover so that a holiday or a sickness does not stop the line.</li>
+      <li>Use the matrix to plan training. Do not use it on its own to judge a person.</li>
+    </ul>
+  </div>
+  <div class="card"><h2>Limits</h2>
+    <p>No gaps found does not mean the team is competent. The tool only checks the record. A competent person has to judge whether the sign-offs are fair and whether the skills listed are the ones the job needs. Check your own legal duties on training and competence.</p>
+  </div>
+  <div class="card"><h2>Related tools</h2>
+    <p><a href="skills-matrix-dashboard.html">Skills Matrix and Cross-Training Dashboard</a> shows my own 11-person team results. <a href="corrective-action-tracker.html">Corrective Action Tracker</a> can follow training actions to a checked close.</p>
+  </div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <h2 id="dlgT"></h2><p class="sm" id="dlgS"></p>
+  <div class="f" id="dlgF"></div>
+  <div class="toolbar" style="margin:14px 0 0"><button class="btn" id="dlgOk">Save</button><button class="btn sec" id="dlgCancel">Cancel</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's assessment of training and competence. Skills Matrix Builder. Data stays in this browser unless you save a data file. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-skills-matrix-v1", UIK="rmilburn-skills-matrix-ui";
+var LV=["Not trained","In training","Needs supervision","Competent alone","Can train others"];
+var MAXP=60,MAXS=40;
+var S=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,edit=null;
+function blank(){return {team:"",months:12,example:false,people:[],skills:[],cells:{}};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(days){var d=new Date();d.setDate(d.getDate()+days);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function addMonths(d,m){var p=d.split("-").map(Number),x=new Date(p[0],p[1]-1+m,p[2]);return dstr(x);}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;
+    else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;
+    else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add(e,arguments[i]);return e;}
+function add(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function nid(list){var m=0;list.forEach(function(x){if(x.id>m)m=x.id;});return m+1;}
+function P(id){for(var i=0;i<S.people.length;i++)if(S.people[i].id===id)return S.people[i];return null;}
+function K(id){for(var i=0;i<S.skills.length;i++)if(S.skills[i].id===id)return S.skills[i];return null;}
+function ck(p,s){return p+":"+s;}
+function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:""};}
+
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;
+  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));o.example=d.example===true;
+  var seen={};
+  (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
+  seen={};
+  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
+  var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
+  var c=d.cells&&typeof d.cells==="object"?d.cells:{};
+  Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
+    var lv=Math.max(0,Math.min(4,parseInt(x.lv,10)||0));
+    var v={lv:lv,by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200)};
+    if(v.lv||v.by||v.on||v.plan||v.note)o.cells[k]=v;});
+  return o;
+}
+
+/* a level 3 or 4 counts only when signed off properly */
+function state(p,s){
+  var c=cell(p.id,s.id),td=today(),r={lv:c.lv,c:c,ok:false,unsigned:false,expired:false,self:false,late:false,why:""};
+  if(c.lv>=3){
+    if(!c.by.trim()){r.unsigned=true;r.why="no assessor named";}
+    else if(norm(c.by)===norm(p.name)){r.unsigned=true;r.self=true;r.why="the operator signed off their own level";}
+    else if(!c.on){r.unsigned=true;r.why="no sign-off date";}
+    else if(c.on>td){r.unsigned=true;r.why="sign-off date is in the future";}
+    else if(addMonths(c.on,S.months)<td){r.expired=true;r.why="sign-off ran out on "+fmt(addMonths(c.on,S.months));}
+    else r.ok=true;
+  }else if(c.plan&&c.plan<td){r.late=true;r.why="training date "+fmt(c.plan)+" has passed";}
+  return r;
+}
+
+function analyse(){
+  var gaps=[],notes=[],cov={},key={};
+  function g(ref,msg){gaps.push({ref:ref,msg:msg});}function n(ref,msg){notes.push({ref:ref,msg:msg});}
+  S.people.forEach(function(p){key[p.id]=[];});
+  S.skills.forEach(function(s){
+    var ok=[],tr=[],pend=0;
+    S.people.forEach(function(p){var st=state(p,s);if(st.ok){ok.push(p);if(st.lv===4)tr.push(p);}
+      if(st.unsigned||st.expired)g("c"+ck(p.id,s.id),(p.name||"(no name)")+", "+(s.name||"(no name)")+": level "+st.lv+" not counted, "+st.why+".");
+      if(st.late)g("c"+ck(p.id,s.id),(p.name||"(no name)")+", "+(s.name||"(no name)")+": "+st.why+" and the person is still below competent.");
+      if(st.unsigned||st.expired)pend++;});
+    cov[s.id]={ok:ok,tr:tr,pend:pend};
+    if(ok.length===1)key[ok[0].id].push(s);
+    if(!s.name.trim())g("s"+s.id,"A skill has no name.");
+    if(ok.length<s.need){
+      var m=(s.name||"(no name)")+": "+ok.length+" of "+s.need+" signed-off people.";
+      if(s.crit)g("s"+s.id,"Critical skill. "+m+(ok.length===0?" Nobody is signed off, so the work depends on someone who has not been checked.":" "+(ok.length===1?"One absence stops this.":"")));
+      else n("s"+s.id,m);
+    }
+    if(s.crit&&!tr.length)n("s"+s.id,(s.name||"(no name)")+": critical, and nobody signed off can train others.");
+  });
+  S.people.forEach(function(p){
+    if(!p.name.trim())g("p"+p.id,"A person has no name.");
+    if(key[p.id].length>=3)n("p"+p.id,(p.name||"(no name)")+" is the only signed-off cover for "+plural(key[p.id].length,"skill")+": "+key[p.id].map(function(s){return s.name;}).join(", ")+". Key person risk.");
+    var any=S.skills.some(function(s){return cell(p.id,s.id).lv>0;});
+    if(!any&&S.skills.length)n("p"+p.id,(p.name||"(no name)")+" has no skills rated yet.");
+  });
+  var names={};S.people.forEach(function(p){var k=norm(p.name);if(k){if(names[k])g("p"+p.id,"Two people share the name \""+p.name+"\". Sign-offs by name cannot tell them apart.");names[k]=1;}});
+  return {gaps:gaps,notes:notes,cov:cov,key:key};
+}
+
+/* storage */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+
+/* rendering */
+function rerender(){var ae=document.activeElement,key=ae&&ae.getAttribute&&ae.getAttribute("data-k"),ss=null,se=null;
+  if(ae&&typeof ae.selectionStart==="number"){ss=ae.selectionStart;se=ae.selectionEnd;}
+  var y=window.scrollY;renderAll();window.scrollTo(0,y);
+  if(key){var q=document.querySelector('[data-k="'+key+'"]');if(q){q.focus();if(ss!==null){try{q.setSelectionRange(ss,se);}catch(e){}}}}}
+function renderAll(){renderStatus();renderLegend();renderGrid();renderSetup();renderCover();$("banner").hidden=!S.example;}
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!S.people.length||!S.skills.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing to check yet."}),h("div",{class:"sm",text:"Add people and skills on the People and skills tab, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on this matrix for cover decisions yet."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Coverage and gaps for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the team is competent. A competent person must still judge the sign-offs. "+plural(A.notes.length,"note")+" to look at."}));}
+}
+function renderLegend(){var l=$("legend");l.innerHTML="";
+  LV.forEach(function(t,i){l.appendChild(h("span",{},h("i",{class:"sw cell l"+i,style:"width:22px;height:22px;border-width:1px;font-size:.75rem",text:String(i)}),t));});
+  l.appendChild(h("span",{},h("i",{class:"sw cell l3 unsigned",style:"width:22px;height:22px;font-size:.75rem",text:"3"}),"Dashed amber: not signed off, not counted"));
+  l.appendChild(h("span",{},h("i",{class:"sw cell l3 expired",style:"width:22px;height:22px;font-size:.75rem",text:"3"}),"Dashed orange: sign-off expired, not counted"));
+  l.appendChild(h("span",{},h("i",{class:"sw cell l1 late",style:"width:22px;height:22px;font-size:.75rem",text:"1"}),"Red ring: training date passed"));
+}
+function renderGrid(){
+  var t=$("grid");t.innerHTML="";
+  if(!S.people.length||!S.skills.length){t.appendChild(h("tbody",{},h("tr",{},h("td",{style:"padding:20px;text-align:left",text:"No matrix yet. Add people and skills on the People and skills tab."}))));return;}
+  var A=analyse(),hr=h("tr",{},h("th",{class:"pn",text:"Person"}));
+  S.skills.forEach(function(s){hr.appendChild(h("th",{class:"sk",title:s.area},s.name||"(no name)",s.crit?h("div",{},h("span",{class:"chip crit",text:"Critical"})):null));});
+  t.appendChild(h("thead",{},hr));
+  var tb=h("tbody");
+  S.people.forEach(function(p){
+    var tr=h("tr",{},h("td",{class:"pn"},h("strong",{text:p.name||"(no name)"}),p.role?h("div",{class:"sm",text:p.role}):null));
+    S.skills.forEach(function(s){
+      var st=state(p,s),mk=st.unsigned?"?":st.expired?"!":st.late?"T":"";
+      var lab=(p.name||"person")+", "+(s.name||"skill")+": level "+st.lv+" "+LV[st.lv]+(st.unsigned?", not signed off, not counted":st.expired?", sign-off expired, not counted":st.ok?", signed off":"")+(st.late?", training date passed":"");
+      var b=h("button",{type:"button",class:"cell l"+st.lv+(st.unsigned?" unsigned":"")+(st.expired?" expired":"")+(st.late?" late":""),"aria-label":lab,"data-k":"c"+p.id+"_"+s.id,onclick:function(){openCell(p.id,s.id);}},String(st.lv),mk?h("span",{class:"mk",text:mk}):null);
+      tr.appendChild(h("td",{},b));
+    });tb.appendChild(tr);});
+  var fr=h("tr",{},h("td",{class:"pn"},h("strong",{text:"Signed off"})));
+  S.skills.forEach(function(s){var c=A.cov[s.id],ok=c.ok.length,cls=ok>=s.need?"ok":(ok===0&&s.crit?"bad":(s.crit?"bad":"mid"));
+    fr.appendChild(h("td",{},h("span",{class:"cov "+cls,text:ok+" of "+s.need})));});
+  tb.appendChild(fr);t.appendChild(tb);
+}
+function openCell(pid,sid){
+  var p=P(pid),s=K(sid),c=cell(pid,sid);edit={pid:pid,sid:sid};
+  $("dlgT").textContent=(p.name||"(no name)")+": "+(s.name||"(no name)");
+  $("dlgS").textContent="Level 3 and 4 need an assessor who is not the operator, and a date.";
+  var f=$("dlgF");f.innerHTML="";
+  var sl=h("select",{id:"dLv"});LV.forEach(function(t,i){var o=h("option",{value:String(i),text:i+" "+t});if(i===c.lv)o.selected=true;sl.appendChild(o);});
+  add(f,[h("label",{class:"full"},"Level",sl),
+    h("label",{},"Signed off by",h("input",{type:"text",id:"dBy",value:c.by,maxlength:"60"})),
+    h("label",{},"Date of sign-off",h("input",{type:"date",id:"dOn",value:c.on})),
+    h("label",{},"Training planned by",h("input",{type:"date",id:"dPlan",value:c.plan})),
+    h("label",{class:"full"},"What did the assessor see?",h("input",{type:"text",id:"dNote",value:c.note,maxlength:"200"}))]);
+  var d=$("dlg");if(typeof d.showModal==="function")d.showModal();else d.setAttribute("open","");
+}
+$("dlgOk").onclick=function(){
+  if(!edit)return;var v={lv:parseInt($("dLv").value,10)||0,by:$("dBy").value.slice(0,60),on:dOk($("dOn").value),plan:dOk($("dPlan").value),note:$("dNote").value.slice(0,200)};
+  var k=ck(edit.pid,edit.sid);if(v.lv||v.by||v.on||v.plan||v.note)S.cells[k]=v;else delete S.cells[k];
+  closeDlg();touch();rerender();};
+$("dlgCancel").onclick=closeDlg;
+function closeDlg(){var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");var e=edit;edit=null;if(e){var b=document.querySelector('[data-k="c'+e.pid+'_'+e.sid+'"]');if(b)b.focus();}}
+$("dlg").addEventListener("cancel",function(){edit=null;});
+
+function arm(k){armed=k;clearTimeout(armT);armT=setTimeout(function(){armed=null;rerender();},5000);rerender();}
+function txt(val,key,max,on){var e=h("input",{type:"text",value:val,maxlength:String(max),"data-k":key});e.addEventListener("input",function(){on(e.value);touch();renderStatus();renderCover();});return e;}
+function renderSetup(){
+  $("setMonths").value=S.months;$("setTeam").value=S.team;
+  var pl=$("peopleList");pl.innerHTML="";
+  S.people.forEach(function(p){var a=armed==="p"+p.id;
+    pl.appendChild(h("div",{class:"it row"},
+      h("label",{},"Name",txt(p.name,"pn"+p.id,60,function(v){p.name=v;})),
+      h("label",{},"Role",txt(p.role,"pr"+p.id,60,function(v){p.role=v;})),
+      h("span",{}),
+      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"pd"+p.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.people=S.people.filter(function(x){return x!==p;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[0]===String(p.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("p"+p.id);}})));});
+  if(!S.people.length)pl.appendChild(h("p",{class:"sm",text:"No people yet."}));
+  var sl=$("skillList");sl.innerHTML="";
+  S.skills.forEach(function(s){var a=armed==="s"+s.id;
+    var cr=h("input",{type:"checkbox","data-k":"sc"+s.id,checked:s.crit});cr.addEventListener("change",function(){s.crit=cr.checked;touch();rerender();});
+    var nd=h("input",{type:"number",min:"1",max:"20",value:String(s.need),"data-k":"sn"+s.id});nd.addEventListener("input",function(){s.need=Math.max(1,Math.min(20,parseInt(nd.value,10)||1));touch();renderStatus();renderCover();renderGrid();});
+    sl.appendChild(h("div",{class:"it sk row"},
+      h("label",{},"Skill",txt(s.name,"sk"+s.id,60,function(v){s.name=v;})),
+      h("label",{},"Area",txt(s.area,"sa"+s.id,40,function(v){s.area=v;})),
+      h("label",{},"People needed",nd),
+      h("label",{style:"flex-direction:row;align-items:center;gap:8px"},cr,"Critical"),
+      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"sd"+s.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.skills=S.skills.filter(function(x){return x!==s;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[1]===String(s.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("s"+s.id);}})));});
+  if(!S.skills.length)sl.appendChild(h("p",{class:"sm",text:"No skills yet."}));
+}
+$("setMonths").addEventListener("input",function(){S.months=Math.max(1,Math.min(60,parseInt(this.value,10)||12));touch();renderStatus();renderGrid();renderCover();});
+$("setTeam").addEventListener("input",function(){S.team=this.value.slice(0,80);touch();});
+$("addPerson").onclick=function(){if(S.people.length>=MAXP)return;var id=nid(S.people);S.people.push({id:id,name:"",role:""});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="pn'+id+'"]');if(q)q.focus();},0);};
+$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
+
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderCover(){
+  var A=analyse(),k=$("kpis"),t=$("covTable"),sg=$("suggest"),fl=$("flagList");k.innerHTML="";t.innerHTML="";sg.innerHTML="";fl.innerHTML="";
+  var crit=S.skills.filter(function(s){return s.crit;}),critOk=crit.filter(function(s){return A.cov[s.id].ok.length>=s.need;}).length;
+  var short=S.skills.filter(function(s){return A.cov[s.id].ok.length<s.need;}).length;
+  var keyp=S.people.filter(function(p){return A.key[p.id].length>=3;}).length;
+  add(k,kpi(S.people.length+" / "+S.skills.length,"People / skills"),kpi(crit.length?critOk+" of "+crit.length:"0","Critical skills fully covered",crit.length&&critOk<crit.length?"crit":"ok"),
+    kpi(short,"Skills short of target",short?"warn":"ok"),kpi(A.gaps.length,"Gaps",A.gaps.length?"crit":"ok"),kpi(keyp,"Key person risks",keyp?"warn":"ok"));
+  if(!S.people.length||!S.skills.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));t.appendChild(h("tbody",{},h("tr",{},h("td",{text:"Nothing to show yet."}))));sg.appendChild(h("p",{class:"sm",text:"Nothing to suggest yet."}));return;}
+  var hr=h("tr",{});["Skill","Area","Signed off","Needed","Trainers","Not counted"].forEach(function(x){hr.appendChild(h("th",{text:x,style:"text-align:left"}));});
+  t.appendChild(h("thead",{},hr));var tb=h("tbody");
+  S.skills.forEach(function(s){var c=A.cov[s.id],ok=c.ok.length;
+    var tr=h("tr",{},h("td",{style:"text-align:left"},s.name||"(no name)"," ",s.crit?h("span",{class:"chip crit",text:"Critical"}):null),
+      h("td",{style:"text-align:left",text:s.area||""}),
+      h("td",{},h("span",{class:"cov "+(ok>=s.need?"ok":s.crit?"bad":"mid"),text:String(ok)})),h("td",{text:String(s.need)}),h("td",{text:String(c.tr.length)}),h("td",{text:String(c.pend)}));
+    tb.appendChild(tr);});
+  t.appendChild(tb);
+  var any=false;
+  S.skills.forEach(function(s){var c=A.cov[s.id];if(c.ok.length>=s.need)return;any=true;
+    var cand=S.people.filter(function(p){return !c.ok.some(function(o){return o.id===p.id;});}).map(function(p){return {p:p,lv:cell(p.id,s.id).lv};}).sort(function(a,b){return b.lv-a.lv;}).slice(0,3);
+    var trn=c.tr.length?c.tr:c.ok;
+    sg.appendChild(h("p",{},h("strong",{text:(s.name||"(no name)")+": "}),"needs "+(s.need-c.ok.length)+" more signed-off. Closest: "+cand.map(function(x){return (x.p.name||"(no name)")+" (level "+x.lv+")";}).join(", ")+". "+(trn.length?"Trainer: "+trn.map(function(x){return x.name||"(no name)";}).join(", ")+".":"Nobody is signed off to train it, so bring in a trainer from outside.")));});
+  if(!any)sg.appendChild(h("p",{class:"sm",text:"Every skill is at or above its target."}));
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Go there",onclick:function(){goTo(x.ref);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the sign-offs."}));
+}
+function goTo(ref){
+  if(ref.charAt(0)==="c"){var m=ref.slice(1).split(":");showTab("matrix");setTimeout(function(){var b=document.querySelector('[data-k="c'+m[0]+'_'+m[1]+'"]');if(b){b.scrollIntoView({block:"center",inline:"center"});b.focus();}},30);}
+  else{showTab("setup");var id=ref.slice(1),kk=ref.charAt(0)==="s"?"sk":"pn";setTimeout(function(){var q=document.querySelector('[data-k="'+kk+id+'"]');if(q){q.scrollIntoView({block:"center"});q.focus();}},30);}
+}
+
+function showTab(t){uiSet("tab",t);["matrix","setup","cover","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+
+$("btnNew").onclick=function(){var b=$("btnNew");
+  if(armed==="new"){S=blank();armed=null;touch();rerender();b.textContent="New matrix";b.classList.remove("danger","armed");return;}
+  if(!S.people.length&&!S.skills.length){S=blank();touch();rerender();return;}
+  armed="new";b.textContent="Confirm: clear everything";b.classList.add("danger","armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="New matrix";b.classList.remove("danger","armed");},5000);};
+$("btnExample").onclick=function(){S=example();armed=null;touch();rerender();showTab("matrix");};
+$("btnSave").onclick=function(){download("skills-matrix.json",JSON.stringify({app:"skills-matrix-builder",version:1,saved:new Date().toISOString(),data:S},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>2000000){alert("That file is too large to be a skills matrix data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;S=clean(d.data);armed=null;touch();rerender();}catch(e){alert("That file could not be read. It is not a skills matrix data file.");}ev.target.value="";};rd.readAsText(f);});
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Person","Role"].concat(S.skills.map(function(s){return s.name+(s.crit?" (critical)":"");}));
+  var rows=S.people.map(function(p){return [p.name,p.role].concat(S.skills.map(function(s){var st=state(p,s);return st.lv+(st.unsigned?" not signed off":st.expired?" expired":"");}));});
+  var A=analyse();rows.push(["Signed off",""].concat(S.skills.map(function(s){return A.cov[s.id].ok.length+" of "+s.need;})));
+  download("skills-matrix.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+function buildReport(){var r=$("report"),A=analyse();r.innerHTML="";
+  add(r,h("h1",{text:"Skills matrix report"}));
+  if(S.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real team."}));
+  add(r,h("p",{text:(S.team||"Team not named")+". Printed "+fmt(today())+". Sign-offs valid for "+S.months+" months."}));
+  add(r,h("p",{class:"gapx",text:A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on this matrix for cover decisions yet.":"No gaps found by the checks. A competent person must still judge the sign-offs."}));
+  var t=h("table",{}),hr=h("tr",{},h("th",{text:"Person"}));S.skills.forEach(function(s){hr.appendChild(h("th",{text:s.name+(s.crit?" (critical)":"")}));});t.appendChild(hr);
+  S.people.forEach(function(p){var tr=h("tr",{},h("td",{text:p.name}));S.skills.forEach(function(s){var st=state(p,s);tr.appendChild(h("td",{text:st.lv+(st.unsigned?" ?":st.expired?" !":"")+(st.late?" T":"")}));});t.appendChild(tr);});
+  var fr=h("tr",{},h("td",{text:"Signed off"}));S.skills.forEach(function(s){fr.appendChild(h("td",{text:A.cov[s.id].ok.length+" of "+s.need}));});t.appendChild(fr);add(r,t);
+  add(r,h("p",{class:"sm",text:"? not signed off, not counted. ! sign-off expired, not counted. T training date passed."}));
+  add(r,h("h2",{text:"Gaps and notes"}));var all=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!all.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});all.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Decision support only. A competent person must judge the result."}));}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function example(){
+  var o=blank();o.team="Example cell (made up)";o.months=12;o.example=true;
+  ["Example Operator A","Example Operator B","Example Operator C","Example Operator D","Example Operator E","Example Operator F"].forEach(function(n,i){o.people.push({id:i+1,name:n,role:i<4?"Operator":"Team member"});});
+  [["Isolate and lock off",  "Safety",true,2],["Clear a conveyor jam","Safety",true,2],["Set up the line","Production",true,2],["Final inspection","Quality",false,2],["Fork truck","Logistics",false,1],["Changeover","Production",false,2]].forEach(function(s,i){o.skills.push({id:i+1,name:s[0],area:s[1],crit:s[2],need:s[3]});});
+  function C(p,s,lv,by,on,plan,note){o.cells[p+":"+s]={lv:lv,by:by||"",on:on||"",plan:plan||"",note:note||""};}
+  var A="Example Supervisor",B="Example Manager";
+  C(1,1,4,A,off(-90),"","Watched a full isolation");C(2,1,3,A,off(-60));C(3,1,3,B,off(-420));C(4,1,2,"","",off(20));C(5,1,1,"","",off(-10));C(6,1,0);
+  C(1,2,3,A,off(-80));C(2,2,3,"Example Operator B",off(-30));C(3,2,2,"","",off(40));C(4,2,0);
+  C(1,3,4,B,off(-100));C(2,3,3,B,off(-100));C(3,3,3,A,off(-20));C(4,3,2);C(5,3,1);
+  C(1,4,3,A,off(-40));C(2,4,3);C(3,4,4,A,off(-300));C(5,4,2);
+  C(3,5,3,B,off(-200));C(6,5,2);
+  C(1,6,3,A,off(-60));C(2,6,3,A,off(-60));C(4,6,2);
+  return o;}
+
+var sv=load();if(sv)S=sv;
+renderAll();renderSave();
+var ui=uiGet();showTab(["matrix","setup","cover","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
+window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>

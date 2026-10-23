@@ -377,6 +377,7 @@ function renderSave(){
   else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
   else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}
 }
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
 function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
 
 /* ---------- rendering ---------- */
