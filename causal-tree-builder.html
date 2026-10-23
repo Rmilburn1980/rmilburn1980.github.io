@@ -148,7 +148,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 
 <section id="tab-actions" hidden>
   <p class="disc">Link each action to the cause it deals with. An action only closes once someone other than its owner has checked that it worked. Look higher up the hierarchy of controls before settling for training, procedures or PPE.</p>
-  <div class="toolbar"><button class="btn" id="btnAddAction">Add an action</button> <a class="btn sec" href="corrective-action-tracker.html">Open the Corrective Action Tracker</a></div>
+  <div class="toolbar"><button class="btn" id="btnAddAction">Add an action</button> <button class="btn sec" id="btnSend">Send actions to the tracker</button> <a class="btn sec" href="corrective-action-tracker.html">Open the Corrective Action Tracker</a></div>
+  <p class="sm" id="sendNote" role="status"></p>
   <div id="actions"></div>
 </section>
 
@@ -616,6 +617,26 @@ $("file").addEventListener("change",function(ev){
   };
   rd.readAsText(f);
 });
+$("btnSend").onclick=function(){
+  var note=$("sendNote"),TK="rmilburn-action-tracker-v1",BASE=9000000;
+  var list=S.actions.filter(function(a){return a.text.trim();});
+  if(!list.length){note.textContent="There are no actions with wording to send.";return;}
+  var cur={actions:[]};
+  try{var d=JSON.parse(localStorage.getItem(TK));if(d&&Array.isArray(d.actions))cur=d;}catch(e){}
+  var ids={};list.forEach(function(a){ids[BASE+a.id]=1;});
+  var kept=cur.actions.filter(function(x){return !ids[x&&x.id];}),raised=S.event.date||today();
+  list.forEach(function(a){
+    var n=a.node?byId(a.node):null;
+    kept.push({id:BASE+a.id,example:a.ex===true||S.event.example===true,title:a.text.trim().slice(0,140),
+      detail:("From a causal tree. Event: "+(S.event.title||"not described")).slice(0,400),source:"Incident",hoc:a.hoc,
+      riskId:null,riskText:n?short(n.text,110):"",owner:a.owner,raised:raised,due:a.due,
+      status:a.status==="done"?"done":"open",doneDate:a.status==="done"?a.verOn:"",doneNote:"",verifier:"",verDate:"",verNote:"",result:"",cancel:"",log:[]});
+  });
+  try{
+    localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+    note.textContent="Sent "+plural(list.length,"action")+" to the tracker. Sending again updates them, it does not duplicate them. Anything an action already had in the tracker will be replaced. Checks are not carried across: the tracker needs its own check of each one.";
+  }catch(e){note.textContent="This browser would not let the page write to the tracker. Nothing was sent.";}
+};
 $("btnPrint").onclick=function(){buildReport();window.print();};
 window.addEventListener("beforeprint",buildReport);
 $("btnExample").onclick=function(){S=example();armed=null;touch();rerender();showTab("tree");window.scrollTo(0,0);};
