@@ -105,8 +105,9 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <button class="btn danger" id="btnClear">Clear all</button>
   <input type="file" id="file" accept="application/json,.json" multiple style="position:absolute;left:-9999px" tabindex="-1" aria-label="Add team data files">
 </div>
+<div id="fdBar"></div>
 <p class="sm" id="loadNote" role="status"></p>
-<p class="disc">A matrix you build or edit in the <a href="skills-matrix-builder.html">Skills Matrix Builder</a> on this browser appears here by itself, and updates as you type. For other teams, use Save data file in the builder and add those files here. If a team appears both ways, the newest one is used. Adding a file for a team that is already here replaces the old one. Names stay in this browser. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
+<p class="disc">A matrix you build or edit in the <a href="skills-matrix-builder.html">Skills Matrix Builder</a> on this browser appears here by itself, and updates as you type. For other teams on other computers, link the shared folder below, or use Save data file in the builder and add those files here. If a team appears both ways, the newest one is used. Adding a file for a team that is already here replaces the old one. Names stay in this browser. Keep only what you have a reason to hold, and follow your own data protection rules.</p>
 
 <section id="tab-over">
   <div class="kpis" id="kpis"></div>
@@ -282,6 +283,60 @@ $("btnClear").onclick=function(){var b=$("btnClear");
   clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear all";b.classList.remove("armed");},5000);};
 $("btnExample").onclick=function(){T=exampleTeams();example=true;touch();renderAll();$("loadNote").textContent="";};
 
+
+/* ---------- shared folder (Chrome and Edge on a computer) ---------- */
+var HAS_FS=typeof window.showDirectoryPicker==="function";
+var FD={h:null,on:false,teams:[],msg:"",at:"",bad:[]};
+function idb(){return new Promise(function(res,rej){var r=indexedDB.open("rmilburn-skills-folder",1);r.onupgradeneeded=function(){r.result.createObjectStore("h");};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+function idbGet(){return idb().then(function(db){return new Promise(function(res){var q=db.transaction("h").objectStore("h").get("folder");q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function idbSet(v){return idb().then(function(db){return new Promise(function(res){var tx=db.transaction("h","readwrite");if(v)tx.objectStore("h").put(v,"folder");else tx.objectStore("h").delete("folder");tx.oncomplete=function(){res(true);};tx.onerror=function(){res(false);};});}).catch(function(){return false;});}
+function perm(h,ask){
+  if(!h||typeof h.queryPermission!=="function")return Promise.resolve(!!h);
+  return h.queryPermission({mode:"read"}).then(function(p){if(p==="granted")return true;if(!ask)return false;return h.requestPermission({mode:"read"}).then(function(q){return q==="granted";});}).catch(function(){return false;});
+}
+async function readFolder(){
+  if(!FD.h||!FD.on)return;
+  var out=[],bad=[],n=0;
+  try{
+    for await(var e of FD.h.values()){
+      if(e.kind!=="file"||!/\.skills\.json$/i.test(e.name))continue;
+      if(++n>MAXT){bad.push("More than "+MAXT+" team files, the rest were not read.");break;}
+      try{var f=await e.getFile();if(f.size>2000000)throw 0;var d=JSON.parse(await f.text());
+        if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;
+        var m=cleanM(d.data),nm=m.team.trim()||e.name.replace(/\.skills\.json$/i,"").slice(0,80);
+        var at=Date.parse(d.saved)||f.lastModified||0,sv=typeof d.saved==="string"?dOk(d.saved.slice(0,10)):"";
+        out.push({id:1000+out.length,name:nm,saved:sv||dstr(new Date(f.lastModified)),loaded:today(),at:at,ex:d.data.example===true,m:m,folder:true});
+      }catch(er){bad.push(e.name+" could not be read, so it was skipped.");}
+    }
+    FD.teams=cleanTeams(out).map(function(t,i){t.folder=true;return t;});FD.bad=bad;
+    FD.at=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});FD.msg="Read "+plural(FD.teams.length,"team file")+" at "+FD.at+".";
+  }catch(err){FD.msg="Could not read the folder ("+(err&&err.name?err.name:"error")+").";}
+  renderFD();renderAll();
+}
+function linkFolder(){
+  window.showDirectoryPicker({mode:"read"}).then(function(h){FD.h=h;FD.on=true;return idbSet(h);}).then(function(){return readFolder();}).catch(function(e){if(e&&e.name==="AbortError")return;FD.msg="Could not link the folder ("+(e&&e.name?e.name:"error")+").";renderFD();});
+}
+function reconnect(){perm(FD.h,true).then(function(ok){FD.on=ok;if(ok)readFolder();else{FD.msg="Permission was not given, so the folder is not connected.";renderFD();}});}
+function unlink(){FD.h=null;FD.on=false;FD.teams=[];FD.bad=[];FD.msg="Unlinked.";idbSet(null);renderFD();renderAll();}
+function renderFD(){
+  var c=$("fdBar");if(!c)return;c.innerHTML="";
+  if(!HAS_FS){c.appendChild(h("p",{class:"sm",text:"Reading a shared folder needs Chrome or Edge on a computer. You can still add team files by hand."}));return;}
+  var st=FD.on?"Shared folder linked. "+FD.msg:FD.h?"A folder was linked before. Press Reconnect to allow access again.":"No shared folder linked. In SharePoint, open the document library and press Sync so it shows as a folder on your computer, then link that folder here.";
+  c.appendChild(h("p",{class:"sm",role:"status",text:st}));
+  var b=h("div",{class:"toolbar"});
+  if(!FD.h)add(b,h("button",{class:"btn sec small",type:"button",text:"Link a shared folder",onclick:linkFolder}));
+  else if(!FD.on)add(b,h("button",{class:"btn small",type:"button",text:"Reconnect",onclick:reconnect}),h("button",{class:"btn sec small",type:"button",text:"Unlink",onclick:unlink}));
+  else add(b,h("button",{class:"btn sec small",type:"button",text:"Refresh now",onclick:readFolder}),h("button",{class:"btn sec small",type:"button",text:"Unlink",onclick:unlink}));
+  c.appendChild(b);
+  if(FD.bad.length){var u=h("ul",{class:"fl"});FD.bad.forEach(function(x){u.appendChild(h("li",{class:"g",text:x}));});c.appendChild(u);}
+}
+function fdInit(){
+  renderFD();if(!HAS_FS)return;
+  idbGet().then(function(h){if(!h)return;FD.h=h;return perm(h,false).then(function(ok){FD.on=ok;if(ok)return readFolder();renderFD();});});
+  setInterval(function(){if(document.visibilityState==="visible"&&FD.on)readFolder();},60000);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"&&FD.on)readFolder();});
+}
+
 /* views */
 function live(){
   var d;try{d=JSON.parse(localStorage.getItem(SHK));}catch(e){}
@@ -291,7 +346,7 @@ function live(){
 function merged(){
   var out=[],by={};
   T.forEach(function(t){by[norm(t.name)]=t;});
-  live().forEach(function(t){var k=norm(t.name),o=by[k];if(!o||t.at>=o.at)by[k]=t;});
+  live().concat(FD.teams).forEach(function(t){var k=norm(t.name),o=by[k];if(!o||t.at>=o.at)by[k]=t;});
   Object.keys(by).forEach(function(k){out.push(by[k]);});
   return out.sort(function(a,b){return a.name.localeCompare(b.name);});
 }
@@ -319,7 +374,7 @@ function renderOver(A){
   var hr=h("tr",{});[["Team",""],["People","num"],["Cover against target",""],["Critical covered","num"],["Skills short","num"],["Claimed not counted","num"],["Expiring 90 days","num"],["Gaps","num"],["File",""],["Status",""]].forEach(function(c){hr.appendChild(h("th",{class:c[1],text:c[0]}));});
   t.appendChild(h("thead",{},hr));var tb=h("tbody");
   A.slice().sort(function(a,b){return b.x.gaps.length-a.x.gaps.length||a.t.name.localeCompare(b.t.name);}).forEach(function(a){var x=a.x;
-    var fileTxt=a.t.live?"Live from the builder":a.t.ex?"Example":(x.age===null?"Age unknown":x.age>STALE?x.age+" days old":x.age+" days");
+    var fileTxt=a.t.folder?"Shared folder":a.t.live?"Live from the builder":a.t.ex?"Example":(x.age===null?"Age unknown":x.age>STALE?x.age+" days old":x.age+" days");
     tb.appendChild(h("tr",{},h("td",{},h("strong",{text:a.t.name}),a.t.ex?h("span",{class:"chip ex",text:"Example",style:"margin-left:6px"}):null),
       h("td",{class:"num",text:String(x.people)}),
       h("td",{},h("span",{class:"bar","aria-hidden":"true"},h("i",{style:"width:"+x.pct+"%"})),h("span",{class:x.pct>=100?"okc":x.pct>=80?"mid":"bad",text:x.pct+"%"})),
@@ -359,13 +414,14 @@ function renderDetail(A){
   A.forEach(function(a){var id=a.t.id;
     var d=h("details",{class:"t"});
     var rm=armed==="t"+id;
-    d.appendChild(h("summary",{},h("strong",{text:a.t.name}),h("span",{class:"chip "+(a.x.gaps.length?"g":"ok"),text:plural(a.x.gaps.length,"gap")}),h("span",{class:"sm",text:plural(a.x.notes.length,"note")+". Cover "+a.x.pct+"%. "+(a.t.live?"Live from the Skills Matrix Builder.":a.t.saved?"File saved "+fmt(a.t.saved)+".":"File date unknown.")})));
+    d.appendChild(h("summary",{},h("strong",{text:a.t.name}),h("span",{class:"chip "+(a.x.gaps.length?"g":"ok"),text:plural(a.x.gaps.length,"gap")}),h("span",{class:"sm",text:plural(a.x.notes.length,"note")+". Cover "+a.x.pct+"%. "+(a.t.folder?"From the shared folder.":a.t.live?"Live from the Skills Matrix Builder.":a.t.saved?"File saved "+fmt(a.t.saved)+".":"File date unknown.")})));
     var b=h("div",{class:"body"});
     if(a.x.gaps.length){b.appendChild(h("h3",{text:"Gaps"}));var u=h("ul",{class:"fl"});a.x.gaps.forEach(function(g){u.appendChild(h("li",{class:"g",text:g}));});b.appendChild(u);}
     if(a.x.notes.length){b.appendChild(h("h3",{text:"Notes"}));var u2=h("ul",{class:"fl"});a.x.notes.forEach(function(g){u2.appendChild(h("li",{class:"o",text:g}));});b.appendChild(u2);}
     if(!a.x.gaps.length&&!a.x.notes.length)b.appendChild(h("p",{class:"sm",text:"No gaps or notes."}));
-    b.appendChild(h("div",{style:"margin-top:12px"},h("button",{class:"btn danger small"+(rm?" armed":""),type:"button",text:rm?"Confirm: remove this team":(a.t.live?"Remove from this view":"Remove this team"),onclick:function(){
-      if(rm){if(a.t.live){try{var dd=JSON.parse(localStorage.getItem(SHK)),k=norm(a.t.name);dd.teams=dd.teams.filter(function(t){return norm(t&&t.name)!==k;});localStorage.setItem(SHK,JSON.stringify(dd));}catch(e){}}else{T=T.filter(function(t){return t.id!==id;});}armed=null;touch();renderAll();}else{armed="t"+id;clearTimeout(armT);armT=setTimeout(function(){armed=null;renderAll();},5000);renderAll();var dd=document.querySelectorAll("details.t");}}})));
+    if(a.t.folder)b.appendChild(h("p",{class:"sm",text:"This team comes from the shared folder. To remove it here, remove its file from the folder."}));
+    else b.appendChild(h("div",{style:"margin-top:12px"},h("button",{class:"btn danger small"+(rm?" armed":""),type:"button",text:rm?"Confirm: remove this team":(a.t.live?"Remove from this view":"Remove this team"),onclick:function(){
+      if(rm){if(a.t.folder){}else if(a.t.live){try{var dd=JSON.parse(localStorage.getItem(SHK)),k=norm(a.t.name);dd.teams=dd.teams.filter(function(t){return norm(t&&t.name)!==k;});localStorage.setItem(SHK,JSON.stringify(dd));}catch(e){}}else{T=T.filter(function(t){return t.id!==id;});}armed=null;touch();renderAll();}else{armed="t"+id;clearTimeout(armT);armT=setTimeout(function(){armed=null;renderAll();},5000);renderAll();var dd=document.querySelectorAll("details.t");}}})));
     d.appendChild(b);if(rm)d.open=true;box.appendChild(d);});
 }
 
@@ -413,11 +469,11 @@ function exampleTeams(){
 }
 
 var sv=load();if(sv)T=sv;else if(!live().length){T=exampleTeams();example=true;saveNow();}
-renderAll();renderSave();
+renderAll();renderSave();fdInit();
 var ui=uiGet();showTab(["over","skills","teams","guide"].indexOf(ui.tab)>=0?ui.tab:"over");
 window.addEventListener("storage",function(e){if(e.key===SHK)renderAll();});
 document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")renderAll();});
-window.__cd={metrics:metrics,teams:function(){return merged();},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};
+window.__fd=FD;window.__cd={metrics:metrics,teams:function(){return merged();},set:function(x){T=cleanTeams(x);renderAll();},cleanTeams:cleanTeams};
 })();
 </script>
 <!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->

@@ -115,6 +115,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <p class="savebar" id="saveNote" role="status"></p>
 <div class="banner" id="banner" hidden>Example data is loaded. Every name and rating is made up so you can see how the checks work. It is not a real team. Press New matrix to start your own.</div>
 <div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="banner" id="syncBanner" role="alert" hidden></div>
 <div class="toolbar">
   <button class="btn" id="btnNew">New matrix</button>
   <button class="btn sec" id="btnExample">Load example</button>
@@ -137,6 +138,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <div class="f"><label>Sign-off is valid for (months)<input type="number" id="setMonths" min="1" max="60"></label>
     <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label></div>
   </div>
+  <div class="card" id="fsCard"></div>
   <div class="card"><h2>People</h2><div class="list" id="peopleList"></div><button class="btn small" id="addPerson">Add a person</button></div>
   <div class="card"><h2>Skills</h2>
     <p class="sm">Mark a skill Critical if the work stops or becomes unsafe without it. Set how many signed-off people you need.</p>
@@ -311,7 +313,7 @@ function publish(){
     localStorage.setItem(SHK,JSON.stringify({teams:d}));uiSet("pub",has?nm:"");
   }catch(e){}
 }
-function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}publish();dirty=false;renderSave();}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}publish();dirty=false;renderSave();if(typeof fsPush==="function")fsPush(false);}
 function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
 function renderSave(){var el=$("saveNote");
   if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
@@ -319,6 +321,93 @@ function renderSave(){var el=$("saveNote");
   else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
 window.addEventListener("pagehide",function(){if(dirty)saveNow();});document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
 function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+
+
+/* ---------- shared folder (Chrome and Edge on a computer) ---------- */
+var HAS_FS=typeof window.showDirectoryPicker==="function";
+var FS={h:null,on:false,seen:"",conflict:null,msg:"",ask:false,last:""};
+function idb(){return new Promise(function(res,rej){var r=indexedDB.open("rmilburn-skills-folder",1);r.onupgradeneeded=function(){r.result.createObjectStore("h");};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+function idbGet(){return idb().then(function(db){return new Promise(function(res){var q=db.transaction("h").objectStore("h").get("folder");q.onsuccess=function(){res(q.result||null);};q.onerror=function(){res(null);};});}).catch(function(){return null;});}
+function idbSet(v){return idb().then(function(db){return new Promise(function(res){var tx=db.transaction("h","readwrite");if(v)tx.objectStore("h").put(v,"folder");else tx.objectStore("h").delete("folder");tx.oncomplete=function(){res(true);};tx.onerror=function(){res(false);};});}).catch(function(){return false;});}
+function perm(h,ask){
+  if(!h||typeof h.queryPermission!=="function")return Promise.resolve(!!h);
+  return h.queryPermission({mode:"readwrite"}).then(function(p){if(p==="granted")return true;if(!ask)return false;return h.requestPermission({mode:"readwrite"}).then(function(q){return q==="granted";});}).catch(function(){return false;});
+}
+function slug(s){return (String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60))||"unnamed-team";}
+function fname(){return slug(S.team)+".skills.json";}
+function readTeamFile(){
+  return FS.h.getFileHandle(fname()).then(function(fh){return fh.getFile();}).then(function(f){
+    if(f.size>2000000)throw new Error("too large");return f.text();}).then(function(t){
+    var d=JSON.parse(t);if(!d||d.app!=="skills-matrix-builder"||!d.data||typeof d.saved!=="string")throw new Error("not ours");return d;
+  }).catch(function(e){if(e&&e.name==="NotFoundError")return null;throw e;});
+}
+function same(ex){try{return JSON.stringify(clean(ex.data))===JSON.stringify(S);}catch(e){return false;}}
+function setFS(msg){FS.msg=msg;renderFS();}
+function writeTeamFile(){
+  var stamp=new Date().toISOString();
+  return FS.h.getFileHandle(fname(),{create:true}).then(function(fh){return fh.createWritable();}).then(function(w){
+    return w.write(JSON.stringify({app:"skills-matrix-builder",version:1,saved:stamp,data:S},null,2)).then(function(){return w.close();});
+  }).then(function(){FS.seen=stamp;FS.conflict=null;FS.last=new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});setFS("Saved to the shared folder as "+fname()+" at "+FS.last+".");});
+}
+var fsT=null,fsBusy=false;
+function fsPush(force){
+  if(!FS.on||!FS.h)return;
+  if(S.example){setFS("Example data is never written to the shared folder.");return;}
+  if(!S.people.length||!S.skills.length)return;
+  clearTimeout(fsT);fsT=setTimeout(function(){
+    if(fsBusy)return;fsBusy=true;
+    var go=force?Promise.resolve(null):readTeamFile();
+    go.then(function(ex){
+      if(ex&&ex.saved!==FS.seen){if(same(ex)){FS.seen=ex.saved;setFS("Already up to date with the shared folder.");return null;}FS.conflict=ex;setFS("");return null;}
+      return writeTeamFile();
+    }).catch(function(e){setFS("Could not write to the shared folder ("+(e&&e.name?e.name:"error")+"). Your work is still saved in this browser.");}).then(function(){fsBusy=false;});
+  },force?0:1500);
+}
+function fsPull(){
+  if(!FS.on||!FS.h||fsBusy||FS.conflict||S.example)return;
+  readTeamFile().then(function(ex){
+    if(!ex||ex.saved===FS.seen)return;
+    if(dirty){FS.conflict=ex;setFS("");return;}
+    S=clean(ex.data);FS.seen=ex.saved;saveLocalOnly();rerender();setFS("Updated from the shared folder: someone changed "+fname()+".");
+  }).catch(function(){});
+}
+function saveLocalOnly(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}publish();}
+function linkFolder(){
+  window.showDirectoryPicker({mode:"readwrite"}).then(function(h){
+    FS.h=h;FS.on=true;FS.seen="";FS.conflict=null;return idbSet(h);
+  }).then(function(){setFS("Linked.");return readTeamFile();}).then(function(ex){
+    if(ex&&same(ex)){FS.seen=ex.saved;setFS("Already up to date with the shared folder.");}else if(ex){FS.conflict=ex;setFS("");}else fsPush(true);
+  }).catch(function(e){if(e&&e.name==="AbortError")return;setFS("Could not link the folder ("+(e&&e.name?e.name:"error")+").");});
+}
+function reconnect(){perm(FS.h,true).then(function(ok){FS.on=ok;if(ok){FS.seen=FS.seen||"";fsPull();setFS("Reconnected.");}else setFS("Permission was not given, so the folder is not connected.");});}
+function unlink(){FS.h=null;FS.on=false;FS.seen="";FS.conflict=null;idbSet(null);setFS("Unlinked. Your work stays in this browser.");}
+function useTheirs(){var ex=FS.conflict;if(!ex)return;S=clean(ex.data);FS.seen=ex.saved;FS.conflict=null;saveLocalOnly();rerender();setFS("Using the shared version.");}
+function keepMine(){FS.conflict=null;fsPush(true);}
+function renderFS(){
+  var c=$("fsCard");if(!c)return;c.innerHTML="";
+  add(c,h("h2",{text:"Shared folder"}));
+  if(!HAS_FS){add(c,h("p",{class:"sm",text:"Sharing through a folder needs Chrome or Edge on a computer. Your work is still saved in this browser, and you can use Save data file to pass it on."}));return;}
+  add(c,h("p",{class:"sm",text:"Link a folder that everyone in your company can reach, and each team's matrix is saved there as its own file. In SharePoint, open the document library and press Sync, so it shows as a folder in File Explorer, then choose that folder here. The Company Skills Dashboard can read the same folder. Only the data file is written. Nothing is sent to any website."}));
+  var st=FS.on?"Linked. "+(FS.msg||""):FS.h?"A folder was linked before. Press Reconnect to allow access again.":"Not linked.";
+  add(c,h("p",{role:"status",text:st}));
+  var b=h("div",{class:"toolbar"});
+  if(!FS.h)add(b,h("button",{class:"btn small",type:"button",text:"Link a shared folder",onclick:linkFolder}));
+  else if(!FS.on)add(b,h("button",{class:"btn small",type:"button",text:"Reconnect",onclick:reconnect}),h("button",{class:"btn sec small",type:"button",text:"Unlink",onclick:unlink}));
+  else add(b,h("button",{class:"btn sec small",type:"button",text:"Check for changes",onclick:fsPull}),h("button",{class:"btn sec small",type:"button",text:"Save now",onclick:function(){fsPush(false);}}),h("button",{class:"btn sec small",type:"button",text:"Unlink",onclick:unlink}));
+  add(c,b);
+  var cb=$("syncBanner");cb.innerHTML="";cb.hidden=!FS.conflict;
+  if(FS.conflict){var t=new Date(FS.conflict.saved);
+    add(cb,h("strong",{text:"The shared folder has a different version of this team. "}),
+      h("span",{text:"It was saved "+(isNaN(t)?"at an unknown time":t.toLocaleString("en-GB"))+". Nothing has been overwritten. Choose which to keep. "}),
+      h("button",{class:"btn small",type:"button",text:"Use the shared version",onclick:useTheirs})," ",
+      h("button",{class:"btn sec small",type:"button",text:"Keep mine and overwrite",onclick:keepMine}));}
+}
+function fsInit(){
+  renderFS();if(!HAS_FS)return;
+  idbGet().then(function(h){if(!h)return;FS.h=h;return perm(h,false).then(function(ok){FS.on=ok;renderFS();if(ok)fsPull();});});
+  setInterval(function(){if(document.visibilityState==="visible")fsPull();},60000);
+  document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")fsPull();});
+}
 
 /* rendering */
 function rerender(){var ae=document.activeElement,key=ae&&ae.getAttribute&&ae.getAttribute("data-k"),ss=null,se=null;
@@ -492,9 +581,9 @@ function example(){
   return o;}
 
 var sv=load();if(sv)S=sv;else{S=example();saveNow();}
-renderAll();renderSave();
+renderAll();renderSave();fsInit();
 var ui=uiGet();showTab(["matrix","setup","cover","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
-window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
+window.__fs=FS;window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
 })();
 </script>
 <!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
