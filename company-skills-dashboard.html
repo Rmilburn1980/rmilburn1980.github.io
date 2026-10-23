@@ -182,7 +182,7 @@ function cleanM(d){
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
-  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
+  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),sopUrl:str(s.sopUrl,500),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
   var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
   var c=d.cells&&typeof d.cells==="object"?d.cells:{};
   Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};

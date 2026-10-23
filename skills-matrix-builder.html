@@ -75,7 +75,7 @@ tr:last-child td{border-bottom:none}th:last-child,td:last-child{border-right:non
 .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf}
 .chip.crit{background:var(--high)}
 .list .it{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:0 0 8px;display:grid;grid-template-columns:2fr 1.4fr 1fr auto;gap:10px;align-items:end}
-.list .it.sk{grid-template-columns:2fr 1.2fr 1fr .8fr .8fr auto}
+.list .it.sk{grid-template-columns:2fr 1.2fr 1fr 1.4fr .8fr .8fr auto}
 @media (max-width:760px){.list .it,.list .it.sk{grid-template-columns:1fr 1fr}}
 .row label input,.row label select{width:100%}
 dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:520px;width:calc(100% - 32px)}
@@ -174,6 +174,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li>A non-critical skill short of its target is a note.</li>
       <li>A critical skill with no signed-off trainer at level 4 is a note.</li>
       <li>A training date that has passed for someone still below level 3 is a gap.</li>
+      <li>An SOP link must start with https. Anything else is ignored. A critical skill with an SOP number but no link is a note when other skills have links.</li>
       <li>A critical skill with no SOP number recorded is a note. Sign off against the written standard, and put its number in the matrix.</li>
       <li>A person who is the only signed-off cover for three or more skills is listed as a key person risk.</li>
     </ul>
@@ -236,6 +237,8 @@ function nid(list){var m=0;list.forEach(function(x){if(x.id>m)m=x.id;});return m
 function P(id){for(var i=0;i<S.people.length;i++)if(S.people[i].id===id)return S.people[i];return null;}
 function K(id){for(var i=0;i<S.skills.length;i++)if(S.skills[i].id===id)return S.skills[i];return null;}
 function ck(p,s){return p+":"+s;}
+function sopHref(s){var u=(s.sopUrl||"").trim();if(!u||u.length>500)return "";try{var x=new URL(u);return x.protocol==="https:"?x.href:"";}catch(e){return "";}}
+function sopNode(s){if(!s.sop)return null;var href=sopHref(s);return href?h("div",{},h("a",{class:"sm",href:href,target:"_blank",rel:"noopener noreferrer","aria-label":sopL(s)+" (opens the document in a new tab)",text:sopL(s)})):h("div",{class:"sm",text:sopL(s)});}
 function sopL(s){return /^sop/i.test(s.sop.trim())?s.sop.trim():"SOP "+s.sop.trim();}
 function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:""};}
 
@@ -245,7 +248,7 @@ function clean(d){
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
-  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
+  (Array.isArray(d.skills)?d.skills.slice(0,MAXS):[]).forEach(function(s){if(!s)return;var id=parseInt(s.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.skills.push({id:id,name:str(s.name,60),area:str(s.area,40),sop:str(s.sop,30),sopUrl:(function(u){u=str(u,500).trim();if(!u)return "";try{return new URL(u).protocol==="https:"?u:"";}catch(e){return "";}})(s.sopUrl),crit:s.crit===true,need:Math.max(1,Math.min(20,parseInt(s.need,10)||2))});});
   var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
   var c=d.cells&&typeof d.cells==="object"?d.cells:{};
   Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
@@ -287,6 +290,8 @@ function analyse(){
       if(s.crit)g("s"+s.id,"Critical skill. "+m+(ok.length===0?" Nobody is signed off, so the work depends on someone who has not been checked.":" "+(ok.length===1?"One absence stops this.":"")));
       else n("s"+s.id,m);
     }
+    if((s.sopUrl||"").trim()&&!sopHref(s))n("s"+s.id,(s.name||"(no name)")+": the SOP link is not a valid https address, so it is not shown as a link.");
+    if(s.crit&&s.sop.trim()&&!sopHref(s)&&S.skills.some(function(k){return sopHref(k);}))n("s"+s.id,(s.name||"(no name)")+": critical, has an SOP number but no SOP link, while other skills have one.");
     if(s.crit&&!s.sop.trim())n("s"+s.id,(s.name||"(no name)")+": critical, and no SOP number is recorded. Sign-offs need a written standard to assess against.");
     if(s.crit&&!tr.length)n("s"+s.id,(s.name||"(no name)")+": critical, and nobody signed off can train others.");
   });
@@ -434,7 +439,7 @@ function renderGrid(){
   var t=$("grid");t.innerHTML="";
   if(!S.people.length||!S.skills.length){t.appendChild(h("tbody",{},h("tr",{},h("td",{style:"padding:20px;text-align:left",text:"No matrix yet. Add people and skills on the People and skills tab."}))));return;}
   var A=analyse(),hr=h("tr",{},h("th",{class:"pn",text:"Person"}));
-  S.skills.forEach(function(s){hr.appendChild(h("th",{class:"sk",title:s.area},s.name||"(no name)",s.sop?h("div",{class:"sm",text:sopL(s)}):null,s.crit?h("div",{},h("span",{class:"chip crit",text:"Critical"})):null));});
+  S.skills.forEach(function(s){hr.appendChild(h("th",{class:"sk",title:s.area},s.name||"(no name)",sopNode(s),s.crit?h("div",{},h("span",{class:"chip crit",text:"Critical"})):null));});
   t.appendChild(h("thead",{},hr));
   var tb=h("tbody");
   S.people.forEach(function(p){
@@ -491,6 +496,7 @@ function renderSetup(){
       h("label",{},"Skill",txt(s.name,"sk"+s.id,60,function(v){s.name=v;})),
       h("label",{},"Area",txt(s.area,"sa"+s.id,40,function(v){s.area=v;})),
       h("label",{},"SOP number",txt(s.sop,"so"+s.id,30,function(v){s.sop=v;renderGrid();})),
+      h("label",{},"SOP link (https, optional)",txt(s.sopUrl||"","su"+s.id,500,function(v){s.sopUrl=v;renderGrid();})),
       h("label",{},"People needed",nd),
       h("label",{style:"flex-direction:row;align-items:center;gap:8px"},cr,"Critical"),
       h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"sd"+s.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.skills=S.skills.filter(function(x){return x!==s;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[1]===String(s.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("s"+s.id);}})));});
@@ -499,7 +505,7 @@ function renderSetup(){
 $("setMonths").addEventListener("input",function(){S.months=Math.max(1,Math.min(60,parseInt(this.value,10)||12));touch();renderStatus();renderGrid();renderCover();});
 $("setTeam").addEventListener("input",function(){S.team=this.value.slice(0,80);touch();});
 $("addPerson").onclick=function(){if(S.people.length>=MAXP)return;var id=nid(S.people);S.people.push({id:id,name:"",role:""});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="pn'+id+'"]');if(q)q.focus();},0);};
-$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",sop:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
+$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",sop:"",sopUrl:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
 
 function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
 function renderCover(){
@@ -514,7 +520,7 @@ function renderCover(){
   t.appendChild(h("thead",{},hr));var tb=h("tbody");
   S.skills.forEach(function(s){var c=A.cov[s.id],ok=c.ok.length;
     var tr=h("tr",{},h("td",{style:"text-align:left"},s.name||"(no name)"," ",s.crit?h("span",{class:"chip crit",text:"Critical"}):null),
-      h("td",{style:"text-align:left",text:s.sop||"none"}),
+      h("td",{style:"text-align:left"},s.sop?(sopHref(s)?h("a",{href:sopHref(s),target:"_blank",rel:"noopener noreferrer",text:sopL(s)}):sopL(s)):"none"),
       h("td",{style:"text-align:left",text:s.area||""}),
       h("td",{},h("span",{class:"cov "+(ok>=s.need?"ok":s.crit?"bad":"mid"),text:String(ok)})),h("td",{text:String(s.need)}),h("td",{text:String(c.tr.length)}),h("td",{text:String(c.pend)}));
     tb.appendChild(tr);});
