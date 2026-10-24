@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OEE and Downtime Log</title>
+<meta name="description" content="Record shifts and stops, work out availability, performance, quality and OEE from the counts, and see where the lost time went in a Pareto of downtime reasons. Shows what is missing or unchecked in the record. Opens with made-up example data.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.status.st-over{border-color:var(--high)}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>OEE and Downtime Log</h1>
+    <p>Record each shift with its stops and counts. The tool works out availability, performance, quality and OEE from your numbers, ranks the reasons time was lost, and shows what is missing or has not been checked by a second person. Runs with impossible or unchecked figures are left out of the totals and listed.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="runs">Runs</button>
+  <button role="tab" aria-selected="false" data-tab="dash">Dashboard</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records production figures and the initials or names of the people who recorded and checked them. It stays in this browser and in files you save. Nothing is sent to this website. Your employer is responsible for this data. Only use it with your employer's approval, on a company device, and save files only to your company's approved location. Use initials or a role rather than a full name. Do not record the names of operators against stops or rejects, and do not use the figures to judge individuals. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every run tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear log to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add a run</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn danger" id="btnClear">Clear log</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+
+<section id="tab-runs"><div class="list" id="list"></div></section>
+
+<section id="tab-dash" hidden>
+  <div class="toolbar"><label class="sm">Period <select id="period" aria-label="Period"><option value="28" selected>Last 28 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option><option value="0">All records</option></select></label>
+  <label class="sm">Line <select id="lineSel" aria-label="Line"></select></label></div>
+  <div class="kpis" id="kpis"></div>
+  <p class="disc" id="dashNote"></p>
+  <div class="card"><h2>Where the planned time went</h2><div class="tablewrap"><table id="lossTable"></table></div>
+    <p class="sm">Each row is a share of planned production time. Availability loss is stop time. Performance loss is time spent running below the ideal rate. Quality loss is the time spent making units that were rejected.</p></div>
+  <div class="card"><h2>Downtime Pareto</h2><div id="paretoWrap"></div><div class="tablewrap"><table id="paretoTable"></table></div>
+    <p class="sm" id="paretoNote"></p></div>
+  <div class="card"><h2>By line</h2><div class="tablewrap"><table id="lineTable"></table></div></div>
+  <div class="card"><h2>By week</h2><div class="tablewrap"><table id="weekTable"></table></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record. They cannot tell whether the counts, the ideal rate or the stop reasons are true. A second person has to check those against the line.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>The sums</h2>
+    <ul>
+      <li><strong>Planned production time:</strong> the minutes the line was meant to run, after planned breaks. You enter it for each run.</li>
+      <li><strong>Run time</strong> = planned time minus the minutes of every stop you recorded.</li>
+      <li><strong>Availability</strong> = run time divided by planned time.</li>
+      <li><strong>Performance</strong> = the time the units made should have taken at the ideal rate, divided by run time.</li>
+      <li><strong>Quality</strong> = good units divided by all units made.</li>
+      <li><strong>OEE</strong> = availability times performance times quality. It is the same as the time spent making good units at the ideal rate, divided by planned time.</li>
+      <li><strong>Totals across runs</strong> add up the minutes and units first and then divide. They are not an average of each run's percentage, which would give a short or slow run the same weight as a full one.</li>
+    </ul></div>
+  <div class="card"><h2>The ideal rate decides everything</h2>
+    <p>Performance and OEE depend on the ideal rate you enter, in units per hour. If it is set low, performance looks good. If it differs from line to line or year to year, the OEE figures cannot be compared. Write down where the ideal rate came from (design rate, best demonstrated rate, or the standard time) and keep it the same. The tool does not decide it for you. A common target such as 85 percent is only a talking point. It means nothing unless the ideal rate and the stop rules are defined the same way.</p></div>
+  <div class="card"><h2>What the checks do</h2>
+    <ul>
+      <li>A run with a missing date, line, planned time, ideal rate or counts is listed and left out of the OEE figures.</li>
+      <li>A run whose stops add up to more than the planned time, or with more good units than units made, is impossible and is left out.</li>
+      <li>A run with performance over 100 percent is left out. It means the ideal rate is too low, the count is wrong, or stops were not recorded.</li>
+      <li>A stop with no reason is counted in the Pareto as "Reason not recorded", and a gap is raised if that is over 20 percent of downtime.</li>
+      <li>Each run needs a person who recorded it and a different person who checked it.</li>
+      <li>Two runs for the same date, line and shift are flagged as a possible duplicate.</li>
+    </ul></div>
+  <div class="card"><h2>Reading the Pareto</h2>
+    <p>The Pareto ranks stop reasons by minutes lost. The cumulative line shows how much of the total the top reasons make up. It only counts stops somebody recorded. Short stops of a minute or two are often not written down, so the real minor stoppage loss is usually bigger than it looks, and shows up as performance loss rather than as a stop. Use it to choose what to investigate next, for example with the <a href="5-whys-tool.html">5 Whys tool</a> or the <a href="causal-tree-builder.html">Causal Tree Builder</a>, then track the fix in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the figures are right. OEE describes the line, not the people on it. Do not use it to rank or judge individuals. This is decision support only.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Run</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save run</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete run</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only. OEE and Downtime Log. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-oee-log-v1",UIK="rmilburn-oee-log-ui";
+var REASONS=[["breakdown","Breakdown or equipment fault"],["changeover","Changeover or setup"],["material","Waiting for material"],["labour","Waiting for people or cover"],["quality","Quality hold or rework stop"],["maint","Planned maintenance overrun"],["startup","Start-up or shutdown"],["minor","Minor stoppages"],["other","Other (say what in the note)"],["none","Reason not recorded"]];
+var MAXR=3000,MAXS=60,SV={};
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,period=28,lineF="";
+function blank(){return {example:false,runs:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function num(v,lo,hi){if(v===""||v===null||v===undefined)return "";var n=Number(v);if(!isFinite(n))return "";return Math.min(hi,Math.max(lo,n));}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function addDays(d,n){var p=d.split("-").map(Number);return dstr(new Date(p[0],p[1]-1,p[2]+n));}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function weekStart(d){var p=d.split("-").map(Number),x=new Date(p[0],p[1]-1,p[2]),w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return dstr(x);}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function pct(x){return (x===null||x===undefined||!isFinite(x))?"n/a":(x*100).toFixed(1)+"%";}
+function mins(x){return (Math.round(x*10)/10)+" min";}
+function hrs(m){return (m/60).toFixed(1)+" h";}
+function reasonLabel(k){for(var i=0;i<REASONS.length;i++)if(REASONS[i][0]===k)return REASONS[i][1];return "Reason not recorded";}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function svg(tag,a,txt){var e=document.createElementNS("http://www.w3.org/2000/svg",tag),k;for(k in a||{})e.setAttribute(k,a[k]);if(txt!==undefined)e.textContent=txt;return e;}
+
+/* ---------- cleaning ---------- */
+function cleanStop(x,i){x=x&&typeof x==="object"?x:{};var r=str(x.reason,12);var ok=REASONS.some(function(q){return q[0]===r;});
+  return {id:Math.round(num(x.id,1,1e9))||i+1,min:num(x.min,0,1440),reason:ok?r:"",note:str(x.note,200)};}
+function cleanRun(x,i){x=x&&typeof x==="object"?x:{};
+  var st=Array.isArray(x.stops)?x.stops.slice(0,MAXS).map(cleanStop):[];
+  return {id:Math.round(num(x.id,1,1e9))||i+1,date:dOk(x.date),line:str(x.line,60),shift:str(x.shift,30),
+    planned:num(x.planned,0,1440),rate:num(x.rate,0,100000),total:num(x.total,0,1e7),good:num(x.good,0,1e7),
+    recBy:str(x.recBy,60),chkBy:str(x.chkBy,60),note:str(x.note,300),example:x.example===true,stops:st};}
+function clean(d){d=d&&typeof d==="object"?d:{};var seen={};
+  var runs=(Array.isArray(d.runs)?d.runs.slice(0,MAXR):[]).map(cleanRun);
+  runs.forEach(function(r){while(seen[r.id])r.id++;seen[r.id]=1;});
+  return {example:d.example===true,runs:runs};}
+
+/* ---------- the sums ---------- */
+function calc(r){
+  var stopMin=0,unrec=0,problems=[],missing=[];
+  r.stops.forEach(function(s){var m=s.min===""?0:s.min;stopMin+=m;if(!s.reason||s.reason==="none")unrec+=m;});
+  if(!r.date)missing.push("date");if(!r.line.trim())missing.push("line");
+  if(r.planned===""||r.planned<=0)missing.push("planned time");
+  if(r.rate===""||r.rate<=0)missing.push("ideal rate");
+  if(r.total==="")missing.push("units made");if(r.good==="")missing.push("good units");
+  var c={stopMin:stopMin,unrec:unrec,missing:missing,problems:problems,ok:false,stopsOk:false,planned:r.planned===""?0:r.planned};
+  if(r.date&&r.planned!==""&&r.planned>0&&stopMin<=r.planned&&r.date<=today())c.stopsOk=true;
+  if(missing.length){return c;}
+  if(stopMin>r.planned)problems.push("Stops add up to "+mins(stopMin)+", more than the planned "+mins(r.planned)+".");
+  if(r.good>r.total)problems.push("More good units ("+r.good+") than units made ("+r.total+").");
+  if(r.date>today())problems.push("The date is in the future.");
+  if(problems.length)return c;
+  c.run=r.planned-stopMin;c.idealMin=r.total/r.rate*60;c.goodMin=r.good/r.rate*60;
+  if(c.run<=0){problems.push("No run time is left after the stops, so performance cannot be worked out.");return c;}
+  c.A=c.run/r.planned;c.P=c.idealMin/c.run;c.Q=r.total>0?r.good/r.total:null;
+  if(c.P>1){problems.push("Performance is "+pct(c.P)+". Running above the ideal rate means the ideal rate is too low, the count is wrong, or stops were not recorded.");return c;}
+  if(c.Q===null){problems.push("No units were made, so quality cannot be worked out.");return c;}
+  c.oee=c.goodMin/r.planned;c.ok=true;return c;}
+function analyseRun(r){var c=calc(r),g=[],n=[];
+  if(c.missing.length)g.push("Missing: "+c.missing.join(", ")+". Left out of the OEE figures.");
+  c.problems.forEach(function(p){g.push(p+" Left out of the OEE figures.");});
+  r.stops.forEach(function(s){if(s.min===""||s.min<=0)g.push("A stop has no minutes.");});
+  if(!norm(r.recBy))g.push("Nobody is named as having recorded this run.");
+  else if(!norm(r.chkBy))g.push("Not checked by a second person.");
+  else if(norm(r.recBy)===norm(r.chkBy))g.push("Checked by the same person who recorded it.");
+  if(c.stopMin>=30&&c.unrec/c.stopMin>0.2)n.push(Math.round(c.unrec/c.stopMin*100)+"% of the stop time has no reason recorded.");
+  if(c.ok&&r.stops.length===0&&c.P<0.97)n.push("No stops recorded but performance is "+pct(c.P)+". Short stops may not have been written down.");
+  return {c:c,g:g,n:n};}
+function inPeriod(r){if(!period)return true;return r.date&&r.date>=off(-period);}
+function analyse(){
+  var gaps=[],notes=[],by={},dup={};
+  D.runs.forEach(function(r){var a=analyseRun(r);by[r.id]=a;
+    var k=[r.date,norm(r.line),norm(r.shift)].join("|");if(r.date&&norm(r.line)){(dup[k]=dup[k]||[]).push(r);}});
+  Object.keys(dup).forEach(function(k){if(dup[k].length>1)dup[k].forEach(function(r){by[r.id].g.push("Another run has the same date, line and shift. Possible duplicate.");});});
+  D.runs.forEach(function(r){var a=by[r.id],lab=runLabel(r);a.g.forEach(function(m){gaps.push({id:r.id,msg:lab+": "+m});});a.n.forEach(function(m){notes.push({id:r.id,msg:lab+": "+m});});});
+  var p=pooled(D.runs.filter(inPeriod),""),all=p.totalStopMin;
+  if(all>0&&p.unrecMin/all>0.2)gaps.push({id:0,msg:"Over 20% of recorded downtime in this period ("+Math.round(p.unrecMin/all*100)+"%) has no reason. The Pareto is incomplete."});
+  if(p.n<5&&p.n>0)notes.push({id:0,msg:"Only "+plural(p.n,"run")+" count in this period. That is too few to show a pattern."});
+  var latest="";D.runs.forEach(function(r){if(r.date&&r.date<=today()&&r.date>latest)latest=r.date;});
+  if(latest&&daysBetween(latest,today())>7)notes.push({id:0,msg:"The latest record is "+daysBetween(latest,today())+" days old."});
+  return {gaps:gaps,notes:notes,by:by};}
+function runLabel(r){return (r.date?fmt(r.date):"No date")+" "+(r.line.trim()||"no line")+(r.shift?" "+r.shift:"");}
+function pooled(runs,line){
+  var o={n:0,excluded:0,planned:0,run:0,ideal:0,goodMin:0,total:0,good:0,stopMin:0,totalStopMin:0,unrecMin:0,reasons:{}};
+  runs.forEach(function(r){if(line&&r.line!==line)return;var c=calc(r);
+    if(c.stopsOk){c.stopMin&&r.stops.forEach(function(s){var k=(!s.reason)?"none":s.reason,m=s.min===""?0:s.min;o.reasons[k]=(o.reasons[k]||0)+m;o.totalStopMin+=m;if(k==="none")o.unrecMin+=m;});}
+    if(!c.ok){o.excluded++;return;}
+    o.n++;o.planned+=r.planned;o.run+=c.run;o.ideal+=c.idealMin;o.goodMin+=c.goodMin;o.total+=r.total;o.good+=r.good;o.stopMin+=c.stopMin;});
+  o.A=o.planned>0?o.run/o.planned:null;o.P=o.run>0?o.ideal/o.run:null;o.Q=o.ideal>0?o.goodMin/o.ideal:null;o.oee=o.planned>0?o.goodMin/o.planned:null;
+  return o;}
+
+/* ---------- storage ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextId(){var m=0;D.runs.forEach(function(r){if(r.id>m)m=r.id;});return m+1;}
+
+/* ---------- list ---------- */
+function renderAll(){renderStatus();renderList();renderDash();renderChecks();$("banner").hidden=!D.example;}
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.runs.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing recorded yet."}),h("div",{class:"sm",text:"Add a run, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on these figures yet."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the counts, the ideal rate or the stop reasons are right. A second person must still check them against the line. "+plural(A.notes.length,"note")+"."}));}}
+function renderList(){
+  var A=analyse(),el=$("list");el.innerHTML="";
+  if(!D.runs.length){add(el,h("p",{class:"sm",text:"No runs yet."}));return;}
+  D.runs.slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"")||b.id-a.id;}).forEach(function(r){
+    var a=A.by[r.id],c=a.c;
+    var b=h("button",{type:"button",class:"inc "+(a.g.length?"gap":"clean"),"data-k":"r"+r.id,onclick:function(){openRun(r.id);}},
+      h("div",{class:"t",text:runLabel(r)}),
+      h("div",{class:"m"},
+        r.example?h("span",{class:"chip v",text:"Example"}):null,
+        c.ok?h("span",{class:"chip c",text:"OEE "+pct(c.oee)}):h("span",{class:"chip g",text:"Left out of totals"}),
+        c.ok?h("span",{class:"chip",text:"A "+pct(c.A)+" P "+pct(c.P)+" Q "+pct(c.Q)}):null,
+        h("span",{class:"chip",text:"Stops "+mins(c.stopMin)}),
+        a.g.length?h("span",{class:"chip g",text:plural(a.g.length,"gap")}):h("span",{class:"chip ok",text:"No gaps found"})));
+    if(a.g.length||a.n.length){var ul=h("ul",{class:"fl"});a.g.forEach(function(m){add(ul,h("li",{class:"g",text:m}));});a.n.forEach(function(m){add(ul,h("li",{class:"o",text:m}));});add(b,ul);}
+    add(el,b);});}
+
+/* ---------- dashboard ---------- */
+function fillLines(){var sel=$("lineSel"),cur=lineF,ls=[];D.runs.forEach(function(r){var l=r.line.trim();if(l&&ls.indexOf(l)<0)ls.push(l);});ls.sort();
+  sel.innerHTML="";add(sel,h("option",{value:"",text:"All lines"}));ls.forEach(function(l){add(sel,h("option",{value:l,text:l}));});
+  if(ls.indexOf(cur)<0)cur="";lineF=cur;sel.value=cur;}
+function kpi(n,l,cls){return h("div",{class:"kpi "+(cls||"")},h("div",{class:"n",text:n}),h("div",{class:"l",text:l}));}
+function tbl(el,heads,rows,numFrom){el.innerHTML="";var tr=h("tr");heads.forEach(function(x,i){add(tr,h("th",{class:i>=numFrom?"num":"",scope:"col",text:x}));});add(el,h("thead",{},tr));var tb=h("tbody");
+  rows.forEach(function(r){var t=h("tr");r.forEach(function(c,i){add(t,h(i===0?"th":"td",{class:i>=numFrom?"num":"",scope:i===0?"row":null,style:i===0?"text-transform:none;letter-spacing:0;font-size:.86rem;color:var(--text);background:transparent;white-space:normal":null},c));});add(tb,t);});
+  if(!rows.length)add(tb,h("tr",{},h("td",{colspan:heads.length,class:"sm",text:"Nothing to show for this period."})));add(el,tb);}
+function renderDash(){
+  fillLines();
+  var runs=D.runs.filter(inPeriod),p=pooled(runs,lineF),k=$("kpis");k.innerHTML="";
+  add(k,kpi(pct(p.oee),"OEE (planned time making good units at the ideal rate)"),kpi(pct(p.A),"Availability"),kpi(pct(p.P),"Performance"),kpi(pct(p.Q),"Quality"),
+    kpi(String(p.n),"Runs counted"),kpi(String(p.excluded),"Runs left out because of gaps",p.excluded?"warn":"ok"),
+    kpi(p.planned?hrs(p.planned):"n/a","Planned production time"),kpi(p.totalStopMin?hrs(p.totalStopMin):"0.0 h","Recorded stop time (runs with valid stops, as in the Pareto)"));
+  $("dashNote").textContent=p.n?"Totals add up minutes and units across the counted runs, then divide. Runs with missing, impossible or over-100% figures are left out and listed under Checks. The ideal rate you entered sets performance and OEE, so only compare lines that use the same definition.":"No runs count in this period yet.";
+  /* loss table */
+  var pl=p.planned,rows=[];
+  if(pl>0){var aL=p.stopMin,pL=p.run-p.ideal,qL=p.ideal-p.goodMin;
+    rows=[["Planned production time",hrs(pl),"100.0%"],["Availability loss (stops)",hrs(aL),pct(aL/pl)],["Performance loss (running below the ideal rate)",hrs(pL),pct(pL/pl)],["Quality loss (rejected units)",hrs(qL),pct(qL/pl)],["Fully productive time (OEE)",hrs(p.goodMin),pct(p.goodMin/pl)]];}
+  tbl($("lossTable"),["Where the time went","Hours","Share of planned"],rows,1);
+  /* pareto */
+  var items=[],tot=0;Object.keys(p.reasons).forEach(function(kk){if(p.reasons[kk]>0){items.push({k:kk,m:p.reasons[kk]});tot+=p.reasons[kk];}});
+  items.sort(function(a,b){return b.m-a.m;});
+  var wrap=$("paretoWrap");wrap.innerHTML="";var pr=[],cum=0;
+  items.forEach(function(it,i){cum+=it.m;pr.push([String(i+1)+" "+reasonLabel(it.k),Math.round(it.m)+" min",pct(it.m/tot),pct(cum/tot)]);});
+  tbl($("paretoTable"),["Reason","Minutes","Share","Cumulative"],pr,1);
+  if(items.length)add(wrap,pareto(items,tot));
+  $("paretoNote").textContent=items.length?"Counts "+Math.round(tot)+" recorded stop minutes. The Pareto only shows stops somebody wrote down. Short stops that were not recorded show up as performance loss above.":"No stops recorded in this period.";
+  /* by line */
+  var lines=[];runs.forEach(function(r){var l=r.line.trim();if(l&&lines.indexOf(l)<0)lines.push(l);});lines.sort();
+  tbl($("lineTable"),["Line","Runs counted","Left out","OEE","Availability","Performance","Quality","Top stop reason"],lines.map(function(l){var q=pooled(runs,l),top="",tm=0;Object.keys(q.reasons).forEach(function(kk){if(q.reasons[kk]>tm){tm=q.reasons[kk];top=reasonLabel(kk);}});
+    return [l,String(q.n),String(q.excluded),pct(q.oee),pct(q.A),pct(q.P),pct(q.Q),top||"none recorded"];}),1);
+  /* by week */
+  var wk={};runs.forEach(function(r){if(!r.date)return;if(lineF&&r.line!==lineF)return;var w=weekStart(r.date);(wk[w]=wk[w]||[]).push(r);});
+  var ws=Object.keys(wk).sort().reverse();
+  tbl($("weekTable"),["Week starting","Runs counted","Left out","OEE","Availability","Performance","Quality"],ws.map(function(w){var q=pooled(wk[w],"");return [fmt(w),String(q.n),String(q.excluded),pct(q.oee),pct(q.A),pct(q.P),pct(q.Q)];}),1);
+}
+function pareto(items,tot){
+  var W=640,H=300,L=44,R=44,T=16,B=36,pw=W-L-R,ph=H-T-B,n=items.length,bw=pw/n,max=items[0].m;
+  var s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Pareto chart of downtime minutes by reason, with a cumulative percentage line. The same figures are in the table below.",style:"width:100%;height:auto;max-width:760px;display:block"});
+  [0,.25,.5,.75,1].forEach(function(f){var y=T+ph-ph*f;add1(s,svg("line",{x1:L,x2:W-R,y1:y,y2:y,stroke:"#2c4466","stroke-width":1}));
+    add1(s,svg("text",{x:L-6,y:y+4,"text-anchor":"end","font-size":11,fill:"#a9b8cf"},Math.round(max*f)));
+    add1(s,svg("text",{x:W-R+6,y:y+4,"text-anchor":"start","font-size":11,fill:"#a9b8cf"},Math.round(f*100)+"%"));});
+  var cum=0,pts=[];
+  items.forEach(function(it,i){var bh=ph*it.m/max,x=L+i*bw+bw*.15,w=bw*.7;
+    add1(s,svg("rect",{x:x,y:T+ph-bh,width:w,height:bh,fill:it.k==="none"?"#a9b8cf":"#3aa7c7"}));
+    add1(s,svg("text",{x:L+i*bw+bw/2,y:H-B+16,"text-anchor":"middle","font-size":12,fill:"#e8eef7"},String(i+1)));
+    cum+=it.m;pts.push([L+i*bw+bw/2,T+ph-ph*cum/tot]);});
+  add1(s,svg("polyline",{points:pts.map(function(p){return p[0]+","+p[1];}).join(" "),fill:"none",stroke:"#fb923c","stroke-width":2.5}));
+  pts.forEach(function(p){add1(s,svg("circle",{cx:p[0],cy:p[1],r:3.5,fill:"#fb923c"}));});
+  add1(s,svg("text",{x:L,y:H-4,"font-size":11,fill:"#a9b8cf"},"Bars: minutes lost. Line: cumulative share. Numbers match the table rows."));
+  return s;}
+
+function renderChecks(){var A=analyse(),el=$("flagList");el.innerHTML="";
+  if(!D.runs.length){add(el,h("p",{class:"sm",text:"Nothing recorded yet."}));return;}
+  if(A.gaps.length){add(el,h("h3",{text:"Gaps ("+A.gaps.length+")"}));var ul=h("ul",{class:"fl"});A.gaps.forEach(function(g){add(ul,h("li",{class:"g",text:g.msg}));});add(el,ul);}
+  else add(el,h("p",{text:"No gaps found by these checks. This does not mean the record is right."}));
+  if(A.notes.length){add(el,h("h3",{text:"Notes ("+A.notes.length+")"}));var u2=h("ul",{class:"fl"});A.notes.forEach(function(g){add(u2,h("li",{class:"o",text:g.msg}));});add(el,u2);}}
+
+/* ---------- dialog ---------- */
+function field(label,input,full){return h("label",{class:full?"full":""},label,input);}
+function openRun(id){
+  var r=id?D.runs.filter(function(x){return x.id===id;})[0]:null;if(id&&!r)return;
+  draftNew=!r;draft=r?JSON.parse(JSON.stringify(r)):cleanRun({id:nextId(),date:today(),planned:450,stops:[]},0);
+  $("dlgT").textContent=draftNew?"New run":"Run "+runLabel(draft);$("dlgDel").hidden=draftNew;buildForm();$("dlg").showModal();}
+var prevEl=null;
+function updPrev(){if(!prevEl)return;prevEl.innerHTML="";var a=analyseRun(cleanRun(draft,0)),c=a.c;
+  if(c.ok)add(prevEl,h("strong",{text:"OEE "+pct(c.oee)}),h("div",{class:"sm",text:"Availability "+pct(c.A)+", performance "+pct(c.P)+", quality "+pct(c.Q)+". Run time "+mins(c.run)+" after "+mins(c.stopMin)+" of stops."}));
+  else add(prevEl,h("strong",{text:"Cannot work out OEE yet"}));
+  var ul=h("ul",{class:"fl"});a.g.forEach(function(m){add(ul,h("li",{class:"g",text:m}));});a.n.forEach(function(m){add(ul,h("li",{class:"o",text:m}));});if(ul.childNodes.length)add(prevEl,ul);}
+function inp(key,type,extra){var a={type:type,value:draft[key]===""?"":draft[key],oninput:function(e){draft[key]=type==="number"?e.target.value:e.target.value;updPrev();}};for(var k in extra||{})a[k]=extra[k];return h("input",a);}
+function buildForm(){
+  var b=$("dlgB");b.innerHTML="";
+  var f1=h("fieldset",{},h("legend",{text:"1 When and where"}),h("div",{class:"f"},
+    field("Date",inp("date","date",{id:"fDate"})),field("Line or cell",inp("line","text",{id:"fLine",maxlength:60})),
+    field("Shift",inp("shift","text",{id:"fShift",maxlength:30,placeholder:"for example Early"})),
+    field("Planned production time (minutes, after planned breaks)",inp("planned","number",{id:"fPlan",min:0,max:1440,step:"any",inputmode:"decimal"}))));
+  var f2=h("fieldset",{},h("legend",{text:"2 Output"}),h("div",{class:"f"},
+    field("Ideal rate (units per hour)",inp("rate","number",{id:"fRate",min:0,step:"any",inputmode:"decimal"})),
+    field("Units made, good and bad",inp("total","number",{id:"fTot",min:0,step:"any",inputmode:"decimal"})),
+    field("Good units",inp("good","number",{id:"fGood",min:0,step:"any",inputmode:"decimal"}))),
+    h("p",{class:"sm",text:"Write down where the ideal rate comes from (design rate, best demonstrated rate or standard time) and use the same one every time."}));
+  var stopsBox=h("div",{id:"stopsBox"});
+  var f3=h("fieldset",{},h("legend",{text:"3 Stops"}),stopsBox,h("button",{class:"btn sec small",type:"button",id:"btnAddStop",onclick:function(){draft.stops.push({id:draft.stops.length+1,min:"",reason:"",note:""});drawStops();updPrev();}},"Add a stop"),
+    h("p",{class:"sm",text:"Record every stop with its minutes and a reason. A stop with no reason counts as Reason not recorded."}));
+  var f4=h("fieldset",{},h("legend",{text:"4 Who recorded and checked"}),h("div",{class:"f"},
+    field("Recorded by (initials or role)",inp("recBy","text",{id:"fRec",maxlength:60})),field("Checked against the line by (a different person)",inp("chkBy","text",{id:"fChk",maxlength:60})),
+    field("Note",h("textarea",{id:"fNote",maxlength:300,oninput:function(e){draft.note=e.target.value;},value:draft.note}),true)));
+  prevEl=h("div",{class:"rd",role:"status","aria-live":"polite",id:"prev"});
+  add(b,f1,f2,f3,f4,prevEl);drawStops();updPrev();}
+function drawStops(){var box=$("stopsBox");box.innerHTML="";
+  draft.stops.forEach(function(s,i){
+    var sel=h("select",{"aria-label":"Reason for stop "+(i+1),onchange:function(e){s.reason=e.target.value;updPrev();}},h("option",{value:"",text:"Choose a reason"}),REASONS.map(function(q){return h("option",{value:q[0],text:q[1]});}));sel.value=s.reason;
+    add(box,h("div",{class:"ac"},h("div",{class:"f"},
+      field("Minutes",h("input",{type:"number",min:0,max:1440,step:"any",inputmode:"decimal",value:s.min===""?"":s.min,"aria-label":"Minutes for stop "+(i+1),oninput:function(e){s.min=e.target.value;updPrev();}})),
+      field("Reason",sel),
+      field("Note",h("input",{type:"text",maxlength:200,value:s.note,"aria-label":"Note for stop "+(i+1),oninput:function(e){s.note=e.target.value;}}),true)),
+      h("button",{class:"btn danger small",type:"button",onclick:function(){draft.stops.splice(i,1);drawStops();updPrev();}},"Remove this stop")));});}
+function saveRun(){var r=cleanRun(draft,0);r.example=draft.example===true;
+  if(draftNew){r.id=nextId();D.runs.push(r);}else{for(var i=0;i<D.runs.length;i++)if(D.runs[i].id===r.id)D.runs[i]=r;}
+  D.example=D.runs.some(function(x){return x.example;});$("dlg").close();touch();renderAll();}
+$("dlgOk").onclick=saveRun;$("dlgCancel").onclick=function(){$("dlg").close();};$("dlgX").onclick=function(){$("dlg").close();};
+$("dlgDel").onclick=function(){var b=$("dlgDel");if(armed!=="del"){armed="del";b.textContent="Press again to delete";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Delete run";b.classList.remove("armed");},4000);return;}
+  armed=null;D.runs=D.runs.filter(function(x){return x.id!==draft.id;});D.example=D.runs.some(function(x){return x.example;});$("dlg").close();b.textContent="Delete run";b.classList.remove("armed");touch();renderAll();};
+$("dlg").addEventListener("close",function(){prevEl=null;});
+
+/* ---------- files ---------- */
+$("btnAdd").onclick=function(){openRun(0);};
+$("btnExample").onclick=function(){if(D.runs.length&&!D.example&&!confirm("Replace the log with the example? Your own runs will be removed from this browser unless you saved a file."))return;D=example();touch();renderAll();};
+$("btnSave").onclick=function(){download("oee-downtime-log-"+today()+".json",JSON.stringify({app:"oee-downtime-log",version:1,saved:new Date().toISOString(),data:D},null,1),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").onchange=function(e){var f=e.target.files[0];e.target.value="";if(!f)return;if(f.size>5e6){alert("That file is too large.");return;}
+  var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o||o.app!=="oee-downtime-log"||!o.data)throw 0;D=clean(o.data);touch();renderAll();}catch(x){alert("That is not an OEE and Downtime Log data file.");}};rd.readAsText(f);};
+$("btnClear").onclick=function(){var b=$("btnClear");if(armed!=="clr"){armed="clr";b.textContent="Press again to clear everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear log";b.classList.remove("armed");},4000);return;}
+  armed=null;D=blank();b.textContent="Clear log";b.classList.remove("armed");touch();renderAll();};
+function csvCell(v){v=String(v===null||v===undefined?"":v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){var A=analyse(),rows=[["Date","Line","Shift","Planned min","Ideal rate per hour","Units made","Good units","Stop min","Availability","Performance","Quality","OEE","Counted in totals","Recorded by","Checked by","Gaps"]];
+  D.runs.forEach(function(r){var a=A.by[r.id],c=a.c;rows.push([r.date,r.line,r.shift,r.planned,r.rate,r.total,r.good,c.stopMin,c.ok?(c.A*100).toFixed(1):"",c.ok?(c.P*100).toFixed(1):"",c.ok?(c.Q*100).toFixed(1):"",c.ok?(c.oee*100).toFixed(1):"",c.ok?"yes":"no",r.recBy,r.chkBy,a.g.join(" | ")]);});
+  download("oee-downtime-log-"+today()+".csv",rows.map(function(r){return r.map(csvCell).join(",");}).join("\r\n"),"text/csv");};
+$("btnPrint").onclick=function(){var A=analyse(),R=$("report");R.innerHTML="";var p=pooled(D.runs.filter(inPeriod),lineF);
+  add(R,h("h1",{text:"OEE and Downtime Log"}),h("p",{text:"Printed "+fmt(today())+". Period: "+(period?"last "+period+" days":"all records")+(lineF?". Line: "+lineF:". All lines.")+(D.example?" EXAMPLE DATA, NOT A REAL RECORD.":"")}));
+  add(R,h("p",{class:"gapx",text:A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on these figures yet.":"No gaps found by these checks. A second person must still check the counts, the ideal rate and the reasons."}));
+  add(R,h("h2",{text:"Totals"}),h("p",{text:"OEE "+pct(p.oee)+", availability "+pct(p.A)+", performance "+pct(p.P)+", quality "+pct(p.Q)+". Runs counted "+p.n+", left out "+p.excluded+"."}));
+  var t=h("table");add(t,h("tr",{},["Date","Line","Shift","OEE","A","P","Q","Stops","Counted"].map(function(x){return h("th",{text:x});})));
+  D.runs.slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"");}).forEach(function(r){var c=A.by[r.id].c;add(t,h("tr",{},[fmt(r.date),r.line,r.shift,c.ok?pct(c.oee):"n/a",c.ok?pct(c.A):"",c.ok?pct(c.P):"",c.ok?pct(c.Q):"",mins(c.stopMin),c.ok?"yes":"no"].map(function(x){return h("td",{text:x});})));});
+  add(R,h("h2",{text:"Runs"}),t);
+  if(A.gaps.length){var u=h("ul");A.gaps.forEach(function(g){add(u,h("li",{text:g.msg}));});add(R,h("h2",{text:"Gaps"}),u);}
+  window.print();};
+
+/* ---------- tabs ---------- */
+function showTab(t){["runs","dash","checks","guide"].forEach(function(x){$("tab-"+x).hidden=x!==t;});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});uiSet("tab",t);}
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){showTab(b.getAttribute("data-tab"));};});
+$("period").onchange=function(e){period=Number(e.target.value)||0;uiSet("period",period);renderDash();renderStatus();renderChecks();};
+$("lineSel").onchange=function(e){lineF=e.target.value;renderDash();};
+
+/* ---------- example ---------- */
+function example(){
+  var id=0;function R(d,line,shift,planned,rate,total,good,rec,chk,stops){id++;return {id:id,example:true,date:off(d),line:line,shift:shift,planned:planned,rate:rate,total:total,good:good,recBy:rec,chkBy:chk,note:"",
+    stops:stops.map(function(s,i){return {id:i+1,min:s[0],reason:s[1],note:s[2]||""};})};}
+  var A="Example Line A",B="Example Line B",o1="Example Op 1",o2="Example Op 2",ld="Example Lead";
+  return clean({example:true,runs:[
+    R(-27,A,"Early",450,12,66,63,o1,ld,[[35,"breakdown","Example fault"],[20,"changeover"],[12,"material"]]),
+    R(-26,A,"Late",450,12,70,68,o2,ld,[[25,"breakdown"],[20,"changeover"]]),
+    R(-24,A,"Early",450,12,72,70,o1,ld,[[15,"material"],[10,"minor"],[20,"changeover"]]),
+    R(-21,A,"Early",450,12,61,57,o1,ld,[[60,"breakdown"],[20,"changeover"],[15,""]]),
+    R(-19,A,"Late",450,12,74,73,o2,ld,[[20,"changeover"],[10,"minor"]]),
+    R(-14,A,"Early",450,12,69,66,o1,ld,[[40,"breakdown"],[18,"material"]]),
+    R(-12,A,"Late",450,12,92,90,o2,ld,[[10,"minor"]]),
+    R(-7,A,"Early",450,12,70,67,o1,o1,[[30,"breakdown"],[20,"changeover"]]),
+    R(-3,A,"Late",450,12,71,69,o2,"",[[25,"material"],[15,"changeover"]]),
+    R(-26,B,"Early",450,30,180,176,o1,ld,[[20,"changeover"],[15,"minor"]]),
+    R(-20,B,"Late",450,30,170,164,o2,ld,[[45,"breakdown"],[20,"changeover"],[10,"minor"]]),
+    R(-13,B,"Early",450,30,185,181,o1,ld,[[18,"changeover"],[12,"material"]]),
+    R(-6,B,"Late",450,30,165,158,o2,ld,[[55,"breakdown"],[20,"changeover"]]),
+    R(-2,B,"Early",450,30,120,118,o1,ld,[[320,"breakdown"],[150,"material"]])
+  ]});}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+var ui=uiGet();if(ui.period!==undefined&&[0,28,90,365].indexOf(Number(ui.period))>=0){period=Number(ui.period);$("period").value=String(period);}
+renderAll();renderSave();
+showTab(["runs","dash","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"runs");
+window.__oee={calc:calc,analyse:analyse,pooled:pooled,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>

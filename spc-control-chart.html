@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPC Control Chart Tool</title>
+<meta name="description" content="Paste measurements to draw individuals and moving range, or X-bar and range, control charts. Limits come from a baseline you choose, signals are marked by rule, and Cp and Cpk are only shown when the baseline is stable. Opens with made-up example data.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.status.st-over{border-color:var(--high)}
+.scroll{overflow-x:auto}
+.f label span.sm{display:block}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>SPC Control Chart Tool</h1>
+    <p>Paste your measurements in the order they were taken. The tool draws the control charts, works the limits out from a baseline you choose, marks every signal with the rule that fired, and shows what is weak about the data. Capability figures are only shown when the baseline is stable and long enough.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="chart">Chart</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div class="banner" id="banner" hidden>Example data is loaded. The measurements are made up so you can see how the signals and checks work. They are not from a real process. Press Clear data to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn danger" id="btnClear">Clear data</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+
+<section id="tab-chart">
+  <div class="card"><h2>Data and settings</h2>
+    <div class="f">
+      <label>Chart type
+        <select id="sMode"><option value="imr">Individuals and moving range (one value per point)</option><option value="xbar">X-bar and range (a group of values per point)</option></select></label>
+      <label>What is measured (for example hole position)<input id="sName" type="text" maxlength="80"></label>
+      <label>Unit<input id="sUnit" type="text" maxlength="12" placeholder="mm"></label>
+      <label>Points used to set the limits (the baseline). 0 means all.<input id="sBase" type="number" min="0" step="1" inputmode="numeric"></label>
+      <label>Lower specification limit (optional)<input id="sLsl" type="number" step="any" inputmode="decimal"></label>
+      <label>Upper specification limit (optional)<input id="sUsl" type="number" step="any" inputmode="decimal"></label>
+      <label class="full">Measurements, in the order taken. Use a full stop for decimals.<span class="sm" id="fmtHint"></span>
+        <textarea id="sData" rows="8" spellcheck="false" style="font-family:ui-monospace,Consolas,monospace"></textarea></label>
+      <label>Points left out of the limit calculation (point numbers, comma separated)<input id="sExcl" type="text" maxlength="200" placeholder="for example 7, 8"></label>
+      <label>Reason for leaving them out (required if any are left out)<input id="sExclWhy" type="text" maxlength="300"></label>
+      <label class="full">Note (who measured, the gauge, the date range)<textarea id="sNote" maxlength="400" rows="2"></textarea></label>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <p class="disc" id="chartNote"></p>
+  <div class="card"><h2 id="h1">Chart</h2><div class="scroll" id="c1"></div></div>
+  <div class="card"><h2 id="h2">Range chart</h2><div class="scroll" id="c2"></div></div>
+  <div class="card"><h2>Signals</h2><div class="tablewrap"><table id="sigTable"></table></div></div>
+  <div class="card"><h2>Capability</h2><div id="capBox"></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look at the data and the settings. They cannot tell whether the measurements were taken properly, whether the gauge is good enough, or whether the points are really in time order.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What a control chart tells you</h2>
+    <p>A control chart separates ordinary variation, which the process produces all the time, from signals, which point to something that changed. The limits are not specification limits. They come from the process's own variation in the baseline you chose. A point inside the limits can still be out of specification, and a point outside them can still be inside it.</p></div>
+  <div class="card"><h2>How the limits are worked out</h2>
+    <ul>
+      <li><strong>Individuals and moving range:</strong> centre is the baseline mean. Limits are the mean plus or minus 2.66 times the average moving range (the gap between each point and the one before). The moving range chart has an upper limit of 3.267 times that average.</li>
+      <li><strong>X-bar and range:</strong> centre is the mean of the baseline subgroup means. Limits are that mean plus or minus A2 times the average range. The range chart has limits of D4 and D3 times the average range. A2, D3 and D4 are the standard constants for the subgroup size, 2 to 10.</li>
+      <li>Sigma for the zones is the distance from the centre line to the upper limit, divided by 3.</li>
+      <li>Limits use the baseline only. Later points are judged against them, so a shift after the baseline shows up instead of moving the limits.</li>
+    </ul></div>
+  <div class="card"><h2>The signals it looks for</h2>
+    <ul>
+      <li><strong>Rule 1:</strong> a point beyond a control limit.</li>
+      <li><strong>Rule 2:</strong> nine points in a row on the same side of the centre line.</li>
+      <li><strong>Rule 3:</strong> six points in a row all rising or all falling.</li>
+      <li><strong>Rule 5:</strong> two of three points in a row beyond 2 sigma on the same side.</li>
+      <li><strong>Rule 6:</strong> four of five points in a row beyond 1 sigma on the same side.</li>
+      <li>On the range chart only rule 1 is used.</li>
+      <li>A signal is marked on the point that completes the pattern. Signals are a prompt to look for a cause. They are not proof of one. About 1 point in 370 falls outside the limits on a stable process by chance, and using several rules raises the overall false alarm rate.</li>
+    </ul></div>
+  <div class="card"><h2>Capability, and why it can be withheld</h2>
+    <p>Cp and Cpk use the short-term spread (average range or moving range divided by d2). Pp and Ppk use the spread of all baseline values. They compare the process with your specification limits. They only mean something when the process is stable, so the tool shows them only when the baseline has no signals, has at least 20 points, and there are valid specification limits. They also assume the values are roughly bell shaped, which the tool does not test. Customer targets differ, so check yours. A good capability figure says nothing about the points after the baseline.</p></div>
+  <div class="card"><h2>Taking points out of the limit calculation</h2>
+    <p>If a point has a known cause that will not recur (a wrong part loaded, a gauge dropped), you can leave it out of the limit calculation by entering its number and the reason. It stays on the chart as a hollow marker. Do not leave points out only because they look odd. The tool asks for the reason and flags it if it is missing.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Use this for the Control phase of the <a href="dmaic-fpy-dashboard.html">DMAIC project board</a>. Find causes with the <a href="5-whys-tool.html">5 Whys tool</a>. Track fixes in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>. See where line time is lost in the <a href="oee-downtime-log.html">OEE and Downtime Log</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the process is in control or the data is right. This is decision support only.</p></div>
+</section>
+</main>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only. SPC Control Chart Tool. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-spc-v1",UIK="rmilburn-spc-ui",MAXV=5000;
+var A2={2:1.880,3:1.023,4:0.729,5:0.577,6:0.483,7:0.419,8:0.373,9:0.337,10:0.308};
+var D3={2:0,3:0,4:0,5:0,6:0,7:0.076,8:0.136,9:0.184,10:0.223};
+var D4={2:3.267,3:2.574,4:2.282,5:2.114,6:2.004,7:1.924,8:1.864,9:1.816,10:1.777};
+var d2={2:1.128,3:1.693,4:2.059,5:2.326,6:2.534,7:2.704,8:2.847,9:2.970,10:3.078};
+var S=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null;
+function blank(){return {example:false,mode:"imr",name:"",unit:"",base:0,lsl:"",usl:"",data:"",excl:"",exclWhy:"",note:""};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function num(v){if(v===""||v===null||v===undefined)return "";var n=Number(v);return isFinite(n)?n:"";}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function f(x,dp){return (x===null||x===undefined||!isFinite(x))?"n/a":x.toFixed(dp===undefined?4:dp);}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function svg(tag,a,txt){var e=document.createElementNS("http://www.w3.org/2000/svg",tag),k;for(k in a||{})e.setAttribute(k,a[k]);if(txt!==undefined)e.textContent=txt;return e;}
+function clean(d){d=d&&typeof d==="object"?d:{};return {example:d.example===true,mode:d.mode==="xbar"?"xbar":"imr",name:str(d.name,80),unit:str(d.unit,12),
+  base:Math.max(0,Math.min(MAXV,Math.round(Number(d.base))||0)),lsl:num(d.lsl),usl:num(d.usl),data:str(d.data,200000),excl:str(d.excl,200),exclWhy:str(d.exclWhy,300),note:str(d.note,400)};}
+
+/* ---------- the maths ---------- */
+function mean(a){var s=0;a.forEach(function(x){s+=x;});return a.length?s/a.length:null;}
+function sdev(a){if(a.length<2)return null;var m=mean(a),s=0;a.forEach(function(x){s+=(x-m)*(x-m);});return Math.sqrt(s/(a.length-1));}
+function parse(S){
+  var errs=[],pts=[],skipped=0,n=0,sizeBad=[];
+  if(S.mode==="imr"){
+    var toks=S.data.split(/[\s,;]+/).filter(function(t){return t!=="";});
+    var cut=false;if(toks.length>MAXV){toks=toks.slice(0,MAXV);cut=true;}
+    toks.forEach(function(t,k){var v=Number(t);if(!isFinite(v)||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(t)){skipped++;if(errs.length<5)errs.push("Value "+(k+1)+" (\""+t.slice(0,12)+"\") is not a number and was skipped.");}else pts.push({vals:[v],x:v});});
+    if(cut)errs.push("Only the first "+MAXV+" values were read.");
+    n=1;
+  }else{
+    var lines=S.data.split(/\r?\n/).map(function(l){return l.trim();}).filter(function(l){return l!=="";}),rows=[],cnt={};
+    if(lines.length>MAXV)lines=lines.slice(0,MAXV);
+    lines.forEach(function(l,k){var bad=false,vals=[];l.split(/[\s,;]+/).filter(function(t){return t!=="";}).forEach(function(t){var v=Number(t);if(!isFinite(v)||!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(t)){bad=true;}else vals.push(v);});
+      if(bad){skipped++;if(errs.length<5)errs.push("Line "+(k+1)+" has a value that is not a number. The whole line was skipped.");return;}
+      rows.push({line:k+1,vals:vals});cnt[vals.length]=(cnt[vals.length]||0)+1;});
+    var best=0,bc=0;Object.keys(cnt).forEach(function(k){if(cnt[k]>bc){bc=cnt[k];best=Number(k);}});n=best;
+    rows.forEach(function(r){if(r.vals.length!==n){sizeBad.push(r.line);}else pts.push({vals:r.vals,x:mean(r.vals),r:Math.max.apply(null,r.vals)-Math.min.apply(null,r.vals)});});
+    if(sizeBad.length)errs.push(plural(sizeBad.length,"line")+" did not have "+n+" values (line"+(sizeBad.length>1?"s ":" ")+sizeBad.slice(0,8).join(", ")+") and "+(sizeBad.length>1?"were":"was")+" skipped.");
+  }
+  if(S.mode==="imr")pts.forEach(function(p,i){p.r=i>0?Math.abs(p.x-pts[i-1].x):null;});
+  return {pts:pts,errs:errs,n:n,skipped:skipped+sizeBad.length};}
+function exclSet(S,N){var set={},bad=[];S.excl.split(/[\s,;]+/).filter(Boolean).forEach(function(t){var k=Number(t);if(Number.isInteger(k)&&k>=1&&k<=N)set[k-1]=1;else bad.push(t);});return {set:set,bad:bad};}
+function sideOf(v,cl){return v>cl?1:(v<cl?-1:0);}
+function signalsFor(vals,cl,sig,hiOnly,uOv,lOv){
+  var out={};function mark(i,r){(out[i]=out[i]||[]).push(r);}
+  var N=vals.length,ucl=hiOnly?uOv:cl+3*sig,lcl=hiOnly?lOv:cl-3*sig,i,j;
+  for(i=0;i<N;i++){if(vals[i]===null)continue;if(vals[i]>ucl||(vals[i]<lcl&&(!hiOnly||lcl>0)))mark(i,1);}
+  if(hiOnly)return out;
+  /* rule 2: 9 in a row same side */
+  var run=0,last=0;for(i=0;i<N;i++){var s=sideOf(vals[i],cl);if(s!==0&&s===last)run++;else run=s!==0?1:0;last=s;if(run>=9)mark(i,2);}
+  /* rule 3: 6 in a row rising or falling */
+  var up=1,dn=1;for(i=1;i<N;i++){if(vals[i]>vals[i-1]){up++;dn=1;}else if(vals[i]<vals[i-1]){dn++;up=1;}else{up=1;dn=1;}if(up>=6||dn>=6)mark(i,3);}
+  /* rule 5: 2 of 3 beyond 2 sigma same side; rule 6: 4 of 5 beyond 1 sigma same side */
+  for(i=0;i<N;i++){[1,-1].forEach(function(sd){
+    if(i>=2){var c=0;for(j=i-2;j<=i;j++)if((vals[j]-cl)*sd>2*sig)c++;if(c>=2&&(vals[i]-cl)*sd>2*sig)mark(i,5);}
+    if(i>=4){var c2=0;for(j=i-4;j<=i;j++)if((vals[j]-cl)*sd>sig)c2++;if(c2>=4&&(vals[i]-cl)*sd>sig)mark(i,6);}
+  });}
+  Object.keys(out).forEach(function(k){var seen={};out[k]=out[k].filter(function(r){if(seen[r])return false;seen[r]=1;return true;}).sort(function(a,b){return a-b;});});
+  return out;}
+function analyse(S){
+  S=S||SV;var P=parse(S),pts=P.pts,N=pts.length,g=[],nt=[],R={P:P,N:N,gaps:g,notes:nt,ok:false};
+  P.errs.forEach(function(e){g.push(e);});
+  var imr=S.mode==="imr",n=P.n;
+  if(!imr&&(n<2||n>10)&&N>0){g.push("The most common line has "+n+" values. X-bar and range needs a group size from 2 to 10, so no chart was drawn.");return R;}
+  var min=imr?3:2;
+  if(N<min){if(S.data.trim())g.push("Need at least "+min+" "+(imr?"values":"groups")+" to draw the chart.");R.empty=!S.data.trim();return R;}
+  var B=S.base>0?Math.min(S.base,N):N;if(S.base>N)nt.push("The baseline is longer than the data, so all "+N+" points are used.");
+  var E=exclSet(S,N);if(E.bad.length)g.push("These left-out point numbers are not valid and were ignored: "+E.bad.slice(0,6).join(", ")+".");
+  var inB=function(i){return i<B&&!E.set[i];};
+  var bxs=[],brs=[],bvals=[],i;
+  for(i=0;i<N;i++){if(!inB(i))continue;bxs.push(pts[i].x);pts[i].vals.forEach(function(v){bvals.push(v);});
+    if(imr){if(i>0&&inB(i-1))brs.push(pts[i].r);}else brs.push(pts[i].r);}
+  if(bxs.length<min||brs.length<1){g.push("Too few baseline points remain after leaving points out. No limits were worked out.");return R;}
+  var cl=mean(bxs),rbar=mean(brs),w,ucl,lcl,rU,rL,sigW;
+  if(imr){w=2.66*rbar;rU=3.267*rbar;rL=0;sigW=rbar/d2[2];}
+  else{w=A2[n]*rbar;rU=D4[n]*rbar;rL=D3[n]*rbar;sigW=rbar/d2[n];}
+  ucl=cl+w;lcl=cl-w;var sig=w/3;
+  R.ok=true;R.cl=cl;R.ucl=ucl;R.lcl=lcl;R.sig=sig;R.rbar=rbar;R.rU=rU;R.rL=rL;R.B=B;R.excl=E.set;R.n=n;R.sigW=sigW;R.nb=bxs.length;
+  var xs=pts.map(function(p){return p.x;}),rs=pts.map(function(p){return p.r===undefined?null:p.r;});
+  R.sx=sig>0?signalsFor(xs,cl,sig,false):{};R.sr=rbar>0?signalsFor(rs,rbar,(rU-rbar)/3,true,rU,rL):{};
+  /* constant data: sigma 0 */
+  if(!(sig>0))g.push("The baseline has no variation at all (every moving range or range is zero). Limits cannot be worked out. Check the measurement resolution.");
+  /* gaps */
+  var minB=20;if(bxs.length<minB)g.push("Only "+bxs.length+" baseline "+(imr?"points":"groups")+". Limits from fewer than "+minB+" are provisional and can move a lot as data is added.");
+  if(E.set&&Object.keys(E.set).length&&!S.exclWhy.trim())g.push("Points have been left out of the limit calculation with no reason given.");
+  var bsig=0;Object.keys(R.sx).forEach(function(k){if(inB(Number(k)))bsig++;});Object.keys(R.sr).forEach(function(k){k=Number(k);if(inB(k)&&(!imr||inB(k-1)))bsig++;});R.baseSignals=bsig;
+  if(bsig>0)g.push("The baseline itself contains signals, so the limits do not describe a stable process. Look for causes first. Leave points out only if a cause is known, then say why.");
+  var zero=0,rn=0;rs.forEach(function(r){if(r!==null){rn++;if(r===0)zero++;}});
+  if(rn>=5&&zero/rn>0.25)g.push("Over a quarter of the "+(imr?"moving ranges":"ranges")+" are exactly zero. The gauge or the rounding may be too coarse for the charts to be meaningful.");
+  var lsl=S.lsl,usl=S.usl;if(lsl!==""&&usl!==""&&lsl>=usl){g.push("The lower specification limit is not below the upper one. Specification limits were ignored.");lsl="";usl="";}
+  R.lsl=lsl;R.usl=usl;
+  var outSpec=0,tot=0;pts.forEach(function(p){p.vals.forEach(function(v){tot++;if((lsl!==""&&v<lsl)||(usl!==""&&v>usl))outSpec++;});});R.outSpec=outSpec;R.tot=tot;
+  if(outSpec>0)g.push("Measurements outside the specification limits: "+outSpec+" of "+tot+".");
+  var latest=false;for(i=Math.max(0,N-3);i<N;i++)if(R.sx[i]||R.sr[i])latest=true;
+  if(latest)g.push("One of the latest three points shows a signal. Check what changed.");
+  if(N>=B&&B<N&&S.base>0)nt.push("Points "+(B+1)+" to "+N+" are outside the baseline. They are judged against limits set from the first "+B+".");
+  var isAll=S.base===0;if(isAll&&N>=20)nt.push("The limits use all the data, so a shift in it can hide itself. Consider setting a baseline from a period you know was stable.");
+  if(lsl===""&&usl==="")nt.push("No specification limits were entered, so capability is not shown.");
+  if(!imr&&(lsl!==""||usl!==""))nt.push("Specification limits are compared with single measurements, not group means, so they are not drawn on the X-bar chart.");
+  /* capability */
+  var why=[];if(lsl===""&&usl==="")why.push("no valid specification limit");if(bsig>0)why.push("the baseline has signals");if(bxs.length<minB)why.push("fewer than "+minB+" baseline points");if(!(sigW>0))why.push("no short-term variation");
+  R.capWhy=why;
+  if(!why.length){var m=cl,sO=sdev(bvals);R.cap={cp:(lsl!==""&&usl!=="")?(usl-lsl)/(6*sigW):null,cpk:Math.min(usl!==""?(usl-m)/(3*sigW):Infinity,lsl!==""?(m-lsl)/(3*sigW):Infinity),pp:(lsl!==""&&usl!==""&&sO>0)?(usl-lsl)/(6*sO):null,ppk:sO>0?Math.min(usl!==""?(usl-m)/(3*sO):Infinity,lsl!==""?(m-lsl)/(3*sO):Infinity):null,mean:m,sW:sigW,sO:sO};}
+  R.nSig=Object.keys(R.sx).length+Object.keys(R.sr).length;
+  return R;}
+
+/* ---------- storage ---------- */
+var SV=S;
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(S));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+
+/* ---------- drawing ---------- */
+var LIGHT={ink:"#111",mut:"#444",grid:"#bbb",pt:"#1f5f8b",sig:"#b00020",lim:"#b00020",cl:"#111",zone:"#999",spec:"#7a3e00",bg:"none"};
+var DARK={ink:"#e8eef7",mut:"#a9b8cf",grid:"#2c4466",pt:"#3aa7c7",sig:"#ff8f8f",lim:"#fb923c",cl:"#e8eef7",zone:"#4a6a94",spec:"#c4b5fd",bg:"none"};
+function chart(o,T){
+  var W=720,H=270,L=58,Rm=84,Tp=18,Bt=34,pw=W-L-Rm,ph=H-Tp-Bt,N=o.vals.length,i;
+  var all=[];o.vals.forEach(function(v){if(v!==null)all.push(v);});[o.ucl,o.lcl,o.cl].forEach(function(v){if(v!==null&&v!==undefined)all.push(v);});
+  if(o.spec)o.spec.forEach(function(v){if(v!==""&&v!==null)all.push(v);});
+  var lo=Math.min.apply(null,all),hi=Math.max.apply(null,all);if(hi===lo){hi+=1;lo-=1;}var pad=(hi-lo)*.08;lo-=pad;hi+=pad;
+  function X(k){return L+(N<=1?pw/2:pw*k/(N-1));}function Y(v){return Tp+ph*(1-(v-lo)/(hi-lo));}
+  var s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":o.label,style:"width:100%;min-width:560px;height:auto;display:block"});
+  function line(v,stroke,dash,lab,w){if(v===null||v===undefined)return;var y=Y(v);add1(s,svg("line",{x1:L,x2:W-Rm,y1:y,y2:y,stroke:stroke,"stroke-width":w||1.5,"stroke-dasharray":dash||""}));if(lab)add1(s,svg("text",{x:W-Rm+5,y:y+4,"font-size":11,fill:T.ink},lab+" "+f(v,o.dp)));}
+  if(o.sig>0&&!o.noZones){[1,-1].forEach(function(sd){[1,2].forEach(function(k){var v=o.cl+sd*k*o.sig;if(v<hi&&v>lo)add1(s,svg("line",{x1:L,x2:W-Rm,y1:Y(v),y2:Y(v),stroke:T.zone,"stroke-width":1,"stroke-dasharray":"2 4"}));});});}
+  if(o.spec){if(o.spec[0]!==""&&o.spec[0]>lo&&o.spec[0]<hi)line(o.spec[0],T.spec,"8 3 2 3","LSL",1.5);if(o.spec[1]!==""&&o.spec[1]<hi&&o.spec[1]>lo)line(o.spec[1],T.spec,"8 3 2 3","USL",1.5);}
+  line(o.ucl,T.lim,"6 4","UCL",1.8);line(o.lcl,T.lim,"6 4","LCL",1.8);line(o.cl,T.cl,"","CL",1.8);
+  if(o.B&&o.B<N&&o.B>0){var bx=(X(o.B-1)+X(o.B))/2;add1(s,svg("line",{x1:bx,x2:bx,y1:Tp,y2:Tp+ph,stroke:T.mut,"stroke-width":1,"stroke-dasharray":"3 3"}));add1(s,svg("text",{x:bx-4,y:Tp+10,"font-size":10,"text-anchor":"end",fill:T.mut},"baseline"));add1(s,svg("text",{x:bx+4,y:Tp+10,"font-size":10,fill:T.mut},"monitoring"));}
+  var d="",pen=false;o.vals.forEach(function(v,k){if(v===null){pen=false;return;}d+=(pen?"L":"M")+X(k).toFixed(1)+" "+Y(v).toFixed(1)+" ";pen=true;});
+  add1(s,svg("path",{d:d,fill:"none",stroke:T.pt,"stroke-width":1.5}));
+  o.vals.forEach(function(v,k){if(v===null)return;var x=X(k),y=Y(v),sg=o.signals[k];
+    if(sg){add1(s,svg("path",{d:"M"+x+" "+(y-7)+" L"+(x+7)+" "+y+" L"+x+" "+(y+7)+" L"+(x-7)+" "+y+" Z",fill:T.sig,stroke:T.ink,"stroke-width":.8}));
+      add1(s,svg("text",{x:x,y:y>Tp+22?y-11:y+21,"text-anchor":"middle","font-size":11,"font-weight":"700",fill:T.sig},String(k+1+(o.off||0))));}
+    else if(o.excl&&o.excl[k])add1(s,svg("circle",{cx:x,cy:y,r:4,fill:"none",stroke:T.pt,"stroke-width":2}));
+    else add1(s,svg("circle",{cx:x,cy:y,r:3.2,fill:T.pt}));});
+  var step=Math.max(1,Math.ceil(N/20));for(i=0;i<N;i+=step)add1(s,svg("text",{x:X(i),y:H-Bt+16,"text-anchor":"middle","font-size":11,fill:T.mut},String(i+1+(o.off||0))));
+  add1(s,svg("text",{x:L,y:H-4,"font-size":11,fill:T.mut},"Point number. Diamonds are signals. Hollow circles were left out of the limits."));
+  [lo+(hi-lo)*.02,(lo+hi)/2,hi-(hi-lo)*.02].forEach(function(v){add1(s,svg("text",{x:L-6,y:Y(v)+4,"text-anchor":"end","font-size":11,fill:T.mut},f(v,o.dp)));});
+  return s;}
+function dpOf(R){var r=R.ucl-R.lcl;return r>=100?1:r>=10?2:r>=1?3:r>=.1?4:5;}
+function drawCharts(R,T,e1,e2,h1,h2){
+  e1.innerHTML="";e2.innerHTML="";var imr=SV.mode==="imr",nm=(SV.name.trim()||"measurement")+(SV.unit?" ("+SV.unit+")":""),dp=dpOf(R);
+  var xs=R.P.pts.map(function(p){return p.x;}),rs=R.P.pts.map(function(p){return p.r===undefined?null:p.r;});
+  h1.textContent=imr?"Individuals chart":"X-bar chart (group means)";h2.textContent=imr?"Moving range chart":"Range chart";
+  add(e1,chart({vals:xs,cl:R.cl,ucl:R.ucl,lcl:R.lcl,sig:R.sig,signals:R.sx,B:R.B,excl:R.excl,dp:dp,spec:imr?[R.lsl,R.usl]:null,
+    label:(imr?"Individuals":"X-bar")+" control chart of "+nm+" with "+plural(Object.keys(R.sx).length,"signal")+"."},T));
+  add(e2,chart({vals:rs,cl:R.rbar,ucl:R.rU,lcl:R.rL>0?R.rL:null,sig:(R.rU-R.rbar)/3,noZones:true,signals:R.sr,B:R.B,excl:null,dp:dp,
+    label:(imr?"Moving range":"Range")+" chart of "+nm+" with "+plural(Object.keys(R.sr).length,"signal")+"."},T));}
+
+/* ---------- rendering ---------- */
+function ruleText(r){return {1:"Beyond a control limit",2:"Nine in a row on one side of the centre",3:"Six in a row rising or falling",5:"Two of three beyond 2 sigma",6:"Four of five beyond 1 sigma"}[r];}
+function kpi(n,l,cls){return h("div",{class:"kpi "+(cls||"")},h("div",{class:"n",text:n}),h("div",{class:"l",text:l}));}
+var last=null;
+function renderAll(){last=analyse(SV);renderStatus();renderChart();renderChecks();$("banner").hidden=!SV.example;}
+function renderStatus(){var A=last,el=$("status");el.innerHTML="";
+  if(A.empty){el.className="status st-empty";add(el,h("strong",{text:"No data yet."}),h("div",{class:"sm",text:"Paste measurements below, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on these limits yet."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". "+(A.ok?plural(A.nSig,"point")+" with a signal. ":"")+"Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the process is in control or the data is right. "+(A.ok?plural(A.nSig,"point")+" with a signal. ":"")+plural(A.notes.length,"note")+"."}));}}
+function renderChart(){
+  var A=last,k=$("kpis");k.innerHTML="";var imr=SV.mode==="imr";
+  $("fmtHint").textContent=imr?" One value per point. Separate values with a new line, a space or a comma.":" One group per line, the same number of values in each (2 to 10), separated by spaces or commas.";
+  if(!A.ok){$("c1").innerHTML="";$("c2").innerHTML="";$("sigTable").innerHTML="";$("capBox").innerHTML="";$("chartNote").textContent=A.empty?"":"No chart could be drawn. See Checks.";$("h1").textContent="Chart";$("h2").textContent="Range chart";return;}
+  var dp=dpOf(A),u=SV.unit?" "+SV.unit:"";
+  add(k,kpi(String(A.N),imr?"Points":"Groups of "+A.n),kpi(f(A.cl,dp),"Centre line"+u),kpi(f(A.ucl,dp),"Upper limit"+u),kpi(f(A.lcl,dp),"Lower limit"+u),kpi(String(A.nSig),"Points with a signal",A.nSig?"warn":"ok"),kpi(String(A.nb),"Baseline points used"));
+  $("chartNote").textContent="Limits are worked out from the first "+A.B+" "+(imr?"points":"groups")+(Object.keys(A.excl).length?", leaving out "+Object.keys(A.excl).length+" you chose":"")+". Signals are a prompt to look for a cause, not proof of one.";
+  drawCharts(A,DARK,$("c1"),$("c2"),$("h1"),$("h2"));
+  var rows=[],i,seen={};Object.keys(A.sx).map(Number).concat(Object.keys(A.sr).map(Number)).sort(function(a,b){return a-b;}).forEach(function(i){if(seen[i])return;seen[i]=1;
+    var p=A.P.pts[i],rs=[];(A.sx[i]||[]).forEach(function(r){rs.push((imr?"Individuals":"X-bar")+" rule "+r+": "+ruleText(r));});(A.sr[i]||[]).forEach(function(r){rs.push((imr?"Moving range":"Range")+" rule "+r+": "+ruleText(r));});
+    rows.push([String(i+1),f(p.x,dp),rs.join(". "),i<A.B?"Baseline":"Monitoring"]);});
+  var t=$("sigTable");t.innerHTML="";var tr=h("tr");["Point","Value","Rule that fired","Where"].forEach(function(x,j){add(tr,h("th",{scope:"col",class:j===1?"num":"",text:x}));});add(t,h("thead",{},tr));var tb=h("tbody");
+  rows.forEach(function(r){add(tb,h("tr",{},r.map(function(c,j){return h("td",{class:j===1?"num":"",text:c});})));});if(!rows.length)add(tb,h("tr",{},h("td",{colspan:4,class:"sm",text:"No signals found by rules 1, 2, 3, 5 and 6. That does not prove the process is stable."})));add(t,tb);
+  var cb=$("capBox");cb.innerHTML="";
+  if(A.cap){var c=A.cap;add(cb,h("div",{class:"tablewrap"},h("table",{},h("thead",{},h("tr",{},[h("th",{text:"Measure",scope:"col"}),h("th",{class:"num",text:"Value",scope:"col"}),h("th",{text:"Based on",scope:"col"})])),
+    h("tbody",{},[["Cp",c.cp,"Short-term spread (sigma "+f(c.sW,dp+1)+")"],["Cpk",c.cpk,"Short-term spread, nearest limit"],["Pp",c.pp,"Overall spread (sigma "+f(c.sO,dp+1)+")"],["Ppk",c.ppk,"Overall spread, nearest limit"]].map(function(r){return h("tr",{},h("td",{text:r[0]}),h("td",{class:"num",text:(r[1]===null||!isFinite(r[1]))?"n/a":r[1].toFixed(2)}),h("td",{text:r[2]}));}))),
+    h("p",{class:"sm",text:"Worked from the baseline only, and only because it has no signals and at least 20 points. These assume roughly bell shaped data, which was not tested. A target such as 1.33 is set by your customer or standard, so check it. A one-sided specification gives Cpk and Ppk only."})));}
+  else add(cb,h("p",{},h("strong",{text:"Capability not shown. "}),"Reason: "+A.capWhy.join(", ")+". "+(A.capWhy.length?"A capability figure from an unstable or short baseline would be misleading.":"")));
+}
+function renderChecks(){var A=last,el=$("flagList");el.innerHTML="";
+  if(A.empty){add(el,h("p",{class:"sm",text:"No data yet."}));return;}
+  if(A.gaps.length){add(el,h("h3",{text:"Gaps ("+A.gaps.length+")"}));var ul=h("ul",{class:"fl"});A.gaps.forEach(function(g){add(ul,h("li",{class:"g",text:g}));});add(el,ul);}
+  else add(el,h("p",{text:"No gaps found by these checks. This does not mean the data is right."}));
+  if(A.notes.length){add(el,h("h3",{text:"Notes ("+A.notes.length+")"}));var u2=h("ul",{class:"fl"});A.notes.forEach(function(g){add(u2,h("li",{class:"o",text:g}));});add(el,u2);}}
+
+/* ---------- inputs ---------- */
+function syncInputs(){$("sMode").value=SV.mode;$("sName").value=SV.name;$("sUnit").value=SV.unit;$("sBase").value=SV.base||"";$("sLsl").value=SV.lsl;$("sUsl").value=SV.usl;$("sData").value=SV.data;$("sExcl").value=SV.excl;$("sExclWhy").value=SV.exclWhy;$("sNote").value=SV.note;}
+function bind(id,key,conv){$(id).addEventListener("input",function(e){var v=e.target.value;SV[key]=conv?conv(v):v;SV.example=false;touch();renderAll();});}
+function bindAll(){bind("sName","name");bind("sUnit","unit");bind("sBase","base",function(v){return Math.max(0,Math.round(Number(v))||0);});bind("sLsl","lsl",num);bind("sUsl","usl",num);bind("sData","data");bind("sExcl","excl");bind("sExclWhy","exclWhy");bind("sNote","note");
+  $("sMode").addEventListener("change",function(e){SV.mode=e.target.value==="xbar"?"xbar":"imr";SV.example=false;touch();renderAll();});}
+function example(){
+  var seed=20261024;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647;}
+  function nrm(){var u=0,v=0;while(u===0)u=rnd();while(v===0)v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+  var lines=[],g,k;for(g=0;g<40;g++){var row=[];var shift=g>=26?0.06:0;for(k=0;k<5;k++)row.push((10+shift+0.05*nrm()).toFixed(3));lines.push(row.join(" "));}
+  return clean({example:true,mode:"xbar",name:"Example: bracket hole position",unit:"mm",base:24,lsl:9.85,usl:10.15,data:lines.join("\n"),excl:"",exclWhy:"",note:"Made-up data. The process mean steps up by 0.06 from group 27."});}
+$("btnExample").onclick=function(){if(SV.data.trim()&&!SV.example&&!confirm("Replace your data with the example? Your data will be removed from this browser unless you saved a file."))return;S=example();SV=S;syncInputs();touch();renderAll();};
+$("btnSave").onclick=function(){download("spc-chart-"+today()+".json",JSON.stringify({app:"spc-control-chart",version:1,saved:new Date().toISOString(),data:SV},null,1),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").onchange=function(e){var fl=e.target.files[0];e.target.value="";if(!fl)return;if(fl.size>5e6){alert("That file is too large.");return;}
+  var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o||o.app!=="spc-control-chart"||!o.data)throw 0;S=clean(o.data);SV=S;syncInputs();touch();renderAll();}catch(x){alert("That is not an SPC Control Chart data file.");}};rd.readAsText(fl);};
+$("btnClear").onclick=function(){var b=$("btnClear");if(armed!=="clr"){armed="clr";b.textContent="Press again to clear everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear data";b.classList.remove("armed");},4000);return;}
+  armed=null;S=blank();SV=S;b.textContent="Clear data";b.classList.remove("armed");syncInputs();touch();renderAll();};
+function csvCell(v){v=String(v===null||v===undefined?"":v);if(/^[=+\-@\t\r]/.test(v)&&!/^-?\d+(\.\d+)?$/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){var A=last;if(!A||!A.ok){alert("There is no chart to export yet.");return;}var imr=SV.mode==="imr";
+  var rows=[["Point","Values",imr?"Value":"Group mean",imr?"Moving range":"Range","Signal rules (centre chart)","Signal rules (range chart)","In baseline","Left out of limits"]];
+  A.P.pts.forEach(function(p,i){rows.push([i+1,p.vals.join(" "),p.x,p.r===undefined||p.r===null?"":p.r,(A.sx[i]||[]).join(" "),(A.sr[i]||[]).join(" "),i<A.B?"yes":"no",A.excl[i]?"yes":"no"]);});
+  rows.push([]);rows.push(["Centre line",A.cl]);rows.push(["Upper limit",A.ucl]);rows.push(["Lower limit",A.lcl]);rows.push(["Range centre",A.rbar]);rows.push(["Range upper limit",A.rU]);
+  download("spc-chart-"+today()+".csv",rows.map(function(r){return r.map(csvCell).join(",");}).join("\r\n"),"text/csv");};
+$("btnPrint").onclick=function(){var A=last,R=$("report");R.innerHTML="";if(!A||!A.ok){alert("There is no chart to print yet.");return;}
+  var imr=SV.mode==="imr";add(R,h("h1",{text:"SPC Control Chart"}),h("p",{text:"Printed "+today()+". "+(SV.name||"Measurement")+(SV.unit?" ("+SV.unit+")":"")+(SV.example?". EXAMPLE DATA, NOT A REAL PROCESS.":"")}));
+  add(R,h("p",{class:"gapx",text:A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on these limits yet.":"No gaps found by these checks. This does not mean the process is in control."}));
+  var dp=dpOf(A),a=h("div"),b=h("div"),t1=h("h2"),t2=h("h2");drawCharts(A,LIGHT,a,b,t1,t2);add(R,t1,a,t2,b);
+  add(R,h("p",{text:"Limits from the first "+A.B+" "+(imr?"points":"groups")+". Centre "+f(A.cl,dp)+", upper "+f(A.ucl,dp)+", lower "+f(A.lcl,dp)+". "+plural(A.nSig,"point")+" with a signal."}));
+  if(A.cap)add(R,h("p",{text:"Cp "+(A.cap.cp===null?"n/a":A.cap.cp.toFixed(2))+", Cpk "+A.cap.cpk.toFixed(2)+", Pp "+(A.cap.pp===null?"n/a":A.cap.pp.toFixed(2))+", Ppk "+(A.cap.ppk===null?"n/a":A.cap.ppk.toFixed(2))+". Baseline only."}));else add(R,h("p",{text:"Capability not shown: "+A.capWhy.join(", ")+"."}));
+  if(A.gaps.length){var u=h("ul");A.gaps.forEach(function(g){add(u,h("li",{text:g}));});add(R,h("h2",{text:"Gaps"}),u);}
+  window.print();};
+
+function showTab(t){["chart","checks","guide"].forEach(function(x){$("tab-"+x).hidden=x!==t;});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});uiSet("tab",t);}
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){showTab(b.getAttribute("data-tab"));};});
+
+var sv=load();if(sv){S=sv;}else{S=example();SV=S;saveNow();}SV=S;
+syncInputs();bindAll();renderAll();renderSave();
+var ui=uiGet();showTab(["chart","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"chart");
+window.__spc={analyse:function(x){return analyse(x||SV);},state:function(){return SV;},set:function(x){S=clean(x);SV=S;syncInputs();renderAll();},clean:clean};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>
