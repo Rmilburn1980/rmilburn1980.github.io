@@ -18,7 +18,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 5 Whys Root Cause Tool, DMAIC project board (first pass yield), SIPOC and Value Stream Map tool, Cycle Time and Waste Analysis tool, and the SMV tool.
 
 ### EHS
-EHS Readiness dashboard, 7S audit dashboard, Risk Assessment dashboard, Swiss Cheese Model dashboard, Corrective Action Tracker, Bow-tie Builder, Causal Tree Builder and the Quick Exposure Check dashboard.
+EHS Readiness dashboard, 7S audit dashboard, Risk Assessment dashboard, Swiss Cheese Model dashboard, Corrective Action Tracker, Bow-tie Builder, Causal Tree Builder, Incident and Near-Miss Log (with a RIDDOR check) and the Quick Exposure Check dashboard.
 
 ## How the safety tools behave
 

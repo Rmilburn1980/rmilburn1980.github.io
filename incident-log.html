@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Incident and Near-Miss Log</title>
+<meta name="description" content="Log incidents and near misses, check whether each one is reportable under RIDDOR with the deadline counted for you, and see what has not been investigated, actioned or independently closed.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Incident and Near-Miss Log</h1>
+    <p>Log what happened, work out whether it has to be reported to the HSE under RIDDOR with the deadline counted for you, and see what has not been investigated, actioned or independently checked. An incident is only closed when someone other than the reporter has checked it.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="log">Log</button>
+  <button role="tab" aria-selected="false" data-tab="dash">Dashboard</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records personal information about people involved in incidents, and about the people who report, investigate and check them. It stays in this browser and in files you save. Nothing is sent to this website. Your employer is responsible for this data. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Do not email files or store them on personal devices. Use initials or a role rather than a full name where you can. Injury and health details are special category data: say what happened and what the injury stops the person doing, but keep medical detail in your occupational health or HR system. Do not record beliefs, union membership, or criminal or disciplinary information. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every incident tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear log to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add an incident</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn sec" id="btnTrack">Send actions to the tracker</button>
+  <button class="btn danger" id="btnClear">Clear log</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+<p class="sm" id="sendNote" role="status"></p>
+
+<section id="tab-log"><div class="list" id="list"></div></section>
+
+<section id="tab-dash" hidden>
+  <div class="toolbar"><label class="sm">Period <select id="period" aria-label="Period"><option value="90">Last 90 days</option><option value="365" selected>Last 12 months</option><option value="0">All records</option></select></label></div>
+  <div class="kpis" id="kpis"></div>
+  <p class="disc" id="cult"></p>
+  <div class="card"><h2>By month</h2><div class="tablewrap"><table id="monthTable"></table></div></div>
+  <div class="card"><h2>By area</h2><div class="tablewrap"><table id="areaTable"></table></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record. They cannot tell whether an incident was reported honestly, or whether the RIDDOR decision is right.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it covers</h2>
+    <p>This is for Great Britain, where RIDDOR 2013 applies. Northern Ireland has its own regulations. The RIDDOR check is a prompt to make a decision and to record who made it. It is not the decision. A competent person decides whether something is reportable, using the <a href="https://www.hse.gov.uk/riddor/reportable-incidents.htm" target="_blank" rel="noopener noreferrer">HSE guidance</a>, and you report through the <a href="https://www.hse.gov.uk/riddor/report.htm" target="_blank" rel="noopener noreferrer">HSE online form</a>.</p></div>
+  <div class="card"><h2>What the RIDDOR check does</h2>
+    <ul>
+      <li>Asks only the questions that apply to the kind of event and person (worker or not a worker).</li>
+      <li>If any question is blank or "unsure", the answer is Undecided. It never defaults to "not reportable".</li>
+      <li><strong>Death, specified injury to a worker, non-worker taken from the scene to hospital for treatment, dangerous occurrence:</strong> notify without delay, and the report must be received within 10 days of the incident.</li>
+      <li><strong>Worker unable to do their normal work for more than 7 consecutive days:</strong> report within 15 days of the incident. The day of the accident is not counted, and weekends and rest days are.</li>
+      <li><strong>More than 3 consecutive days:</strong> keep a record. No report is needed.</li>
+      <li><strong>Reportable occupational disease:</strong> report as soon as you have a doctor's written diagnosis.</li>
+      <li>A worker still off when the log is saved is flagged to check again, because the count may reach the over-7-day threshold later.</li>
+    </ul></div>
+  <div class="card"><h2>The rules the log applies</h2>
+    <ul>
+      <li>A reportable event with no HSE report reference is a gap. If the deadline has passed it says so.</li>
+      <li>An incident marked Closed needs: a settled RIDDOR decision, a report if one was due, an investigation if it was serious or reportable, every action done and checked by someone other than its owner, and a closer who is not the reporter.</li>
+      <li>An event with a potential severity of 4 or 5, or an actual severity of 4 or 5, needs a completed investigation. Use the <a href="causal-tree-builder.html">Causal Tree Builder</a> for those.</li>
+      <li>Wording that sounds like a judgement of a person ("careless", "failed to") is flagged.</li>
+      <li>Wording that may contain health detail is flagged, so it can be moved out of the log.</li>
+    </ul></div>
+  <div class="card"><h2>Reading the dashboard</h2>
+    <p>The figures only count what was logged. A fall in near misses can mean people have stopped reporting, not that the workplace is safer, so look at the near-miss to injury ratio over time and ask people. A rising number of near misses is usually a healthier sign than a fall.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Start a deeper investigation in the <a href="causal-tree-builder.html">Causal Tree Builder</a>. Follow actions in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>. Use the <a href="risk-assessment-dashboard.html">risk register</a> to review the hazard.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the workplace or the record is right. Check your own legal duties. This is decision support only, not legal or health and safety advice.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Incident</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save incident</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete incident</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your legal duties under RIDDOR. Incident and Near-Miss Log. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how personal data recorded here is used, stored and deleted. Provided free and as is, without warranty, and not legal, health and safety or HR advice. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-incident-log-v1",UIK="rmilburn-incident-log-ui",TK="rmilburn-action-tracker-v1",TBASE=7000000;
+var CLASSES=[["near","Near miss"],["dop","Dangerous occurrence"],["injury","Injury"],["illness","Ill health"],["damage","Damage or loss only"]];
+var SPEC=[["fracture","Fracture, other than to fingers, thumbs or toes"],["amputation","Amputation"],["sight","Injury likely to cause permanent loss or reduction of sight"],["crush","Crush injury to the head or torso causing damage to the brain or internal organs"],["burn","Burn covering more than 10% of the body, or significant damage to eyes, breathing system or other vital organs"],["unconscious","Loss of consciousness caused by head injury or asphyxia"],["scalp","Scalping requiring hospital treatment"],["enclosed","Injury in an enclosed space causing hypothermia or heat illness, or needing resuscitation or more than 24 hours in hospital"]];
+var DIS=[["carpal","Carpal tunnel syndrome"],["cramp","Severe cramp of the hand or forearm"],["derm","Occupational dermatitis"],["havs","Hand-arm vibration syndrome"],["asthma","Occupational asthma"],["tendon","Tendonitis or tenosynovitis of the hand or forearm"],["cancer","Occupational cancer"],["bio","Disease from exposure to a biological agent"]];
+var SEVA=["Not set","0 No injury or damage","1 First aid only","2 Minor, back at work","3 Lost time","4 Major or specified injury","5 Fatal or life changing"];
+var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
+var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*)\b/i;
+var HEALTH=/\b(diagnos\w*|medicat\w*|prescri\w*|disabilit\w*|disabled|pregnan\w*|depress\w*|anxiety|mental health|epilep\w*|diabet\w*|asthma|dyslex\w*|hiv|cancer|surgery|operation|sick note|fit note|sickness|illness)\b/i;
+var MAXI=500,MAXA=20;
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,period=365;
+function blank(){return {example:false,incidents:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function addDays(d,n){var p=d.split("-").map(Number);return dstr(new Date(p[0],p[1]-1,p[2]+n));}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function short(s,n){s=String(s||"").trim();return s.length>n?s.slice(0,n-1)+"…":(s||"(no description yet)");}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function yn(v){return (v==="yes"||v==="no"||v==="unsure")?v:"";}
+function ref(i){return "INC-"+String(i.no).padStart(3,"0");}
+function clsLabel(c){for(var i=0;i<CLASSES.length;i++)if(CLASSES[i][0]===c)return CLASSES[i][1];return "No type";}
+
+function cleanInc(x,i){
+  if(!x||typeof x!=="object")return null;
+  var o={id:parseInt(x.id,10)||0,no:parseInt(x.no,10)||0,cls:inList(x.cls,CLASSES),date:dOk(x.date),time:str(x.time,5),place:str(x.place,80),desc:str(x.desc,600),immediate:str(x.immediate,300),
+    person:x.person==="nonworker"?"nonworker":"worker",who:str(x.who,40),reporter:str(x.reporter,60),sevA:Math.max(0,Math.min(6,parseInt(x.sevA,10)||0)),sevP:Math.max(0,Math.min(5,parseInt(x.sevP,10)||0)),
+    workRel:yn(x.workRel),death:yn(x.death),spec:yn(x.spec),specList:[],nonw:yn(x.nonw),dop:yn(x.dop),dopNote:str(x.dopNote,200),disease:yn(x.disease),diseaseKind:inList(x.diseaseKind,DIS),
+    daysOff:(x.daysOff===""||x.daysOff===null||x.daysOff===undefined||isNaN(parseInt(x.daysOff,10)))?"":Math.max(0,Math.min(999,parseInt(x.daysOff,10))),stillOff:x.stillOff===true,
+    rdNote:str(x.rdNote,300),rdBy:str(x.rdBy,60),reportOn:dOk(x.reportOn),reportRef:str(x.reportRef,40),
+    inv:(x.inv==="progress"||x.inv==="done")?x.inv:"none",invNote:str(x.invNote,300),status:x.status==="closed"?"closed":"open",closedBy:str(x.closedBy,60),closedOn:dOk(x.closedOn),actions:[],ex:x.ex===true};
+  (Array.isArray(x.specList)?x.specList:[]).forEach(function(s){if(inList(s,SPEC)&&o.specList.indexOf(s)<0)o.specList.push(s);});
+  (Array.isArray(x.actions)?x.actions.slice(0,MAXA):[]).forEach(function(a,j){if(!a||typeof a!=="object")return;
+    o.actions.push({id:parseInt(a.id,10)||(j+1),text:str(a.text,300),owner:str(a.owner,60),due:dOk(a.due),hoc:HOC.indexOf(a.hoc)>=0?a.hoc:"",status:a.status==="done"?"done":"open",verBy:str(a.verBy,60),verOn:dOk(a.verOn)});});
+  var seen={};o.actions=o.actions.filter(function(a){if(seen[a.id])return false;seen[a.id]=1;return true;});
+  return o;
+}
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;
+  var ids={},nos={},mx=0,mn=0;
+  (Array.isArray(d.incidents)?d.incidents.slice(0,MAXI):[]).forEach(function(x,i){var c=cleanInc(x,i);if(!c)return;if(c.id>mx)mx=c.id;if(c.no>mn)mn=c.no;o.incidents.push(c);});
+  o.incidents.forEach(function(c){if(!c.id||ids[c.id]){c.id=++mx;}ids[c.id]=1;if(!c.no||nos[c.no]){c.no=++mn;}nos[c.no]=1;});
+  return o;
+}
+
+/* ---------- RIDDOR check ---------- */
+function riddor(i){
+  var r={st:"none",cats:[],unanswered:[],notify:false,due:"",dueText:"",record:false,why:[]};
+  var w=i.person==="worker",injury=i.cls==="injury",ill=i.cls==="illness";
+  function ask(name,v){if(v!=="yes"&&v!=="no")r.unanswered.push(name);}
+  if(injury||ill)ask("Was it work-related?",i.workRel);
+  var notWork=(injury||ill)&&i.workRel==="no";
+  if(injury&&!notWork){ask("Did anyone die?",i.death);if(w)ask("Specified injury to a worker?",i.spec);else ask("Non-worker taken from the scene to hospital for treatment?",i.nonw);if(w&&i.daysOff==="")r.unanswered.push("How many days has the worker been unable to do normal work?");}
+  if(ill&&!notWork)ask("Reportable occupational disease diagnosed?",i.disease);
+  ask("Is it a dangerous occurrence listed in RIDDOR?",i.dop);
+  if(i.cls==="damage"||i.cls==="near"||i.cls==="dop"){/* only the dangerous occurrence question applies */}
+  if(!notWork){
+    if(injury&&i.death==="yes"){r.cats.push("Death");r.notify=true;}
+    if(injury&&w&&i.spec==="yes"){r.cats.push("Specified injury");r.notify=true;}
+    if(injury&&!w&&i.nonw==="yes"){r.cats.push("Non-worker taken to hospital");r.notify=true;}
+    if(ill&&i.disease==="yes")r.cats.push("Occupational disease");
+    if(injury&&w&&i.daysOff!==""&&i.daysOff>7)r.cats.push("Over 7 days unable to work");
+    else if(injury&&w&&i.daysOff!==""&&i.daysOff>3)r.record=true;
+  }
+  if(i.dop==="yes"){r.cats.push("Dangerous occurrence");r.notify=true;}
+  var other=r.cats.some(function(c){return c!=="Over 7 days unable to work"&&c!=="Occupational disease";});
+  if(r.cats.length){
+    r.st="report";
+    if(i.date){
+      if(other)r.due=addDays(i.date,10);
+      else if(r.cats.indexOf("Over 7 days unable to work")>=0)r.due=addDays(i.date,15);
+    }
+    if(!r.due&&r.cats.indexOf("Occupational disease")>=0)r.dueText="as soon as you have the doctor's written diagnosis";
+    if(other&&r.cats.indexOf("Over 7 days unable to work")>=0)r.dueText="The over 7 day report has its own limit of 15 days from the incident, but the earlier limit applies.";
+  }else if(r.unanswered.length)r.st="undecided";
+  else if(injury&&w&&i.stillOff&&i.daysOff!==""&&i.daysOff<=7)r.st="watch";
+  else if(r.record)r.st="record";
+  else r.st="none";
+  if(r.st==="watch"&&i.date)r.due=addDays(i.date,15);
+  return r;
+}
+function reported(i){return !!(i.reportOn&&i.reportRef.trim());}
+/* sevA is stored 0 to 6: 0 not set, 1 none, 2 first aid, 3 minor, 4 lost time, 5 major, 6 fatal */
+function serious(i,r){return i.sevP>=4||i.sevA>=5||r.st==="report";}
+
+/* ---------- checks ---------- */
+function analyse(){
+  var gaps=[],notes=[],by={},td=today();
+  function g(i,msg){gaps.push({id:i.id,msg:ref(i)+": "+msg});(by[i.id]=by[i.id]||[]).push({msg:msg,note:false});}
+  function n(i,msg){notes.push({id:i.id,msg:ref(i)+": "+msg});(by[i.id]=by[i.id]||[]).push({msg:msg,note:true});}
+  D.incidents.forEach(function(i){
+    var r=riddor(i),isClosed=i.status==="closed",age=i.date?daysBetween(i.date,td):0;
+    if(!i.cls)g(i,"Choose what kind of event it was.");
+    if(!i.date)g(i,"The date is not set.");else if(i.date>td)g(i,"The date is in the future.");
+    if(!i.place.trim())g(i,"Where it happened is not recorded.");
+    if(!i.desc.trim())g(i,"What happened is not described.");
+    if(!i.reporter.trim())g(i,"Nobody is named as having reported it.");
+    if(!i.sevA)g(i,"The actual outcome is not set.");
+    if(!i.sevP)g(i,"The worst credible outcome is not set.");
+    else if(i.sevA&&i.sevP&&(i.sevA-1)>i.sevP)n(i,"The actual outcome is worse than the worst credible outcome you set. Check both.");
+    /* RIDDOR */
+    if(r.st==="undecided")g(i,"The RIDDOR check is not complete: "+r.unanswered.map(function(q){return q.replace(/\?$/,"");}).join("; ")+". Until it is, treat it as possibly reportable and ask a competent person now.");
+    if(r.st==="watch")n(i,"The worker is still off work. Check again once the days off pass 7. If it does, the report is due by "+fmt(r.due)+".");
+    if(r.st==="report"){
+      var rep=reported(i);
+      if(!rep&&r.due){var left=daysBetween(td,r.due);
+        if(left<0)g(i,"RIDDOR report overdue. It was due by "+fmt(r.due)+" ("+r.cats.join(", ")+") and no report reference is recorded.");
+        else g(i,"Reportable under RIDDOR ("+r.cats.join(", ")+") and not yet reported. Due by "+fmt(r.due)+(r.notify?", and notify without delay":"")+".");}
+      else if(!rep)g(i,"Reportable under RIDDOR ("+r.cats.join(", ")+") and no report reference is recorded. Report "+(r.dueText||"as soon as possible")+".");
+      if(rep&&r.due&&i.reportOn>r.due)n(i,"Reported on "+fmt(i.reportOn)+", after the "+fmt(r.due)+" limit.");
+      if(rep&&r.notify&&i.date&&daysBetween(i.date,i.reportOn)>1)n(i,"Reported "+daysBetween(i.date,i.reportOn)+" days after the incident. Deaths, specified injuries, non-worker hospital cases and dangerous occurrences are to be notified without delay.");
+      if(i.reportOn&&i.reportOn>td)g(i,"The report date is in the future.");
+    }
+    if(r.st==="record")n(i,"More than 3 days unable to work: keep this record. No HSE report is needed unless it goes past 7 days.");
+    if(r.st==="none"&&(i.cls==="injury"||i.cls==="illness")&&!i.rdNote.trim())g(i,"Marked not reportable. Record the reason for that decision.");
+    if(r.st!=="none"&&r.st!=="undecided"&&!i.rdBy.trim())n(i,"Record who made the RIDDOR decision.");
+    if(r.st==="none"&&(i.cls==="injury"||i.cls==="illness")&&i.rdNote.trim()&&!i.rdBy.trim())g(i,"Record who made the RIDDOR decision.");
+    /* investigation */
+    if(serious(i,r)){
+      if(i.inv!=="done"){var m="Serious or reportable, so it needs an investigation, and none is marked complete. Use the Causal Tree Builder.";
+        if(isClosed||age>7||i.inv==="none"&&age>3)g(i,m);else n(i,m);}
+    }else if(i.sevP>=3&&i.inv==="none"&&age>14)n(i,"Potential outcome of 3 or more and no investigation or review recorded.");
+    /* actions */
+    i.actions.forEach(function(a,j){var l="Action "+(j+1);
+      if(!a.text.trim())g(i,l+" has no wording.");
+      if(!a.owner.trim())g(i,l+" has no owner.");
+      if(!a.due)g(i,l+" has no due date.");else if(a.status!=="done"&&a.due<td)g(i,l+" is overdue (due "+fmt(a.due)+").");
+      if(a.status==="done"){
+        if(!a.verBy.trim())g(i,l+" is marked done with nobody named as having checked it worked.");
+        else if(norm(a.verBy)===norm(a.owner))g(i,l+" is marked done, but its owner checked their own work.");
+        if(!a.verOn)g(i,l+" is marked done with no date for the check.");else if(a.verOn>td)g(i,l+" has a check date in the future.");
+      }
+    });
+    if(i.sevP>=3&&i.actions.length&&i.actions.every(function(a){return a.hoc==="Administrative"||a.hoc==="PPE"||!a.hoc;}))n(i,"Every action is training, procedure or PPE. For a potential outcome of "+i.sevP+", look for a way to eliminate, substitute or engineer the cause out.");
+    if(!i.actions.length&&!isClosed&&i.cls!=="damage"&&age>7)n(i,"No actions recorded yet.");
+    /* closure */
+    if(isClosed){
+      if(!i.closedBy.trim())g(i,"Closed with nobody named as having closed it.");
+      else if(norm(i.closedBy)===norm(i.reporter))g(i,"Closed by the person who reported it. Someone else must check and close it.");
+      if(!i.closedOn)g(i,"Closed with no closing date.");else if(i.closedOn>td)g(i,"The closing date is in the future.");
+      if(r.st==="undecided"||r.st==="watch")g(i,"Closed while the RIDDOR decision is not settled.");
+      if(i.actions.some(function(a){return a.status!=="done";}))g(i,"Closed with actions still open.");
+    }else if(age>30)n(i,"Open for "+age+" days.");
+    /* wording */
+    var txt=[i.desc,i.immediate,i.invNote,i.dopNote,i.rdNote].join(" "),m1=txt.match(BLAME),m2=txt.match(HEALTH);
+    if(m1)n(i,"The wording \""+m1[0]+"\" sounds like a judgement of a person. Rewrite it as what was seen or recorded.");
+    if(m2)n(i,"The wording \""+m2[0]+"\" may be health detail. Say what happened and what the person cannot do, and keep medical detail in occupational health or HR.");
+  });
+  return {gaps:gaps,notes:notes,by:by};
+}
+
+/* ---------- storage ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextNo(){var m=0;D.incidents.forEach(function(i){if(i.no>m)m=i.no;});return m+1;}
+function nextId(){var m=0;D.incidents.forEach(function(i){if(i.id>m)m=i.id;});return m+1;}
+
+/* ---------- list ---------- */
+function renderAll(){renderStatus();renderList();renderDash();renderChecks();$("banner").hidden=!D.example;}
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.incidents.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing logged yet."}),h("div",{class:"sm",text:"Add an incident or near miss, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not treat this log as complete."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the log is complete or the decisions are right. A competent person must still judge it. "+plural(A.notes.length,"note")+" to look at."}));}
+}
+function riddorChip(r,i){
+  var m={report:["r","Reportable"],undecided:["y","RIDDOR undecided"],watch:["y","Watch days off"],record:["c","Record only"],none:["","Not reportable"]}[r.st];
+  if((i.cls==="near"||i.cls==="damage")&&r.st==="none")return null;
+  return h("span",{class:"chip "+m[0],text:m[1]});
+}
+function renderList(){
+  var box=$("list");box.innerHTML="";var A=analyse();
+  if(!D.incidents.length){box.appendChild(h("p",{class:"sm",text:"No incidents yet."}));return;}
+  D.incidents.slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"")||b.no-a.no;}).forEach(function(i){
+    var r=riddor(i),f=A.by[i.id]||[],gp=f.filter(function(x){return !x.note;}).length;
+    var b=h("button",{type:"button",class:"inc "+(gp?"gap":"clean")+(i.status==="closed"?" closed":""),"data-k":"i"+i.id,"aria-label":"Open "+ref(i)+": "+short(i.desc,60),onclick:function(){openInc(i.id);}},
+      h("div",{class:"t",text:ref(i)+"  "+short(i.desc,110)}),
+      h("div",{class:"m"},h("span",{class:"chip c",text:clsLabel(i.cls)}),riddorChip(r,i),h("span",{class:"chip "+(i.status==="closed"?"ok":"v"),text:i.status==="closed"?"Closed":"Open"}),
+        h("span",{class:"sm",text:(i.date?fmt(i.date):"no date")+(i.place?", "+i.place:"")}),
+        gp?h("span",{class:"chip g",text:plural(gp,"gap")}):null,i.ex?h("span",{class:"chip",text:"Example"}):null));
+    box.appendChild(b);});
+}
+
+/* ---------- dialog ---------- */
+function sel(list,val,id,blankLabel){var s=h("select",{id:id});s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
+function lab(t,c,full){return h("label",{class:full?"full":""},t,c);}
+function ynSel(val,id){return sel([["yes","Yes"],["no","No"],["unsure","Unsure"]],val,id,"Not answered");}
+function openInc(id){
+  var cur=null;D.incidents.forEach(function(i){if(i.id===id)cur=i;});if(!cur)return;
+  draft=JSON.parse(JSON.stringify(cur));draftNew=false;buildDlg();showDlg();
+}
+function showDlg(){var d=$("dlg");if(typeof d.showModal==="function"){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function closeDlg(){var d=$("dlg"),k=draft?"i"+draft.id:"";if(d.close)d.close();else d.removeAttribute("open");draft=null;draftNew=false;var b=k&&document.querySelector('[data-k="'+k+'"]');if(b)b.focus();else{var a=$("btnAdd");if(a)a.focus();}}
+$("dlgCancel").onclick=closeDlg;$("dlgX").onclick=closeDlg;
+$("dlg").addEventListener("cancel",function(){draft=null;draftNew=false;});
+$("btnAdd").onclick=function(){if(D.incidents.length>=MAXI)return;
+  if(D.example){/* adding to example data would mix real and made-up records */
+    if(!confirm("The example is still loaded. Clear it first so your records are not mixed with made-up ones?"))return;D=blank();touch();}
+  draft=cleanInc({id:nextId(),no:nextNo(),cls:"",date:today(),person:"worker",actions:[]},0);draftNew=true;buildDlg();showDlg();};
+function val(id){var e=$(id);return e?e.value:"";}
+function pull(){ /* copy the form into the draft */
+  if(!draft)return;
+  draft.cls=val("fCls");draft.date=dOk(val("fDate"));draft.time=val("fTime").slice(0,5);draft.place=val("fPlace").slice(0,80);draft.desc=val("fDesc").slice(0,600);draft.immediate=val("fImm").slice(0,300);
+  draft.person=val("fPerson")==="nonworker"?"nonworker":"worker";draft.who=val("fWho").slice(0,40);draft.reporter=val("fRep").slice(0,60);
+  draft.sevA=parseInt(val("fSevA"),10)||0;draft.sevP=parseInt(val("fSevP"),10)||0;
+  draft.workRel=yn(val("fWr"));draft.death=yn(val("fDeath"));draft.spec=yn(val("fSpec"));draft.nonw=yn(val("fNonw"));draft.dop=yn(val("fDop"));draft.dopNote=val("fDopNote").slice(0,200);
+  draft.disease=yn(val("fDis"));draft.diseaseKind=inList(val("fDisK"),DIS);
+  var dv=val("fDays");draft.daysOff=dv===""?"":Math.max(0,Math.min(999,parseInt(dv,10)||0));draft.stillOff=!!($("fStill")&&$("fStill").checked);
+  draft.specList=[];SPEC.forEach(function(s){var c=$("sp_"+s[0]);if(c&&c.checked)draft.specList.push(s[0]);});
+  draft.rdNote=val("fRdNote").slice(0,300);draft.rdBy=val("fRdBy").slice(0,60);draft.reportOn=dOk(val("fRepOn"));draft.reportRef=val("fRepRef").slice(0,40);
+  draft.inv=(val("fInv")==="progress"||val("fInv")==="done")?val("fInv"):"none";draft.invNote=val("fInvNote").slice(0,300);
+  draft.status=val("fStatus")==="closed"?"closed":"open";draft.closedBy=val("fClBy").slice(0,60);draft.closedOn=dOk(val("fClOn"));
+  draft.actions.forEach(function(a){var k=a.id;a.text=val("aT"+k).slice(0,300);a.owner=val("aO"+k).slice(0,60);a.due=dOk(val("aD"+k));a.hoc=HOC.indexOf(val("aH"+k))>=0?val("aH"+k):"";a.status=val("aS"+k)==="done"?"done":"open";a.verBy=val("aVb"+k).slice(0,60);a.verOn=dOk(val("aVo"+k));});
+}
+function buildDlg(){
+  var b=$("dlgB");b.innerHTML="";$("dlgT").textContent=ref(draft)+(draftNew?" (new)":"")+(draft.ex?" (Example)":"");
+  var w=draft.person==="worker",r=riddor(draft);
+  var f1=h("fieldset",{},h("legend",{text:"1. What happened"}),h("div",{class:"f"},
+    lab("Kind of event",sel(CLASSES,draft.cls,"fCls","Choose")),
+    lab("Date",h("input",{type:"date",id:"fDate",value:draft.date})),
+    lab("Time (optional)",h("input",{type:"time",id:"fTime",value:draft.time})),
+    lab("Where",h("input",{type:"text",id:"fPlace",value:draft.place,maxlength:"80"})),
+    lab("What happened? Say what was seen or recorded, not who was to blame.",h("textarea",{id:"fDesc",maxlength:"600",rows:"3"}),true),
+    lab("What was done straight away?",h("textarea",{id:"fImm",maxlength:"300",rows:"2"}),true),
+    lab("Person involved",sel([["worker","Worker (employee, agency or contractor working for you)"],["nonworker","Not a worker (visitor, member of the public)"]],draft.person,"fPerson","Choose")),
+    lab("Name or initials (optional, keep to what you need)",h("input",{type:"text",id:"fWho",value:draft.who,maxlength:"40"})),
+    lab("Reported by",h("input",{type:"text",id:"fRep",value:draft.reporter,maxlength:"60"})),
+    lab("Actual outcome",sel(SEVA.slice(1).map(function(t,i){return [String(i+1),t];}),draft.sevA?String(draft.sevA):"","fSevA","Not set")),
+    lab("Worst credible outcome (what could reasonably have happened)",sel([["1","1 Minor"],["2","2 Moderate"],["3","3 Serious"],["4","4 Major"],["5","5 Fatal or life changing"]],draft.sevP?String(draft.sevP):"","fSevP","Not set"),true)));
+  b.appendChild(f1);$("fDesc").value=draft.desc;$("fImm").value=draft.immediate;
+  /* RIDDOR */
+  var injury=draft.cls==="injury",ill=draft.cls==="illness",f2=h("fieldset",{},h("legend",{text:"2. RIDDOR check (Great Britain)"}),
+    h("p",{class:"sm",text:"Answer every question that appears. A blank or unsure answer leaves the result as Undecided. This is a prompt, not the decision. A competent person decides, using the HSE guidance."}));
+  var g=h("div",{class:"f"});
+  if(injury||ill)add(g,lab("Was it work-related (arising out of or in connection with work)?",ynSel(draft.workRel,"fWr")));
+  if(injury){
+    add(g,lab("Did anyone die?",ynSel(draft.death,"fDeath")));
+    if(w){add(g,lab("Is it a specified injury to a worker?",ynSel(draft.spec,"fSpec")));
+      if(draft.spec==="yes"){var cb=h("div",{class:"full"});cb.appendChild(h("div",{class:"sm",text:"Which kind (tick all that apply)"}));SPEC.forEach(function(s){var c=h("input",{type:"checkbox",id:"sp_"+s[0],checked:draft.specList.indexOf(s[0])>=0});cb.appendChild(h("label",{class:"chk",style:"flex-direction:row"},c,s[1]));});g.appendChild(cb);}
+      add(g,lab("Days unable to do normal work so far (not counting the day of the accident; count weekends and rest days)",h("input",{type:"number",id:"fDays",min:"0",max:"999",value:draft.daysOff===""?"":String(draft.daysOff)}),true));
+      var st=h("input",{type:"checkbox",id:"fStill",checked:draft.stillOff});add(g,h("label",{class:"chk full",style:"flex-direction:row"},st,"The worker is still off work or on restricted duties, so the count may still go up"));}
+    else add(g,lab("Was the person taken directly from the scene to hospital for treatment?",ynSel(draft.nonw,"fNonw")));
+  }
+  if(ill)add(g,lab("Has a doctor diagnosed a reportable occupational disease?",ynSel(draft.disease,"fDis")),lab("Which one",sel(DIS,draft.diseaseKind,"fDisK","Choose")));
+  add(g,lab("Is it a dangerous occurrence listed in RIDDOR Schedule 2 (for example lifting equipment collapse, contact with overhead power lines, an explosion or fire that stops work for more than 24 hours)?",ynSel(draft.dop,"fDop"),true));
+  if(draft.dop==="yes")add(g,lab("Which one",h("input",{type:"text",id:"fDopNote",value:draft.dopNote,maxlength:"200"}),true));
+  f2.appendChild(g);
+  var rep=reported(draft);
+  var cls={report:"rep",undecided:"und",watch:"und",record:"rec",none:"non"}[r.st];
+  var rtxt={report:"Reportable under RIDDOR: "+r.cats.join(", ")+".",undecided:"Undecided. Still to answer: "+r.unanswered.map(function(q){return q.replace(/\?$/,"");}).join("; ")+". Until then, treat it as possibly reportable and ask a competent person now.",
+    watch:"Not reportable yet. The worker is still off. Check again once the days off pass 7.",record:"Not reportable. More than 3 days off, so keep this record.",none:(injury||ill||draft.dop==="no")?"Not reportable on these answers.":"Answer the questions to get a result."}[r.st];
+  var box=h("div",{class:"rd "+cls,role:"status"},h("strong",{text:rtxt}));
+  if(r.due)box.appendChild(h("div",{class:"sm",text:(r.st==="watch"?"If it goes over 7 days, report by ":"Report to be received by ")+fmt(r.due)+(r.st==="report"?" ("+(daysBetween(today(),r.due)<0?plural(-daysBetween(today(),r.due),"day")+" overdue":plural(daysBetween(today(),r.due),"day")+" left")+")":"")+(r.notify?". Notify without delay.":".")}));
+  if(r.dueText)box.appendChild(h("div",{class:"sm",text:r.dueText}));
+  f2.appendChild(box);
+  var g2=h("div",{class:"f"});
+  add(g2,lab("Who made the RIDDOR decision?",h("input",{type:"text",id:"fRdBy",value:draft.rdBy,maxlength:"60"})),lab("Reason for the decision (required if you decide it is not reportable)",h("input",{type:"text",id:"fRdNote",value:draft.rdNote,maxlength:"300"})));
+  if(r.st==="report")add(g2,lab("Reported to the HSE on",h("input",{type:"date",id:"fRepOn",value:draft.reportOn})),lab("HSE report reference",h("input",{type:"text",id:"fRepRef",value:draft.reportRef,maxlength:"40"})));
+  f2.appendChild(g2);
+  f2.appendChild(h("p",{class:"sm"},h("a",{href:"https://www.hse.gov.uk/riddor/reportable-incidents.htm",target:"_blank",rel:"noopener noreferrer",text:"HSE: reportable incidents"})," ",h("a",{href:"https://www.hse.gov.uk/riddor/report.htm",target:"_blank",rel:"noopener noreferrer",text:"HSE: make a report"})));
+  b.appendChild(f2);
+  /* investigation */
+  var f3=h("fieldset",{},h("legend",{text:"3. Investigation"}),h("div",{class:"f"},
+    lab("Investigation",sel([["none","Not started"],["progress","In progress"],["done","Complete"]],draft.inv,"fInv","Not started")),
+    lab("Where is it recorded (for example a Causal Tree file name)?",h("input",{type:"text",id:"fInvNote",value:draft.invNote,maxlength:"300"}))));
+  if(serious(draft,r))f3.appendChild(h("p",{class:"sm",text:"This is serious or reportable, so it needs a completed investigation before it can be closed."}));
+  var tools=h("div",{class:"toolbar",style:"margin-top:8px"});
+  tools.appendChild(h("button",{class:"btn sec small",type:"button",text:"Download a Causal Tree starter file",onclick:function(){pull();downloadStarter(draft);}}));
+  tools.appendChild(h("a",{class:"btn sec small",href:"causal-tree-builder.html",text:"Open the Causal Tree Builder"}));
+  f3.appendChild(tools);f3.appendChild(h("p",{class:"sm",text:"In the Causal Tree Builder, press Load data file and choose the starter file. It replaces whatever is open there, so save your current work first."}));
+  b.appendChild(f3);
+  /* actions */
+  var f4=h("fieldset",{},h("legend",{text:"4. Actions"}));
+  draft.actions.forEach(function(a,j){var k=a.id,ac=h("div",{class:"ac"},h("div",{class:"f"},
+    lab("Action "+(j+1),h("textarea",{id:"aT"+k,maxlength:"300",rows:"2"}),true),
+    lab("Owner",h("input",{type:"text",id:"aO"+k,value:a.owner,maxlength:"60"})),lab("Due",h("input",{type:"date",id:"aD"+k,value:a.due})),
+    lab("Type of control",sel(HOC.map(function(x){return [x,x];}),a.hoc,"aH"+k,"Choose")),
+    lab("Status",sel([["open","Open"],["done","Done, and checked by someone else"]],a.status,"aS"+k,"Open"))));
+    if(a.status==="done")add(ac.firstChild,lab("Checked by (not the owner)",h("input",{type:"text",id:"aVb"+k,value:a.verBy,maxlength:"60"})),lab("Date checked",h("input",{type:"date",id:"aVo"+k,value:a.verOn})));
+    ac.appendChild(h("button",{class:"btn danger small",type:"button",style:"margin-top:8px",text:"Remove this action",onclick:function(){pull();draft.actions=draft.actions.filter(function(z){return z!==a;});buildDlg();}}));
+    f4.appendChild(ac);});
+  f4.appendChild(h("button",{class:"btn small",type:"button",text:"Add an action",onclick:function(){if(draft.actions.length>=MAXA)return;pull();var m=0;draft.actions.forEach(function(z){if(z.id>m)m=z.id;});draft.actions.push({id:m+1,text:"",owner:"",due:"",hoc:"",status:"open",verBy:"",verOn:""});buildDlg();}}));
+  b.appendChild(f4);
+  draft.actions.forEach(function(a){$("aT"+a.id).value=a.text;var sx=$("aS"+a.id);if(sx)sx.onchange=function(){pull();buildDlg();};});
+  /* closure */
+  var f5=h("fieldset",{},h("legend",{text:"5. Closure"}),h("div",{class:"f"},
+    lab("Status",sel([["open","Open"],["closed","Closed"]],draft.status,"fStatus","Open")),
+    lab("Closed by (someone other than the reporter)",h("input",{type:"text",id:"fClBy",value:draft.closedBy,maxlength:"60"})),
+    lab("Date closed",h("input",{type:"date",id:"fClOn",value:draft.closedOn}))));
+  b.appendChild(f5);
+  /* live updates of the RIDDOR result and dependent sections */
+  ["fCls","fPerson","fWr","fDeath","fSpec","fNonw","fDop","fDis","fStill","fDays","fSevP","fSevA"].forEach(function(id){var e=$(id);if(e)e.addEventListener("change",function(){pull();var y=$("dlgB").scrollTop;buildDlg();$("dlgB").scrollTop=y;var n=$(id);if(n)n.focus();});});
+  $("dlgDel").style.visibility=draftNew?"hidden":"visible";
+}
+$("dlgOk").onclick=function(){
+  if(!draft)return;pull();var c=cleanInc(draft,0);
+  if(draftNew)D.incidents.push(c);else D.incidents=D.incidents.map(function(i){return i.id===c.id?c:i;});
+  if(D.example){var allEx=D.incidents.every(function(i){return i.ex;});if(!allEx)D.example=false;}
+  touch();closeDlg();renderAll();};
+$("dlgDel").onclick=function(){var b=$("dlgDel");
+  if(armed!=="del"){armed="del";b.textContent="Confirm: delete this incident";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Delete incident";b.classList.remove("armed");},5000);return;}
+  var id=draft&&draft.id;D.incidents=D.incidents.filter(function(i){return i.id!==id;});armed=null;b.textContent="Delete incident";b.classList.remove("armed");touch();draft=null;closeDlg();renderAll();};
+
+/* ---------- dashboard ---------- */
+function inPeriod(i){if(!period)return true;if(!i.date)return false;return daysBetween(i.date,today())<=period&&i.date<=today();}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderDash(){
+  var k=$("kpis"),mt=$("monthTable"),at=$("areaTable");k.innerHTML="";mt.innerHTML="";at.innerHTML="";
+  var all=D.incidents,A=analyse(),L=all.filter(inPeriod),td=today();
+  if(!all.length){k.appendChild(h("p",{class:"sm",text:"Nothing to show yet."}));$("cult").textContent="";return;}
+  var near=L.filter(function(i){return i.cls==="near"||i.cls==="dop";}).length,inj=L.filter(function(i){return i.cls==="injury"||i.cls==="illness";}).length;
+  var rep=L.filter(function(i){return riddor(i).st==="report";}).length,rec=L.filter(function(i){return riddor(i).st==="record";}).length;
+  var open=all.filter(function(i){return i.status!=="closed";}).length;
+  var openAct=0,overAct=0;all.forEach(function(i){i.actions.forEach(function(a){if(a.status!=="done"){openAct++;if(a.due&&a.due<td)overAct++;}});});
+  var lt=all.filter(function(i){var r=riddor(i);return i.date&&i.date<=td&&((i.cls==="injury"&&(i.sevA>=4||(i.daysOff!==""&&i.daysOff>=1)))||r.st==="report"&&i.cls==="injury");}).map(function(i){return i.date;}).sort();
+  var since=lt.length?daysBetween(lt[lt.length-1],td):null;
+  var overRep=A.gaps.filter(function(g){return /RIDDOR report overdue/.test(g.msg);}).length;
+  add(k,[kpi(L.length,"Events in the period"),kpi(near,"Near misses and dangerous occurrences"),kpi(inj,"Injuries and ill health"),
+    kpi(inj?(near/inj).toFixed(1):(near?"No injuries":"0"),"Near misses per injury"),
+    kpi(rep,"Reportable under RIDDOR",rep?"warn":""),kpi(overRep,"RIDDOR reports overdue",overRep?"crit":"ok"),kpi(rec,"Over 3 day records"),
+    kpi(since===null?"None logged":since,"Days since the last lost-time injury"+(since===null?"":" logged")),kpi(open,"Open incidents",open?"warn":"ok"),kpi(openAct+" / "+overAct,"Open / overdue actions",overAct?"crit":(openAct?"warn":"ok"))]);
+  $("cult").textContent="These figures only count what has been logged. A fall in near misses can mean people have stopped reporting, not that the workplace is safer. Look at the near-miss to injury ratio over time, and ask the people who do the work.";
+  /* by month: last 12 months */
+  var months=[],d=new Date();d.setDate(1);
+  for(var m=11;m>=0;m--){var x=new Date(d.getFullYear(),d.getMonth()-m,1);months.push({key:x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0"),near:0,inj:0});}
+  all.forEach(function(i){if(!i.date)return;var key=i.date.slice(0,7);months.forEach(function(mm){if(mm.key===key){if(i.cls==="injury"||i.cls==="illness")mm.inj++;else if(i.cls==="near"||i.cls==="dop")mm.near++;}});});
+  var mx=1;months.forEach(function(mm){mx=Math.max(mx,mm.near,mm.inj);});
+  var hr=h("tr",{},h("th",{text:"Month"}),h("th",{text:"Near misses and dangerous occurrences"}),h("th",{text:"Injuries and ill health"}));mt.appendChild(h("thead",{},hr));var tb=h("tbody");
+  months.forEach(function(mm){tb.appendChild(h("tr",{},h("td",{text:mm.key.slice(5)+"/"+mm.key.slice(0,4)}),
+    h("td",{},h("span",{class:"bar b1",style:"width:"+Math.round(120*mm.near/mx)+"px","aria-hidden":"true"}),String(mm.near)),
+    h("td",{},h("span",{class:"bar b2",style:"width:"+Math.round(120*mm.inj/mx)+"px","aria-hidden":"true"}),String(mm.inj))));});
+  mt.appendChild(tb);
+  /* by area */
+  var areas={};L.forEach(function(i){var a=i.place.trim()||"(no place)";var o=areas[a]||(areas[a]={n:0,near:0,inj:0,recent:0});o.n++;if(i.cls==="injury"||i.cls==="illness")o.inj++;else o.near++;if(i.date&&daysBetween(i.date,td)<=90)o.recent++;});
+  var ar=Object.keys(areas).map(function(a){return {a:a,o:areas[a]};}).sort(function(x,y){return y.o.n-x.o.n;}).slice(0,10),am=1;ar.forEach(function(x){am=Math.max(am,x.o.n);});
+  at.appendChild(h("thead",{},h("tr",{},h("th",{text:"Area"}),h("th",{text:"Events"}),h("th",{class:"num",text:"Injuries"}),h("th",{class:"num",text:"Last 90 days"}),h("th",{text:"Pattern"}))));
+  var tb2=h("tbody");ar.forEach(function(x){tb2.appendChild(h("tr",{},h("td",{text:x.a}),h("td",{},h("span",{class:"bar b1",style:"width:"+Math.round(120*x.o.n/am)+"px","aria-hidden":"true"}),String(x.o.n)),h("td",{class:"num",text:String(x.o.inj)}),h("td",{class:"num",text:String(x.o.recent)}),h("td",{text:x.o.recent>=2?"Repeat location":""})));});
+  at.appendChild(tb2);
+}
+$("period").addEventListener("change",function(){period=parseInt(this.value,10)||0;renderDash();});
+
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.incidents.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){showTab("log");openInc(x.id);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the log."}));
+}
+
+/* ---------- exports and links ---------- */
+function downloadStarter(i){
+  var r=riddor(i);var ev={title:(i.desc||"").slice(0,300),date:i.date,place:i.place.slice(0,200),sev:Math.max(0,Math.min(5,(i.sevA||1)-1)),lead:"",reviewer:"",suff:"",reported:false,example:i.ex===true};
+  download("causal-tree-"+ref(i).toLowerCase()+".json",JSON.stringify({app:"causal-tree-builder",version:1,saved:new Date().toISOString(),data:{event:ev,nodes:[],actions:[]}},null,2),"application/json");
+}
+$("btnTrack").onclick=function(){
+  var note=$("sendNote"),list=[];
+  D.incidents.forEach(function(i){i.actions.forEach(function(a){if(a.text.trim())list.push({i:i,a:a});});});
+  if(!list.length){note.textContent="There are no actions with wording to send.";return;}
+  var cur={actions:[]};try{var d=JSON.parse(localStorage.getItem(TK));if(d&&Array.isArray(d.actions))cur=d;}catch(e){}
+  var ids={};list.forEach(function(x){ids[TBASE+x.i.id*1000+x.a.id]=1;});
+  var kept=cur.actions.filter(function(z){return !(z&&ids[z.id]);});
+  list.forEach(function(x){var i=x.i,a=x.a;
+    kept.push({id:TBASE+i.id*1000+a.id,example:i.ex===true,title:a.text.trim().slice(0,140),detail:("From "+ref(i)+": "+(i.desc||"")).slice(0,400),source:(i.cls==="near"||i.cls==="dop")?"Near miss":"Incident",hoc:a.hoc,riskId:null,riskText:"",
+      owner:a.owner,raised:i.date||today(),due:a.due,status:a.status==="done"?"done":"open",doneDate:a.status==="done"?a.verOn:"",doneNote:"",verifier:"",verDate:"",verNote:"",result:"",cancel:"",log:[]});});
+  try{localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+    note.textContent="Sent "+plural(list.length,"action")+" to the tracker. Sending again updates them, and replaces anything changed on them there. Checks are not carried across, so each one needs its own check in the tracker.";
+  }catch(e){note.textContent="This browser would not let the page write to the tracker. Nothing was sent.";}
+};
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Ref","Kind","Date","Place","Description","Person","Actual outcome","Worst credible outcome","RIDDOR result","RIDDOR categories","Report due","Reported on","HSE reference","Days off","Investigation","Actions","Status","Closed by","Closed on","Example"];
+  var rows=D.incidents.map(function(i){var r=riddor(i);return [ref(i),clsLabel(i.cls),i.date,i.place,i.desc,i.person==="worker"?"Worker":"Not a worker",SEVA[i.sevA]||"",i.sevP,{report:"Reportable",undecided:"Undecided",watch:"Watch",record:"Record only",none:"Not reportable"}[r.st],r.cats.join("; "),r.due,i.reportOn,i.reportRef,i.daysOff,i.inv,i.actions.length,i.status,i.closedBy,i.closedOn,i.ex?"Yes":"No"];});
+  download("incident-log.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+function buildReport(){
+  var r=$("report"),A=analyse();r.innerHTML="";add(r,h("h1",{text:"Incident and near-miss report"}));
+  if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  add(r,h("p",{text:"Printed "+fmt(today())+". "+plural(D.incidents.length,"event")+"."}));
+  add(r,h("p",{class:"gapx",text:!D.incidents.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not treat this log as complete.":"No gaps found by the checks. A competent person must still judge the log."}));
+  var t=h("table",{}),hr=h("tr",{});["Ref","Kind","Date","Place","What happened","RIDDOR","Status"].forEach(function(x){hr.appendChild(h("th",{text:x}));});t.appendChild(hr);
+  D.incidents.slice().sort(function(a,b){return (b.date||"").localeCompare(a.date||"");}).forEach(function(i){var rr=riddor(i);t.appendChild(h("tr",{},[ref(i),clsLabel(i.cls),fmt(i.date),i.place,short(i.desc,140),{report:"Reportable"+(rr.due?", due "+fmt(rr.due):"")+(reported(i)?", reported "+i.reportRef:", NOT reported"),undecided:"Undecided",watch:"Watch",record:"Record only",none:"Not reportable"}[rr.st],i.status==="closed"?"Closed":"Open"].map(function(v){return h("td",{text:String(v||"")});})));});
+  add(r,t);add(r,h("h2",{text:"Gaps and notes"}));
+  var l=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Decision support only. A competent person must judge the result and make the RIDDOR decisions."}));
+}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["log","dash","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="dash")renderDash();if(t==="checks")renderChecks();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear log";b.classList.remove("armed");return;}
+  if(!D.incidents.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear log";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();touch();renderAll();showTab("log");};
+$("btnSave").onclick=function(){download("incident-log.json",JSON.stringify({app:"incident-log",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>3000000){alert("That file is too large to be an incident log data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="incident-log"||!d.data)throw 0;D=clean(d.data);touch();renderAll();}catch(e){alert("That file could not be read. It is not an incident log data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank();o.example=true;var n=0;
+  function I(p){n++;var base={id:n,no:n,ex:true,person:"worker",who:"",reporter:"Example Operator A",sevA:1,sevP:1,workRel:"",death:"",spec:"",specList:[],nonw:"",dop:"",dopNote:"",disease:"",diseaseKind:"",daysOff:"",stillOff:false,rdNote:"",rdBy:"",reportOn:"",reportRef:"",inv:"none",invNote:"",status:"open",closedBy:"",closedOn:"",actions:[],immediate:"",time:""};
+    for(var k in p)base[k]=p[k];o.incidents.push(cleanInc(base,0));}
+  I({cls:"near",date:off(-3),place:"Example Line 2 racking",desc:"Example: a pallet slid part way off the racking beam while being placed. Nobody was underneath. The pallet was re-seated and the bay was coned off.",sevA:1,sevP:4,dop:"no",inv:"progress",actions:[{id:1,text:"Fit pallet support bars to the Line 2 racking bays and check them weekly.",owner:"Example Engineer",due:off(14),hoc:"Engineering",status:"open",verBy:"",verOn:""}]});
+  I({cls:"injury",date:off(-40),place:"Example Packing",desc:"Example: an operative cut a finger on a strapping edge. First aid applied on site and the person carried on working.",sevA:2,sevP:2,workRel:"yes",death:"no",spec:"no",dop:"no",daysOff:0,rdBy:"Example Safety Lead",rdNote:"First aid only, no time off, not a specified injury.",inv:"done",invNote:"Example review note",status:"closed",closedBy:"Example Manager",closedOn:off(-30),
+    actions:[{id:1,text:"Change to cut-resistant gloves at the strapping station.",owner:"Example Supervisor",due:off(-33),hoc:"PPE",status:"done",verBy:"Example Safety Lead",verOn:off(-31)}]});
+  I({cls:"injury",date:off(-12),place:"Example Assembly",desc:"Example: a worker fell from a low platform and has a broken wrist. Taken to hospital by a colleague.",sevA:5,sevP:4,workRel:"yes",death:"no",spec:"yes",specList:["fracture"],dop:"no",daysOff:12,stillOff:true,rdBy:"Example Safety Lead"});
+  I({cls:"injury",date:off(-10),place:"Example Goods in",desc:"Example: a worker reported a back strain after lifting a heavy box and has been unable to do their normal work since.",sevA:4,sevP:3,workRel:"yes",death:"no",spec:"no",dop:"no",daysOff:9,stillOff:true,rdBy:"Example Safety Lead",inv:"progress"});
+  I({cls:"near",date:off(-20),place:"Example Line 3",desc:"Example: an unguarded nip point was found on a roller during a walk round. The line was stopped and a guard fitted.",sevA:1,sevP:3,dop:"no",reporter:"Example Operator B",status:"closed",closedBy:"Example Operator B",closedOn:off(-19),inv:"done",
+    actions:[{id:1,text:"Add the roller guard to the weekly check sheet.",owner:"Example Supervisor",due:off(-10),hoc:"Administrative",status:"open",verBy:"",verOn:""}]});
+  I({cls:"injury",date:off(-5),place:"Example Reception",person:"nonworker",desc:"Example: a visitor tripped on a loose mat and was seen by a first aider. They then went to hospital by car.",sevA:3,sevP:2,workRel:"yes",death:"no",nonw:"unsure",dop:"no",reporter:"Example Receptionist"});
+  I({cls:"near",date:off(-60),place:"Example Line 1",desc:"Example: a fork truck reversed close to a pedestrian at the end of an aisle. The driver stopped in time.",sevA:1,sevP:4,dop:"no",inv:"done",status:"closed",closedBy:"Example Manager",closedOn:off(-52),
+    actions:[{id:1,text:"Mark a separate pedestrian walkway and fit a reversing alarm and light.",owner:"Example Engineer",due:off(-55),hoc:"Engineering",status:"done",verBy:"Example Safety Lead",verOn:off(-53)}]});
+  return o;
+}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+renderAll();renderSave();
+var ui=uiGet();showTab(["log","dash","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"log");
+window.__il={analyse:analyse,riddor:riddor,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>
