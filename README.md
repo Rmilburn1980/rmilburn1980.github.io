@@ -32,11 +32,11 @@ The safety and skills tools are built to show gaps, not to reassure. They never 
 
 ## Your data
 
-- The tools run in the browser. They do not send, upload or store your entries on this site or on any server I run. There are three exceptions, listed below.
+- The tools run in the browser. They do not send, upload or store your entries on this site or on any server I run. There is one optional exception, listed below.
 - Data stays in the browser's local storage and in any file the user chooses to save. Tools with a Save data file button write a JSON file to the user's own computer.
 - The Skills Matrix Builder and Company Skills Dashboard can optionally save to and read from a folder the user picks (for example a SharePoint library synced to their computer). They only write the team data file. This needs Chrome or Edge on a computer.
 - The site is hosted on GitHub Pages, which logs visitor IP addresses for security under GitHub's own privacy statement. The tools use no analytics.
-- **Exceptions.** (1) The DMAIC, Quick Exposure Check, Skills Matrix and Cross-Training dashboards, and the EHS Readiness dashboard, load fonts from Google Fonts, so Google receives the visitor's IP address when the page opens. (2) The SMV tool loads React and Babel from unpkg.com when it opens, so that service receives the visitor's IP address, and the page runs code it fetches from there. (3) The 7S Audit Dashboard can optionally be connected to a Google Sheet through a Google Apps Script URL the user enters. If they do, audit entries, including auditor and owner names, are sent to that sheet. Do not connect it without your employer's approval.
+- **Exception.** The 7S Audit Dashboard can optionally be connected to a Google Sheet through a Google Apps Script URL the user enters. If they do, audit entries, including auditor and owner names, are sent to that sheet. Do not connect it without your employer's approval. Everything else, including fonts, Chart.js, React and Babel, is served from this site, so visitors' browsers contact only GitHub Pages.
 
 ### Skills and competence records are personal data
 
