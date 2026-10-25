@@ -109,6 +109,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <button role="tab" aria-selected="true" data-tab="matrix">Matrix</button>
   <button role="tab" aria-selected="false" data-tab="setup">People and skills</button>
   <button role="tab" aria-selected="false" data-tab="cover">Coverage and gaps</button>
+  <button role="tab" aria-selected="false" data-tab="audit">Audit pack</button>
   <button role="tab" aria-selected="false" data-tab="log">Change log</button>
   <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
 </nav>
@@ -157,6 +158,20 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <div class="card"><h2>Who to cross-train next</h2><div id="suggest"></div></div>
   <div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
   <p class="disc">The checks look for gaps in the record. They cannot tell whether a sign-off was a fair judgement of the person's skill.</p>
+</section>
+
+<section id="tab-audit" hidden>
+  <div class="card"><h2>Audit evidence pack</h2>
+    <p class="sm"><strong>This is an index, not proof.</strong> It lists every level 3 and 4 sign-off with its assessor, date, evidence reference and the last change recorded in the log, shows which sign-offs count and which do not, and says what is missing. It does not hold the signed sheets or certificates, and it cannot show that a name, date or reference is true. An auditor will ask to see the documents the references point to, and how you control them.</p>
+    <label class="sm" style="display:block">Client or customer requirements that apply (clause numbers or wording, so they print in the pack)
+      <textarea id="clientReq" rows="3" maxlength="1000" style="width:100%"></textarea></label>
+    <div class="toolbar" style="margin-top:12px"><button class="btn" id="btnPack" type="button">Print evidence pack</button><button class="btn sec" id="btnRegCsv" type="button">Download sign-off register as CSV</button></div>
+    <div id="packSummary" class="sm" role="status"></div>
+  </div>
+  <div class="card"><h2>What the matrix helps with, and what it does not</h2>
+    <p class="sm">Requirements are paraphrased from ISO 9001:2015 and ISO 45001:2018 clause 7, and from UK health and safety law. Check the current text of the standard or regulation you are audited against. The last column is worked out from your data. It describes the record. It is not a finding of compliance.</p>
+    <div class="tablewrap"><table id="mapTable"></table></div>
+  </div>
 </section>
 
 <section id="tab-log" hidden>
@@ -233,7 +248,7 @@ var LV=["Not trained","In training","Needs supervision","Competent alone","Can t
 var MAXP=60,MAXS=40;
 var S=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,edit=null;
 var ZERO="0000000000000000000000000000000000000000000000000000000000000000",MAXLOG=2000;
-function blank(){return {team:"",months:12,needEv:false,example:false,people:[],skills:[],cells:{},log:[],logBase:ZERO};}
+function blank(){return {team:"",months:12,needEv:false,clientReq:"",example:false,people:[],skills:[],cells:{},log:[],logBase:ZERO};}
 function $(id){return document.getElementById(id);}
 function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -265,7 +280,7 @@ function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:"",ev
 
 function clean(d){
   var o=blank();if(!d||typeof d!=="object")return o;
-  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));o.example=d.example===true;o.needEv=d.needEv===true;
+  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));o.example=d.example===true;o.needEv=d.needEv===true;o.clientReq=str(d.clientReq,1000);
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
@@ -478,7 +493,7 @@ function rerender(){var ae=document.activeElement,key=ae&&ae.getAttribute&&ae.ge
   if(ae&&typeof ae.selectionStart==="number"){ss=ae.selectionStart;se=ae.selectionEnd;}
   var y=window.scrollY;renderAll();window.scrollTo(0,y);
   if(key){var q=document.querySelector('[data-k="'+key+'"]');if(q){q.focus();if(ss!==null){try{q.setSelectionRange(ss,se);}catch(e){}}}}}
-function renderAll(){renderStatus();renderLegend();renderGrid();renderSetup();renderCover();renderLog();$("banner").hidden=!S.example;}
+function renderAll(){renderStatus();renderLegend();renderGrid();renderSetup();renderCover();renderAudit();renderLog();$("banner").hidden=!S.example;}
 function renderStatus(){
   var A=analyse(),el=$("status");el.innerHTML="";
   if(!S.people.length||!S.skills.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing to check yet."}),h("div",{class:"sm",text:"Add people and skills on the People and skills tab, or load the example."}));return;}
@@ -534,7 +549,7 @@ $("dlgOk").onclick=function(){
   if((old.ev||"")!==v.ev)ch.push("evidence reference \""+(old.ev||"")+"\" to \""+v.ev+"\"");
   if(old.plan!==v.plan)ch.push("training date "+(fmt(old.plan)||"none")+" to "+(fmt(v.plan)||"none"));
   if(old.note!==v.note)ch.push("assessor note edited");
-  if(ch.length)logAdd((P(edit.pid).name||"(no name)")+", "+(K(edit.sid).name||"(no name)")+": "+ch.join("; "));
+  if(ch.length)logAdd("[cell "+edit.pid+":"+edit.sid+"] "+(P(edit.pid).name||"(no name)")+", "+(K(edit.sid).name||"(no name)")+": "+ch.join("; "));
   if(v.lv||v.by||v.on||v.plan||v.note||v.ev)S.cells[k]=v;else delete S.cells[k];
   closeDlg();touch();rerender();};
 $("dlgCancel").onclick=closeDlg;
@@ -571,6 +586,88 @@ function buildSheet(pid,sid){var r=$("report"),p=P(pid),s=K(sid),c=cell(pid,sid)
   add(r,h("p",{class:"sm",text:"Keep the signed sheet in your controlled records. Enter its reference in the matrix. The matrix records that the sheet exists. It does not hold or prove it. Printed "+fmt(today())+"."}));}
 $("dlgSheet").onclick=function(){if(!edit)return;sheetMode=true;buildSheet(edit.pid,edit.sid);var keep=edit;$("dlg").close();window.print();sheetMode=false;setTimeout(function(){edit=keep;},0);};
 window.addEventListener("afterprint",function(){sheetMode=false;});
+
+/* ---------- audit pack ---------- */
+function stats(){
+  var A=analyse(),o={A:A,people:S.people.length,skills:S.skills.length,rated:0,counted:0,countedEv:0,unsigned:0,expired:0,planned:0,late:0,sop:0,short:0,critShort:0,rows:[]};
+  S.skills.forEach(function(s){if((s.sop||"").trim())o.sop++;if(A.cov[s.id].ok.length<s.need){o.short++;if(s.crit)o.critShort++;}});
+  var last={};S.log.forEach(function(e){var m=/^\[cell (\d+):(\d+)\]/.exec(e.what);if(m)last[m[1]+":"+m[2]]=e;});
+  S.people.forEach(function(p){S.skills.forEach(function(s){var st=state(p,s),c=st.c;
+    if(c.lv>=3){o.rated++;if(st.ok){o.counted++;if((c.ev||"").trim())o.countedEv++;}if(st.unsigned)o.unsigned++;if(st.expired)o.expired++;
+      var le=last[p.id+":"+s.id];
+      o.rows.push({p:p,s:s,c:c,st:st,until:c.on?addMonths(c.on,S.months):"",log:le?("No. "+le.n+", "+le.at.slice(0,10)+(le.who?", "+le.who:", no name")):"None in the log"});}
+    else{if(c.plan){o.planned++;if(st.late)o.late++;}}});});
+  o.v=verifyLog();return o;}
+function mapRows(o){
+  var evAll=o.counted>0&&o.countedEv===o.counted;
+  return [
+   {req:"Determine the competence needed for work that affects quality or health and safety. (ISO 9001 7.2 a, ISO 45001 7.2 a)",
+    helps:"A list of skills by area, each with an SOP number, a number of signed-off people needed, and a critical flag.",
+    lim:"It does not decide what competence is needed. That is a management decision based on the risks of the work. Education and experience requirements are not recorded.",
+    st:o.skills===0?"Not supported by the data":"Partly supported",
+    det:o.sop+" of "+o.skills+" skills have a written standard (SOP number) recorded."},
+   {req:"Make sure people are competent, on the basis of education, training or experience. (7.2 b)",
+    helps:"A level only counts with an assessor who is not the operator, a date inside the valid period, and (if you turn it on) an evidence reference.",
+    lim:"It records observed task performance only. It does not record education, qualifications or experience, or whether the assessor is themselves competent to assess.",
+    st:o.counted===0?"Not supported by the data":"Partly supported",
+    det:o.counted+" of "+o.rated+" level 3 and 4 ratings count. Skills below the number of signed-off people you set: "+o.short+" of "+o.skills+" ("+o.critShort+" critical)."},
+   {req:"Where needed, take action to gain the competence, and evaluate whether the action worked. (7.2 c)",
+    helps:"Training dates for people below level 3, a flag when a date has passed, and sign-offs that expire so competence is looked at again.",
+    lim:"It does not record that training took place, what it covered, or any evaluation of its effectiveness beyond the next sign-off.",
+    st:"Partly supported",det:o.planned+" people-skill pairs below level 3 have a training date. Dates that have passed: "+o.late+"."},
+   {req:"Keep documented information as evidence of competence. (7.2 d)",
+    helps:"An evidence reference on each sign-off, a printable signed assessment sheet, and a change log with checksums.",
+    lim:"The reference points to a document held somewhere else. The matrix does not hold it, and cannot check it exists or is genuine. Keeping it means controlled storage.",
+    st:o.counted===0?"Not supported by the data":evAll?"Supported by the data entered":"Partly supported",
+    det:o.countedEv+" of "+o.counted+" counted sign-offs have an evidence reference."},
+   {req:"Control the documented information: identification, access, changes, storage, retention. (ISO 9001 7.5.3, ISO 45001 7.5.3)",
+    helps:"A change log that shows if its entries were edited outside the tool.",
+    lim:"No login, no access control, no trusted clock, no approval step, no retention rule. The file sits on a device or a shared folder you control. This needs a document control system.",
+    st:"Not supported by this tool",det:"The log chain is "+(o.v.ok?"intact across "+o.v.count+(o.v.count===1?" entry":" entries"):"broken at entry "+o.v.bad)+". "+o.A.gaps.length+(o.A.gaps.length===1?" gap":" gaps")+" found by the checks."},
+   {req:"People are aware of the policy, their contribution and the consequences of not following requirements. (7.3)",
+    helps:"Nothing directly.",lim:"Awareness is shown by briefings, toolbox talks and how people answer questions. It is not in the matrix.",
+    st:"Not supported by this tool",det:"Not applicable to the data."},
+   {req:"UK duties to give information, instruction, training and supervision, and to take capabilities into account when giving people tasks. (Health and Safety at Work etc. Act 1974 section 2(2)(c), Management of Health and Safety at Work Regulations 1999 regulation 13)",
+    helps:"Shows who is signed off for each task and which tasks, especially critical ones, have nobody or too few signed off.",
+    lim:"Whether the duty is met is for the employer to judge, and for the enforcing authority to test. A record of sign-offs does not show that training was suitable or that supervision happened.",
+    st:"Partly supported",det:"Critical skills below the number you set: "+o.critShort+"."},
+   {req:"Customer or client requirements.",helps:"Whatever you enter in the box above, printed in the pack.",lim:"The tool does not know your customer's requirements and does not test against them.",
+    st:S.clientReq.trim()?"Listed, not tested":"Not assessed",det:S.clientReq.trim()?"Requirements were entered. Check each against the evidence.":"None entered."}];}
+function renderAudit(){var o=stats();$("clientReq").value=S.clientReq;
+  $("packSummary").textContent=o.counted+" of "+o.rated+" level 3 and 4 ratings count; "+o.countedEv+" of those counted have an evidence reference; the change log chain is "+(o.v.ok?"intact ("+o.v.count+(o.v.count===1?" entry":" entries")+")":"broken at entry "+o.v.bad)+"; "+o.A.gaps.length+(o.A.gaps.length===1?" gap":" gaps")+" found by the checks.";
+  var t=$("mapTable");t.innerHTML="";var tr=h("tr");["Requirement","What the matrix gives","What it does not do","Position from your data"].forEach(function(x){add(tr,h("th",{scope:"col",text:x}));});add(t,h("thead",{},tr));var tb=h("tbody");
+  mapRows(o).forEach(function(r){add(tb,h("tr",{},h("td",{text:r.req,style:"min-width:200px"}),h("td",{text:r.helps,style:"min-width:180px"}),h("td",{text:r.lim,style:"min-width:200px"}),h("td",{style:"min-width:170px"},h("strong",{text:r.st}),h("div",{class:"sm",text:r.det}))));});add(t,tb);}
+$("clientReq").addEventListener("input",function(){S.clientReq=this.value.slice(0,1000);touch();});
+function regRows(o){return o.rows.map(function(x){var c=x.c,st=x.st;return [x.p.name,x.p.role,x.s.name,x.s.sop?sopL(x.s):"",c.lv,c.by,c.on?fmt(c.on):"",x.until?fmt(x.until):"",c.ev||"",st.ok?"Counted":"Not counted: "+st.why,x.log];});}
+var REGH=["Person","Role","Skill","SOP","Level","Assessor","Sign-off date","Valid until","Evidence reference","Counted?","Last change in the log"];
+$("btnRegCsv").onclick=function(){var o=stats();download("skills-sign-off-register-"+today()+".csv",[REGH].concat(regRows(o)).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+$("btnPack").onclick=function(){sheetMode=true;buildPack();window.print();sheetMode=false;};
+function buildPack(){var r=$("report"),o=stats(),A=o.A;r.innerHTML="";
+  add(r,h("h1",{text:"Skills and competence: audit evidence pack"}));
+  if(S.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real team."}));
+  add(r,h("p",{text:(S.team||"Team not named")+". Printed "+new Date().toLocaleString("en-GB")+(whoName()?" by "+whoName():"")+". Sign-offs are valid for "+S.months+" months. "+(S.needEv?"An evidence reference is required for a level 3 or 4 to count.":"An evidence reference is not required for a level to count.")}));
+  add(r,h("p",{class:"gapx",text:"This pack is an index to the evidence. It is not proof of competence or of compliance. It does not contain the signed assessments, certificates or training records, and it cannot show that a name, date or reference is true. Those documents, and how they are controlled, are the evidence."}));
+  add(r,h("h2",{text:"1 Position"}));
+  var u=h("ul");[o.people+" people and "+o.skills+" skills.",o.counted+" of "+o.rated+" level 3 and 4 ratings count. "+"Not signed off properly: "+o.unsigned+". Expired: "+o.expired+".",o.countedEv+" of the "+o.counted+" counted sign-offs have an evidence reference.","Skills with fewer signed-off people than set: "+o.short+" of "+o.skills+" ("+o.critShort+" critical).",
+    "Change log: "+(o.v.ok?"chain intact across "+o.v.count+(o.v.count===1?" entry":" entries")+". That shows nothing was changed inside the file since each entry was written. It does not show the names or times were true.":"CHAIN BROKEN at entry "+o.v.bad+". The log was edited outside the tool or the file is damaged."),
+    A.gaps.length?A.gaps.length+(A.gaps.length===1?" gap":" gaps")+" found by the checks (section 4).":"No gaps found by the checks. That does not mean the record is complete or right."].forEach(function(x){add(u,h("li",{text:x}));});add(r,u);
+  add(r,h("h2",{text:"2 Sign-off register"}));
+  var t=h("table",{style:"font-size:.7rem"}),hr=h("tr");REGH.forEach(function(x){add(hr,h("th",{text:x}));});add(t,hr);
+  regRows(o).forEach(function(row){var tr=h("tr");row.forEach(function(c){add(tr,h("td",{text:String(c)}));});add(t,tr);});
+  if(!o.rows.length)add(t,h("tr",{},h("td",{colspan:REGH.length,text:"No level 3 or 4 ratings recorded."})));add(r,t);
+  add(r,h("p",{class:"sm",text:"\"None in the log\" means the rating was entered before the log existed, the log was cleared, or the data came from a file that had no log. It is not an error in itself, but an auditor may ask how the rating was authorised."}));
+  add(r,h("h2",{text:"3 What this helps with, and what it does not"}));
+  var t2=h("table",{style:"font-size:.7rem"}),h2=h("tr");["Requirement","What the matrix gives","What it does not do","Position from the data"].forEach(function(x){add(h2,h("th",{text:x}));});add(t2,h2);
+  mapRows(o).forEach(function(m){add(t2,h("tr",{},h("td",{text:m.req}),h("td",{text:m.helps}),h("td",{text:m.lim}),h("td",{text:m.st+". "+m.det})));});add(r,t2);
+  if(S.clientReq.trim())add(r,h("p",{},h("strong",{text:"Client requirements entered: "}),S.clientReq));
+  add(r,h("h2",{text:"4 Gaps and notes"}));var all=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!all.length)add(r,h("p",{text:"None."}));else{var ul=h("ul");all.forEach(function(x){add(ul,h("li",{text:x}));});add(r,ul);}
+  add(r,h("h2",{text:"5 Latest changes in the log"}));
+  var t3=h("table",{style:"font-size:.7rem"}),h3=h("tr");["No.","When","Who","What changed"].forEach(function(x){add(h3,h("th",{text:x}));});add(t3,h3);
+  S.log.slice(-25).reverse().forEach(function(e){var d=new Date(e.at);add(t3,h("tr",{},h("td",{text:String(e.n)}),h("td",{text:isNaN(d)?e.at:d.toLocaleString("en-GB")}),h("td",{text:e.who||"(no name)"}),h("td",{text:e.what})));});
+  if(!S.log.length)add(t3,h("tr",{},h("td",{colspan:4,text:"No changes recorded."})));add(r,t3);
+  add(r,h("h2",{text:"6 Review"}));
+  var t4=h("table",{});[["Reviewed by (name and role)",""],["Signature",""],["Date",""],["Where the signed assessments and certificates are held",""]].forEach(function(x){add(t4,h("tr",{},h("th",{text:x[0],style:"width:35%;text-align:left"}),h("td",{style:"height:2.4em"})));});add(r,t4);}
 
 function renderSetup(){
   $("setMonths").value=S.months;$("setTeam").value=S.team;$("setEv").checked=S.needEv===true;
@@ -636,7 +733,7 @@ function goTo(ref){
   else{showTab("setup");var id=ref.slice(1),kk=ref.charAt(0)==="s"?"sk":"pn";setTimeout(function(){var q=document.querySelector('[data-k="'+kk+id+'"]');if(q){q.scrollIntoView({block:"center"});q.focus();}},30);}
 }
 
-function showTab(t){uiSet("tab",t);["matrix","setup","cover","log","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+function showTab(t){uiSet("tab",t);["matrix","setup","cover","audit","log","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
   document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});}
 document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
 
@@ -693,7 +790,7 @@ function example(){
 
 var sv=load();if(sv)S=sv;else{S=example();saveNow();}
 renderAll();renderSave();fsInit();
-var ui=uiGet();showTab(["matrix","setup","cover","log","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
+var ui=uiGet();showTab(["matrix","setup","cover","audit","log","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
 window.__fs=FS;window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
 })();
 </script>
