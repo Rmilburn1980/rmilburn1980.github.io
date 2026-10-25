@@ -177,8 +177,8 @@ function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray
 
 /* same sanitising as the Skills Matrix Builder */
 function cleanM(d){
-  var o={team:"",months:12,people:[],skills:[],cells:{}};if(!d||typeof d!=="object")return o;
-  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));
+  var o={team:"",months:12,needEv:false,people:[],skills:[],cells:{}};if(!d||typeof d!=="object")return o;
+  o.needEv=d.needEv===true;o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
@@ -186,8 +186,8 @@ function cleanM(d){
   var pi={},si={};o.people.forEach(function(p){pi[p.id]=1;});o.skills.forEach(function(s){si[s.id]=1;});
   var c=d.cells&&typeof d.cells==="object"?d.cells:{};
   Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
-    var v={lv:Math.max(0,Math.min(4,parseInt(x.lv,10)||0)),by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200)};
-    if(v.lv||v.by||v.on||v.plan||v.note)o.cells[k]=v;});
+    var v={lv:Math.max(0,Math.min(4,parseInt(x.lv,10)||0)),by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200),ev:str(x.ev,60)};
+    if(v.lv||v.by||v.on||v.plan||v.note||v.ev)o.cells[k]=v;});
   return o;
 }
 function cleanTeams(list){
@@ -197,7 +197,7 @@ function cleanTeams(list){
     out.push({id:id,name:nm,saved:dOk(t.saved),loaded:dOk(t.loaded)||today(),at:parseInt(t.at,10)||0,ex:t.ex===true,m:m});});
   return out;
 }
-function cellOf(m,p,s){return m.cells[p+":"+s]||{lv:0,by:"",on:"",plan:"",note:""};}
+function cellOf(m,p,s){return m.cells[p+":"+s]||{lv:0,by:"",on:"",plan:"",note:"",ev:""};}
 function state(m,p,s){
   var c=cellOf(m,p.id,s.id),td=today(),r={lv:c.lv,ok:false,unsigned:false,expired:false,late:false,exp:"",why:""};
   if(c.lv>=3){
@@ -205,6 +205,7 @@ function state(m,p,s){
     else if(norm(c.by)===norm(p.name)){r.unsigned=true;r.why="the operator signed off their own level";}
     else if(!c.on){r.unsigned=true;r.why="no sign-off date";}
     else if(c.on>td){r.unsigned=true;r.why="sign-off date is in the future";}
+    else if(m.needEv&&!(c.ev||"").trim()){r.unsigned=true;r.why="no evidence reference (the team requires one)";}
     else{r.exp=addMonths(c.on,m.months);if(r.exp<td){r.expired=true;r.why="sign-off ran out on "+fmt(r.exp);}else r.ok=true;}
   }else if(c.plan&&c.plan<td){r.late=true;r.why="training date "+fmt(c.plan)+" has passed";}
   return r;

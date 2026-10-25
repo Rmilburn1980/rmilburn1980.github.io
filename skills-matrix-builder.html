@@ -109,6 +109,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <button role="tab" aria-selected="true" data-tab="matrix">Matrix</button>
   <button role="tab" aria-selected="false" data-tab="setup">People and skills</button>
   <button role="tab" aria-selected="false" data-tab="cover">Coverage and gaps</button>
+  <button role="tab" aria-selected="false" data-tab="log">Change log</button>
   <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
 </nav>
 <main>
@@ -116,6 +117,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <div class="banner" id="banner" hidden>Example data is loaded. Every name and rating is made up so you can see how the checks work. It is not a real team. Press New matrix to start your own.</div>
 <div class="card" id="dpNotice" role="note" style="border-color:var(--med)"><h2>Data protection notice</h2>
   <p class="sm" style="margin:0 0 6px">This tool records personal information about named employees. It stays in this browser and in files you save. Nothing is sent to this website. Your employer is responsible for this data. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved SharePoint location. Do not email files or store them on personal devices. Notes must describe what the assessor saw on the task only. <strong>Do not record health, injury, disability, adjustments, absence, beliefs, union membership, criminal or disciplinary information.</strong> Employees can ask to see and correct their records. Clear data from this browser when you have finished.</p></div>
+<div class="card" style="padding:10px 14px"><label class="sm" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">Your name, recorded in the change log against every edit <input type="text" id="whoName" maxlength="60" autocomplete="name" style="min-width:200px"></label></div>
 <div class="status st-empty" id="status" role="status" aria-live="polite"></div>
 <div class="banner" id="syncBanner" role="alert" hidden></div>
 <div class="toolbar">
@@ -138,7 +140,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <div class="card"><h2>Settings</h2>
     <p class="sm">Whatever you enter here appears in the <a href="company-skills-dashboard.html">Company Skills Dashboard</a> straight away, under the team name below. Give each team a different name.</p>
     <div class="f"><label>Sign-off is valid for (months)<input type="number" id="setMonths" min="1" max="60"></label>
-    <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label></div>
+    <label>Team or area name<input type="text" id="setTeam" maxlength="80"></label>
+    <label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="setEv"> A level 3 or 4 only counts when an evidence reference is entered (assessment form or certificate number)</label></div>
   </div>
   <div class="card" id="fsCard"></div>
   <div class="card"><h2>Clear data from this browser</h2><p class="sm">Removes this matrix, the copy shown in the Company Skills Dashboard, and the link to the shared folder from this browser. Files already saved to a folder or your computer are not touched.</p><button class="btn danger small" id="btnWipe" type="button">Clear all data from this browser</button></div>
@@ -154,6 +157,15 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <div class="card"><h2>Who to cross-train next</h2><div id="suggest"></div></div>
   <div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
   <p class="disc">The checks look for gaps in the record. They cannot tell whether a sign-off was a fair judgement of the person's skill.</p>
+</section>
+
+<section id="tab-log" hidden>
+  <div class="card"><h2>Change log</h2>
+    <p class="sm">Every change to a rating, sign-off, person, skill or setting is recorded here with the time and the name entered above. Each entry carries a checksum that includes the one before it, so an entry changed or removed outside this tool breaks the chain and is reported as a gap. This helps you trace edits. It does not stop a determined person who rebuilds the whole chain, and the name and the clock are whatever the browser and the user supplied.</p>
+    <div class="toolbar"><button class="btn sec" id="btnVerify" type="button">Check the log</button><button class="btn sec" id="btnLogCsv" type="button">Download log as CSV</button></div>
+    <p id="logResult" role="status" class="sm"></p>
+    <div class="tablewrap"><table id="logTable"></table></div>
+  </div>
 </section>
 
 <section id="tab-guide" class="guide" hidden>
@@ -179,6 +191,14 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li>A person who is the only signed-off cover for three or more skills is listed as a key person risk.</li>
     </ul>
   </div>
+  <div class="card"><h2>Evidence and the change log</h2>
+    <ul>
+      <li>Print an assessment sheet from any rating (open the square, then Print assessment sheet). The assessor watches the task, writes what they saw, and the assessor, operator and a manager sign it. File it in your controlled records and enter its reference here.</li>
+      <li>Turn on the setting in People and skills if a level 3 or 4 should only count when an evidence reference is entered.</li>
+      <li>The change log records each edit with the time and the name you enter above the matrix. Its checksums show if the log was edited outside this tool.</li>
+      <li>None of this makes the matrix a controlled record on its own. Anyone who can edit the file can enter any name, date or reference, and the log cannot prove who they were. For an audit, the signed sheets, certificates and your company's own training records are the evidence. The matrix is the index to them.</li>
+    </ul>
+  </div>
   <div class="card"><h2>Good practice</h2>
     <ul>
       <li>Sign off by watching the person do the task, not by asking them. Write down what you saw, and the date.</li>
@@ -199,7 +219,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <dialog id="dlg" aria-labelledby="dlgT">
   <h2 id="dlgT"></h2><p class="sm" id="dlgS"></p>
   <div class="f" id="dlgF"></div>
-  <div class="toolbar" style="margin:14px 0 0"><button class="btn" id="dlgOk">Save</button><button class="btn sec" id="dlgCancel">Cancel</button></div>
+  <div class="toolbar" style="margin:14px 0 0"><button class="btn" id="dlgOk">Save</button><button class="btn sec" id="dlgCancel">Cancel</button><button class="btn sec" id="dlgSheet" type="button">Print assessment sheet</button></div>
 </dialog>
 
 <div id="report" aria-hidden="true"></div>
@@ -212,7 +232,8 @@ var KEY="rmilburn-skills-matrix-v1", UIK="rmilburn-skills-matrix-ui";
 var LV=["Not trained","In training","Needs supervision","Competent alone","Can train others"];
 var MAXP=60,MAXS=40;
 var S=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,edit=null;
-function blank(){return {team:"",months:12,example:false,people:[],skills:[],cells:{}};}
+var ZERO="0000000000000000000000000000000000000000000000000000000000000000",MAXLOG=2000;
+function blank(){return {team:"",months:12,needEv:false,example:false,people:[],skills:[],cells:{},log:[],logBase:ZERO};}
 function $(id){return document.getElementById(id);}
 function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
 function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -240,11 +261,11 @@ function ck(p,s){return p+":"+s;}
 function sopHref(s){var u=(s.sopUrl||"").trim();if(!u||u.length>500)return "";try{var x=new URL(u);return x.protocol==="https:"?x.href:"";}catch(e){return "";}}
 function sopNode(s){if(!s.sop)return null;var href=sopHref(s);return href?h("div",{},h("a",{class:"sm",href:href,target:"_blank",rel:"noopener noreferrer","aria-label":sopL(s)+" (opens the document in a new tab)",text:sopL(s)})):h("div",{class:"sm",text:sopL(s)});}
 function sopL(s){return /^sop/i.test(s.sop.trim())?s.sop.trim():"SOP "+s.sop.trim();}
-function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:""};}
+function cell(p,s){return S.cells[ck(p,s)]||{lv:0,by:"",on:"",plan:"",note:"",ev:""};}
 
 function clean(d){
   var o=blank();if(!d||typeof d!=="object")return o;
-  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));o.example=d.example===true;
+  o.team=str(d.team,80);o.months=Math.max(1,Math.min(60,parseInt(d.months,10)||12));o.example=d.example===true;o.needEv=d.needEv===true;
   var seen={};
   (Array.isArray(d.people)?d.people.slice(0,MAXP):[]).forEach(function(p){if(!p)return;var id=parseInt(p.id,10);if(!(id>0)||seen[id])return;seen[id]=1;o.people.push({id:id,name:str(p.name,60),role:str(p.role,60)});});
   seen={};
@@ -253,8 +274,10 @@ function clean(d){
   var c=d.cells&&typeof d.cells==="object"?d.cells:{};
   Object.keys(c).slice(0,MAXP*MAXS).forEach(function(k){var m=/^(\d+):(\d+)$/.exec(k);if(!m||!pi[m[1]]||!si[m[2]])return;var x=c[k]||{};
     var lv=Math.max(0,Math.min(4,parseInt(x.lv,10)||0));
-    var v={lv:lv,by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200)};
-    if(v.lv||v.by||v.on||v.plan||v.note)o.cells[k]=v;});
+    var v={lv:lv,by:str(x.by,60),on:dOk(x.on),plan:dOk(x.plan),note:str(x.note,200),ev:str(x.ev,60)};
+    if(v.lv||v.by||v.on||v.plan||v.note||v.ev)o.cells[k]=v;});
+  o.logBase=/^[0-9a-f]{64}$/.test(str(d.logBase,64))?d.logBase:ZERO;
+  (Array.isArray(d.log)?d.log.slice(-MAXLOG):[]).forEach(function(e){if(!e||typeof e!=="object")return;var n=parseInt(e.n,10);if(!(n>0))return;o.log.push({n:n,at:str(e.at,40),who:str(e.who,60),what:str(e.what,400),prev:str(e.prev,64),h:str(e.h,64)});});
   return o;
 }
 
@@ -266,11 +289,40 @@ function state(p,s){
     else if(norm(c.by)===norm(p.name)){r.unsigned=true;r.self=true;r.why="the operator signed off their own level";}
     else if(!c.on){r.unsigned=true;r.why="no sign-off date";}
     else if(c.on>td){r.unsigned=true;r.why="sign-off date is in the future";}
+    else if(S.needEv&&!(c.ev||"").trim()){r.unsigned=true;r.why="no evidence reference (the settings require one)";}
     else if(addMonths(c.on,S.months)<td){r.expired=true;r.why="sign-off ran out on "+fmt(addMonths(c.on,S.months));}
     else r.ok=true;
   }else if(c.plan&&c.plan<td){r.late=true;r.why="training date "+fmt(c.plan)+" has passed";}
   return r;
 }
+
+
+/* ---------- change log with a hash chain ---------- */
+var K256=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+function sha256(msg){
+  var b=new TextEncoder().encode(msg),l=b.length,n=((l+9+63)>>6)<<6,m=new Uint8Array(n),i,j;m.set(b);m[l]=0x80;
+  var bits=l*8,dv=new DataView(m.buffer);dv.setUint32(n-8,Math.floor(bits/4294967296));dv.setUint32(n-4,bits>>>0);
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],w=new Array(64);
+  function rr(x,k){return (x>>>k)|(x<<(32-k));}
+  for(i=0;i<n;i+=64){
+    for(j=0;j<16;j++)w[j]=dv.getUint32(i+j*4);
+    for(j=16;j<64;j++){var s0=rr(w[j-15],7)^rr(w[j-15],18)^(w[j-15]>>>3),s1=rr(w[j-2],17)^rr(w[j-2],19)^(w[j-2]>>>10);w[j]=(w[j-16]+s0+w[j-7]+s1)|0;}
+    var a=H[0],bb=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],hh=H[7];
+    for(j=0;j<64;j++){var S1=rr(e,6)^rr(e,11)^rr(e,25),ch=(e&f)^(~e&g),t1=(hh+S1+ch+K256[j]+w[j])|0,S0=rr(a,2)^rr(a,13)^rr(a,22),mj=(a&bb)^(a&c)^(bb&c),t2=(S0+mj)|0;
+      hh=g;g=f;f=e;e=(d+t1)|0;d=c;c=bb;bb=a;a=(t1+t2)|0;}
+    H[0]=(H[0]+a)|0;H[1]=(H[1]+bb)|0;H[2]=(H[2]+c)|0;H[3]=(H[3]+d)|0;H[4]=(H[4]+e)|0;H[5]=(H[5]+f)|0;H[6]=(H[6]+g)|0;H[7]=(H[7]+hh)|0;}
+  return H.map(function(x){return ("00000000"+(x>>>0).toString(16)).slice(-8);}).join("");}
+function entryHash(prev,n,at,who,what){return sha256([prev,n,at,who,what].join("|"));}
+function whoName(){return String(uiGet().who||"").trim().slice(0,60);}
+function logAdd(what){
+  var L=S.log,last=L.length?L[L.length-1]:null,n=last?last.n+1:1,prev=last?last.h:S.logBase,at=new Date().toISOString(),who=whoName(),w=String(what).slice(0,400);
+  L.push({n:n,at:at,who:who,what:w,prev:prev,h:entryHash(prev,n,at,who,w)});
+  while(L.length>MAXLOG){var o=L.shift();S.logBase=o.h;}}
+var vCache={k:"",v:null};
+function verifyLog(){var L=S.log,k=S.logBase+L.map(function(e){return e.n+"|"+e.at+"|"+e.who+"|"+e.what+"|"+e.prev+"|"+e.h;}).join("\n");if(vCache.k===k)return vCache.v;
+  var res={ok:true,bad:0,count:L.length},prev=S.logBase,pn=0,i;
+  for(i=0;i<L.length;i++){var e=L[i];if(e.prev!==prev||(pn&&e.n!==pn+1)||entryHash(e.prev,e.n,e.at,e.who,e.what)!==e.h){res.ok=false;res.bad=e.n;break;}prev=e.h;pn=e.n;}
+  vCache={k:k,v:res};return res;}
 
 function analyse(){
   var gaps=[],notes=[],cov={},key={};
@@ -302,6 +354,10 @@ function analyse(){
     if(!any&&S.skills.length)n("p"+p.id,(p.name||"(no name)")+" has no skills rated yet.");
   });
   var names={};S.people.forEach(function(p){var k=norm(p.name);if(k){if(names[k])g("p"+p.id,"Two people share the name \""+p.name+"\". Sign-offs by name cannot tell them apart.");names[k]=1;}});
+  var vl=verifyLog();if(!vl.ok)g("log","The change log does not match its own checksums, starting at entry "+vl.bad+". Someone has edited the log outside this tool, or the file is damaged. Do not rely on it as a record.");
+  var nw=S.log.filter(function(e){return !e.who.trim();}).length;if(nw)g("log",plural(nw,"change")+" in the log "+(nw===1?"has":"have")+" no name against it. Enter your name above the matrix before you edit.");
+  var noEv=0;S.people.forEach(function(p){S.skills.forEach(function(s){var st=state(p,s);if(st.ok&&!(st.c.ev||"").trim())noEv++;});});
+  if(noEv&&!S.needEv)n("log",plural(noEv,"counted sign-off")+" "+(noEv===1?"has":"have")+" no evidence reference. Turn on the setting in People and skills to require one.");
   return {gaps:gaps,notes:notes,cov:cov,key:key};
 }
 
@@ -317,7 +373,7 @@ function publish(){
     var u=uiGet(),last=norm(u.pub||""),nm=S.team.trim()||"Unnamed team",nk=norm(nm);
     d=d.filter(function(t){var k=norm(t&&t.name);return k!==last&&k!==nk;});
     var has=S.people.length&&S.skills.length;
-    if(has)d.push({name:nm,saved:today(),at:Date.now(),ex:S.example===true,m:S});
+    if(has)d.push({name:nm,saved:today(),at:Date.now(),ex:S.example===true,m:Object.assign({},S,{log:[]})});
     localStorage.setItem(SHK,JSON.stringify({teams:d}));uiSet("pub",has?nm:"");
   }catch(e){}
 }
@@ -422,7 +478,7 @@ function rerender(){var ae=document.activeElement,key=ae&&ae.getAttribute&&ae.ge
   if(ae&&typeof ae.selectionStart==="number"){ss=ae.selectionStart;se=ae.selectionEnd;}
   var y=window.scrollY;renderAll();window.scrollTo(0,y);
   if(key){var q=document.querySelector('[data-k="'+key+'"]');if(q){q.focus();if(ss!==null){try{q.setSelectionRange(ss,se);}catch(e){}}}}}
-function renderAll(){renderStatus();renderLegend();renderGrid();renderSetup();renderCover();$("banner").hidden=!S.example;}
+function renderAll(){renderStatus();renderLegend();renderGrid();renderSetup();renderCover();renderLog();$("banner").hidden=!S.example;}
 function renderStatus(){
   var A=analyse(),el=$("status");el.innerHTML="";
   if(!S.people.length||!S.skills.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing to check yet."}),h("div",{class:"sm",text:"Add people and skills on the People and skills tab, or load the example."}));return;}
@@ -465,12 +521,21 @@ function openCell(pid,sid){
     h("label",{},"Signed off by",h("input",{type:"text",id:"dBy",value:c.by,maxlength:"60"})),
     h("label",{},"Date of sign-off",h("input",{type:"date",id:"dOn",value:c.on})),
     h("label",{},"Training planned by",h("input",{type:"date",id:"dPlan",value:c.plan})),
+    h("label",{class:"full"},"Evidence reference (assessment form or certificate number)",h("input",{type:"text",id:"dEv",value:c.ev||"",maxlength:"60"}),h("span",{class:"sm",text:"The number of the signed assessment sheet or certificate you keep in your controlled records. The matrix records the reference. It does not hold or prove the document."})),
     h("label",{class:"full"},"What did the assessor see?",h("input",{type:"text",id:"dNote",value:c.note,maxlength:"200"}),h("span",{class:"sm",text:"Observed task performance only. No health, absence or personal matters. The employee may read this."}))]);
   var d=$("dlg");if(typeof d.showModal==="function")d.showModal();else d.setAttribute("open","");
 }
 $("dlgOk").onclick=function(){
-  if(!edit)return;var v={lv:parseInt($("dLv").value,10)||0,by:$("dBy").value.slice(0,60),on:dOk($("dOn").value),plan:dOk($("dPlan").value),note:$("dNote").value.slice(0,200)};
-  var k=ck(edit.pid,edit.sid);if(v.lv||v.by||v.on||v.plan||v.note)S.cells[k]=v;else delete S.cells[k];
+  if(!edit)return;var v={lv:parseInt($("dLv").value,10)||0,by:$("dBy").value.slice(0,60),on:dOk($("dOn").value),plan:dOk($("dPlan").value),note:$("dNote").value.slice(0,200),ev:$("dEv").value.slice(0,60)};
+  var k=ck(edit.pid,edit.sid),old=cell(edit.pid,edit.sid),ch=[];
+  if(old.lv!==v.lv)ch.push("level "+old.lv+" to "+v.lv);
+  if(old.by!==v.by)ch.push("assessor \""+old.by+"\" to \""+v.by+"\"");
+  if(old.on!==v.on)ch.push("sign-off date "+(fmt(old.on)||"none")+" to "+(fmt(v.on)||"none"));
+  if((old.ev||"")!==v.ev)ch.push("evidence reference \""+(old.ev||"")+"\" to \""+v.ev+"\"");
+  if(old.plan!==v.plan)ch.push("training date "+(fmt(old.plan)||"none")+" to "+(fmt(v.plan)||"none"));
+  if(old.note!==v.note)ch.push("assessor note edited");
+  if(ch.length)logAdd((P(edit.pid).name||"(no name)")+", "+(K(edit.sid).name||"(no name)")+": "+ch.join("; "));
+  if(v.lv||v.by||v.on||v.plan||v.note||v.ev)S.cells[k]=v;else delete S.cells[k];
   closeDlg();touch();rerender();};
 $("dlgCancel").onclick=closeDlg;
 function closeDlg(){var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");var e=edit;edit=null;if(e){var b=document.querySelector('[data-k="c'+e.pid+'_'+e.sid+'"]');if(b)b.focus();}}
@@ -478,15 +543,44 @@ $("dlg").addEventListener("cancel",function(){edit=null;});
 
 function arm(k){armed=k;clearTimeout(armT);armT=setTimeout(function(){armed=null;rerender();},5000);rerender();}
 function txt(val,key,max,on){var e=h("input",{type:"text",value:val,maxlength:String(max),"data-k":key});e.addEventListener("input",function(){on(e.value);touch();renderStatus();renderCover();});return e;}
+
+function renderLog(){var t=$("logTable");if(!t)return;t.innerHTML="";var tr=h("tr");["No.","When","Who","What changed"].forEach(function(x){add(tr,h("th",{scope:"col",text:x}));});add(t,h("thead",{},tr));var tb=h("tbody");
+  S.log.slice().reverse().slice(0,300).forEach(function(e){var d=new Date(e.at),ds=isNaN(d)?e.at:d.toLocaleString("en-GB");add(tb,h("tr",{},h("td",{text:String(e.n)}),h("td",{text:ds}),h("td",{text:e.who||"(no name)"}),h("td",{text:e.what})));});
+  if(!S.log.length)add(tb,h("tr",{},h("td",{colspan:4,class:"sm",text:"No changes recorded yet."})));add(t,tb);
+  if(S.log.length>300)$("logResult").textContent="Showing the latest 300 of "+S.log.length+" entries. The CSV has them all.";}
+$("btnVerify").onclick=function(){var v=verifyLog();$("logResult").textContent=v.ok?("The chain is intact across "+v.count+(v.count===1?" entry":" entries")+". That means nothing was changed or removed inside this file since each entry was written. It does not prove the names or times were true."):("The chain breaks at entry "+v.bad+". The log has been altered outside this tool, or the file is damaged.");};
+$("btnLogCsv").onclick=function(){var rows=[["No","When (UTC)","Who","What changed","Previous checksum","Checksum"]].concat(S.log.map(function(e){return [e.n,e.at,e.who,e.what,e.prev,e.h];}));
+  download("skills-matrix-change-log.csv",rows.map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+var wn=$("whoName");wn.value=uiGet().who||"";wn.addEventListener("input",function(){uiSet("who",wn.value.slice(0,60));});
+var sheetMode=false;
+function buildSheet(pid,sid){var r=$("report"),p=P(pid),s=K(sid),c=cell(pid,sid);r.innerHTML="";
+  var lvEl=$("dLv"),by=$("dBy"),on=$("dOn"),ev=$("dEv"),nt=$("dNote");
+  var lv=lvEl?parseInt(lvEl.value,10)||0:c.lv,byV=by?by.value:c.by,onV=on?on.value:c.on,evV=ev?ev.value:(c.ev||""),ntV=nt?nt.value:c.note;
+  function row(a,b){return h("tr",{},h("th",{text:a,style:"width:30%;text-align:left"}),h("td",{text:b||"",style:"height:2.2em"}));}
+  add(r,h("h1",{text:"Skill assessment record"}));
+  if(S.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real person."}));
+  var t=h("table",{});
+  [["Team or area",S.team],["Skill",(s.name||"")+(s.area?" ("+s.area+")":"")],["Standard assessed against",s.sop?sopL(s)+(sopHref(s)?" "+sopHref(s):""):"Not recorded. Name the written standard here: ______"],["Operator",(p.name||"")+(p.role?", "+p.role:"")],
+    ["Level being assessed",lv>=3?lv+" "+LV[lv]:"3 Competent alone or 4 Can train others (circle one)"],["Assessor name",byV],["Date of assessment",onV?fmt(onV):""],["Sign-off valid for",S.months+" months"]].forEach(function(x){add(t,row(x[0],x[1]));});
+  add(r,t);
+  add(r,h("h2",{text:"What the assessor saw"}),h("p",{text:"Watch the task being done. Record what you saw against the standard. Do not record health, absence or personal matters."}),
+    h("div",{style:"border:1px solid #888;min-height:9em;padding:6px;white-space:pre-wrap",text:ntV||""}));
+  add(r,h("h2",{text:"Result"}),h("p",{text:"[  ] Not yet competent        [  ] 3 Competent alone        [  ] 4 Can train others"}));
+  var t2=h("table",{});[["Assessor signature",""],["Operator signature (I understand this record)",""],["Countersigned by (supervisor or manager), name and signature",""],["Evidence reference to enter in the matrix",evV],["Form reference (from your document control)",""]].forEach(function(x){add(t2,row(x[0],x[1]));});
+  add(r,t2);
+  add(r,h("p",{class:"sm",text:"Keep the signed sheet in your controlled records. Enter its reference in the matrix. The matrix records that the sheet exists. It does not hold or prove it. Printed "+fmt(today())+"."}));}
+$("dlgSheet").onclick=function(){if(!edit)return;sheetMode=true;buildSheet(edit.pid,edit.sid);var keep=edit;$("dlg").close();window.print();sheetMode=false;setTimeout(function(){edit=keep;},0);};
+window.addEventListener("afterprint",function(){sheetMode=false;});
+
 function renderSetup(){
-  $("setMonths").value=S.months;$("setTeam").value=S.team;
+  $("setMonths").value=S.months;$("setTeam").value=S.team;$("setEv").checked=S.needEv===true;
   var pl=$("peopleList");pl.innerHTML="";
   S.people.forEach(function(p){var a=armed==="p"+p.id;
     pl.appendChild(h("div",{class:"it row"},
       h("label",{},"Name",txt(p.name,"pn"+p.id,60,function(v){p.name=v;})),
       h("label",{},"Role",txt(p.role,"pr"+p.id,60,function(v){p.role=v;})),
       h("span",{}),
-      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"pd"+p.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.people=S.people.filter(function(x){return x!==p;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[0]===String(p.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("p"+p.id);}})));});
+      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"pd"+p.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){logAdd("Person removed: "+(p.name||"(no name)")+", with "+plural(Object.keys(S.cells).filter(function(k){return k.split(":")[0]===String(p.id)&&S.cells[k].lv>0;}).length,"rating")+".");S.people=S.people.filter(function(x){return x!==p;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[0]===String(p.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("p"+p.id);}})));});
   if(!S.people.length)pl.appendChild(h("p",{class:"sm",text:"No people yet."}));
   var sl=$("skillList");sl.innerHTML="";
   S.skills.forEach(function(s){var a=armed==="s"+s.id;
@@ -499,13 +593,15 @@ function renderSetup(){
       h("label",{},"SOP link (https, optional)",txt(s.sopUrl||"","su"+s.id,500,function(v){s.sopUrl=v;renderGrid();})),
       h("label",{},"People needed",nd),
       h("label",{style:"flex-direction:row;align-items:center;gap:8px"},cr,"Critical"),
-      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"sd"+s.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){S.skills=S.skills.filter(function(x){return x!==s;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[1]===String(s.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("s"+s.id);}})));});
+      h("button",{class:"btn danger small"+(a?" armed":""),type:"button","data-k":"sd"+s.id,text:a?"Confirm remove":"Remove",onclick:function(){if(a){logAdd("Skill removed: "+(s.name||"(no name)")+", with "+plural(Object.keys(S.cells).filter(function(k){return k.split(":")[1]===String(s.id)&&S.cells[k].lv>0;}).length,"rating")+".");S.skills=S.skills.filter(function(x){return x!==s;});Object.keys(S.cells).forEach(function(k){if(k.split(":")[1]===String(s.id))delete S.cells[k];});armed=null;touch();rerender();}else arm("s"+s.id);}})));});
   if(!S.skills.length)sl.appendChild(h("p",{class:"sm",text:"No skills yet."}));
 }
 $("setMonths").addEventListener("input",function(){S.months=Math.max(1,Math.min(60,parseInt(this.value,10)||12));touch();renderStatus();renderGrid();renderCover();});
+$("setMonths").addEventListener("change",function(){logAdd("Sign-off validity set to "+S.months+" months.");touch();renderLog();});
+$("setEv").addEventListener("change",function(){S.needEv=this.checked;logAdd(S.needEv?"Setting turned on: levels 3 and 4 need an evidence reference.":"Setting turned off: evidence reference not required.");touch();rerender();});
 $("setTeam").addEventListener("input",function(){S.team=this.value.slice(0,80);touch();});
-$("addPerson").onclick=function(){if(S.people.length>=MAXP)return;var id=nid(S.people);S.people.push({id:id,name:"",role:""});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="pn'+id+'"]');if(q)q.focus();},0);};
-$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",sop:"",sopUrl:"",crit:false,need:2});touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
+$("addPerson").onclick=function(){if(S.people.length>=MAXP)return;var id=nid(S.people);S.people.push({id:id,name:"",role:""});logAdd("Person added.");touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="pn'+id+'"]');if(q)q.focus();},0);};
+$("addSkill").onclick=function(){if(S.skills.length>=MAXS)return;var id=nid(S.skills);S.skills.push({id:id,name:"",area:"",sop:"",sopUrl:"",crit:false,need:2});logAdd("Skill added.");touch();rerender();setTimeout(function(){var q=document.querySelector('[data-k="sk'+id+'"]');if(q)q.focus();},0);};
 
 function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
 function renderCover(){
@@ -540,7 +636,7 @@ function goTo(ref){
   else{showTab("setup");var id=ref.slice(1),kk=ref.charAt(0)==="s"?"sk":"pn";setTimeout(function(){var q=document.querySelector('[data-k="'+kk+id+'"]');if(q){q.scrollIntoView({block:"center"});q.focus();}},30);}
 }
 
-function showTab(t){uiSet("tab",t);["matrix","setup","cover","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+function showTab(t){uiSet("tab",t);["matrix","setup","cover","log","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
   document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});}
 document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
 
@@ -558,7 +654,7 @@ $("btnSave").onclick=function(){download("skills-matrix.json",JSON.stringify({ap
 $("btnLoad").onclick=function(){$("file").click();};
 $("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
   if(f.size>2000000){alert("That file is too large to be a skills matrix data file.");ev.target.value="";return;}
-  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;S=clean(d.data);armed=null;touch();rerender();}catch(e){alert("That file could not be read. It is not a skills matrix data file.");}ev.target.value="";};rd.readAsText(f);});
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="skills-matrix-builder"||!d.data)throw 0;S=clean(d.data);armed=null;logAdd("Data file loaded: "+f.name.slice(0,60)+".");touch();rerender();}catch(e){alert("That file could not be read. It is not a skills matrix data file.");}ev.target.value="";};rd.readAsText(f);});
 function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 $("btnCsv").onclick=function(){
   var head=["Person","Role"].concat(S.skills.map(function(s){return s.name+(s.sop?" ["+sopL(s)+"]":"")+(s.crit?" (critical)":"");}));
@@ -578,7 +674,7 @@ function buildReport(){var r=$("report"),A=analyse();r.innerHTML="";
   if(!all.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});all.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
   add(r,h("p",{text:"Decision support only. A competent person must judge the result."}));}
 $("btnPrint").onclick=function(){buildReport();window.print();};
-window.addEventListener("beforeprint",buildReport);
+window.addEventListener("beforeprint",function(){if(!sheetMode)buildReport();});
 
 function example(){
   var o=blank();o.team="Example cell (made up)";o.months=12;o.example=true;
@@ -592,11 +688,12 @@ function example(){
   C(1,4,3,A,off(-40));C(2,4,3);C(3,4,4,A,off(-300));C(5,4,2);
   C(3,5,3,B,off(-200));C(6,5,2);
   C(1,6,3,A,off(-60));C(2,6,3,A,off(-60));C(4,6,2);
+  var evn=0;Object.keys(o.cells).forEach(function(k){var c=o.cells[k];if(c.lv>=3&&c.by&&c.on&&evn%2===0)c.ev="EXAMPLE-FORM-"+(100+evn);if(c.lv>=3&&c.by&&c.on)evn++;});
   return o;}
 
 var sv=load();if(sv)S=sv;else{S=example();saveNow();}
 renderAll();renderSave();fsInit();
-var ui=uiGet();showTab(["matrix","setup","cover","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
+var ui=uiGet();showTab(["matrix","setup","cover","log","guide"].indexOf(ui.tab)>=0?ui.tab:"matrix");
 window.__fs=FS;window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
 })();
 </script>
