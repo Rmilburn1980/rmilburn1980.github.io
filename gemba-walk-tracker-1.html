@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Gemba Walk Tracker</title>
+<meta name="description" content="Gemba walk register that traces every observation from the walk to an owner, closing evidence and a re-walk that proved the fix held. Opens with example data.">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://rmilburn1980.github.io/fonts/fonts.css">
+<style>
+/* Layout: dark indigo glowing dashboard. Header, KPI strip, two charts, SQCDP strip, then a traceability register whose rows open a walk-to-verification detail sheet. */
+:root{
+  --bg:#0d0a22; --panel:#15113a; --panel2:#1d1850; --line:#2f2878;
+  --text:#ece9ff; --muted:#a9a3d9; --accent:#8a7bff; --accent-ink:#0d0a22;
+  --s-overdue:#ff6b7f; --s-open:#ffbe55; --s-prog:#55d3ff; --s-closed:#9aa8ff; --s-verified:#6ee7a0;
+  --f-display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-head:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--f-body); font-size:15px; line-height:1.5; color:var(--text);
+  background:radial-gradient(900px 520px at 88% -8%, rgba(138,123,255,.30), transparent 62%),
+             radial-gradient(700px 420px at -8% 6%, rgba(85,211,255,.12), transparent 60%), var(--bg);
+  background-attachment:fixed;
+}
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 88px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{margin:0;font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--s-prog);outline-offset:2px}
+.mono{font-family:var(--f-mono)}
+
+/* header */
+.hub{display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;margin-bottom:14px;border:1px solid var(--line);border-radius:999px;background:rgba(29,26,74,.6);color:var(--accent);text-decoration:none;font-weight:500;font-size:14px}
+.hub:hover{border-color:var(--accent);box-shadow:0 0 18px -4px rgba(139,92,246,.6)}
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--s-prog);margin:0 0 4px}
+h1{font-size:clamp(34px,6vw,54px);line-height:1;text-shadow:0 0 28px rgba(138,123,255,.55)}
+.sub{margin:8px 0 0;color:var(--muted);max-width:56ch}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:9px 14px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;box-shadow:0 0 22px -4px rgba(138,123,255,.8)}
+.btn.warn{border-color:var(--s-overdue);color:var(--s-overdue)}
+.btn.small{padding:6px 10px;font-size:13px}
+.banner{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border:1px dashed var(--s-open);border-radius:12px;padding:10px 14px;margin-bottom:16px;color:var(--s-open)}
+.banner span{min-width:0}
+
+/* cards */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 12px 40px -24px rgba(138,123,255,.7)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px}
+.kpi{text-align:left;width:100%;display:flex;flex-direction:column;gap:2px}
+button.kpi:hover{border-color:var(--accent)}
+.kpi .l{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .n{font-family:var(--f-display);font-size:44px;line-height:1.05;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12px;color:var(--muted)}
+.n.bad{color:var(--s-overdue);text-shadow:0 0 18px rgba(255,107,127,.45)}
+.n.good{color:var(--s-verified);text-shadow:0 0 18px rgba(110,231,160,.35)}
+
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px;margin-bottom:12px}
+.charts .card{min-width:0}
+.card h2{font-size:22px;margin-bottom:2px}
+.card .hint{margin:0 0 10px;color:var(--muted);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 8px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg.chart{display:block;width:100%;height:auto;overflow:visible}
+svg .lbl{fill:var(--muted);font-family:var(--f-body);font-size:12px}
+svg .val{fill:var(--text);font-family:var(--f-mono);font-size:11px}
+svg .grid{stroke:var(--line);stroke-width:1}
+.b-done{fill:var(--s-verified)} .b-open{fill:var(--s-open)} .b-raised{fill:var(--accent)} .b-closed{fill:var(--s-verified)}
+.empty{color:var(--muted);padding:18px 0}
+
+.sqcdp{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.sq{display:flex;flex-direction:column;gap:2px;padding:12px;min-width:0}
+.sq b{font-family:var(--f-display);font-size:34px;line-height:1;color:var(--accent);text-shadow:0 0 18px rgba(138,123,255,.6)}
+.sq .nm{font-size:12px;color:var(--muted)}
+.sq .ct{font-size:13px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.sqcdp{grid-template-columns:repeat(auto-fit,minmax(104px,1fr))}}
+
+/* register */
+.reg-head{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+.filters select,.filters input,.field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+.rows{display:flex;flex-direction:column;gap:6px}
+.row,.rowhead{display:grid;grid-template-columns:92px minmax(0,2fr) minmax(0,1fr) minmax(0,1.5fr) 96px 112px;gap:12px;align-items:start}
+.rowhead{padding:0 12px 4px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.row{width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.row:hover{border-color:var(--accent);box-shadow:0 0 22px -10px var(--accent)}
+.row small{display:block;color:var(--muted);font-size:12px}
+.row b{font-family:var(--f-mono);font-weight:500;font-size:12.5px}
+.row>span{min-width:0;overflow-wrap:anywhere}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:1px 7px;color:var(--muted)}
+.tag.hi{color:var(--s-overdue);border-color:var(--s-overdue)}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;border:1px solid currentColor}
+.s-Overdue{color:var(--s-overdue);background:rgba(255,107,127,.12)}
+.s-Open{color:var(--s-open);background:rgba(255,190,85,.12)}
+.s-In-progress{color:var(--s-prog);background:rgba(85,211,255,.12)}
+.s-Closed{color:var(--s-closed);background:rgba(154,168,255,.12)}
+.s-Verified{color:var(--s-verified);background:rgba(110,231,160,.12)}
+.late{color:var(--s-overdue)!important}
+@media (max-width:780px){
+  .rowhead{display:none}
+  .row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"id st" "obs obs" "act act" "area due"}
+  .c-id{grid-area:id}.c-st{grid-area:st}.c-obs{grid-area:obs}.c-act{grid-area:act}.c-area{grid-area:area}.c-due{grid-area:due;text-align:right}
+}
+
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:rgba(5,3,20,.72)}
+.panel{width:min(580px,100%);height:100%;overflow-y:auto;background:var(--panel);border-left:1px solid var(--accent);padding:18px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 18px;box-shadow:-20px 0 60px -20px rgba(138,123,255,.5)}
+@media (max-width:640px){.sheet{align-items:flex-end}.panel{height:92%;border-left:0;border-top:1px solid var(--accent);border-radius:16px 16px 0 0;padding-left:max(16px,env(safe-area-inset-left,0px))}}
+.ph{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+.ph h2{font-size:28px}
+.x{background:none;border:1px solid var(--line);border-radius:8px;width:36px;height:36px;font-size:18px;flex:none}
+.chain{list-style:none;margin:0 0 16px;padding:0;display:flex;flex-direction:column}
+.chain li{position:relative;padding:0 0 14px 30px;min-width:0}
+.chain li::before{content:"";position:absolute;left:8px;top:18px;bottom:-2px;width:2px;background:var(--line)}
+.chain li:last-child::before{display:none}
+.chain li::after{content:"";position:absolute;left:0;top:3px;width:18px;height:18px;border-radius:50%;border:2px solid var(--line);background:var(--bg)}
+.chain li.done::after{border-color:var(--s-verified);background:var(--s-verified);box-shadow:0 0 12px rgba(110,231,160,.6)}
+.chain li.done::before{background:var(--s-verified)}
+.chain h3{font-size:18px}
+.chain p{margin:2px 0 0;color:var(--muted);overflow-wrap:anywhere}
+.chain p b{color:var(--text);font-weight:500}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--panel2)}
+.box h3{font-size:18px;margin-bottom:8px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:12px;color:var(--muted);min-width:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.two{grid-template-columns:1fr}}
+.field textarea{min-height:64px;resize:vertical}
+.err{color:var(--s-overdue);margin:0 0 8px;min-height:0}
+.hist{list-style:none;margin:0;padding:0;font-size:13px;color:var(--muted)}
+.hist li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;padding:4px 0;border-top:1px solid var(--line)}
+.hist li span:last-child{overflow-wrap:anywhere}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+textarea.csv{font-family:var(--f-mono);font-size:12px;min-height:240px;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+.toast{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--s-verified);color:#06220f;font-weight:600;border-radius:10px;padding:10px 14px;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.row,.btn,.hub{transition:border-color .15s,box-shadow .15s,background .15s}}
+</style>
+
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+      <p class="eyebrow">Go see. Ask why. Show respect.</p>
+      <h1>Gemba Walk Tracker</h1>
+      <p class="sub">Every observation is traced from the walk, to the action and its owner, to the evidence that closed it, to the re-walk that proved the fix held.</p>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnLog" type="button">Log observation</button>
+      <button class="btn sec" id="btnCsv" type="button">Export CSV</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <span>Example data is loaded so you can see how the trace works. Clear it before logging real walks.</span>
+    <button class="btn sec small" id="btnClear" type="button">Clear example data</button>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Key figures"></section>
+
+  <section class="charts" aria-label="Charts">
+    <div class="card">
+      <h2>Observations by category</h2>
+      <p class="hint">Where the waste and hazards are showing up, and how many are already fixed.</p>
+      <div class="legend"><span><i style="background:var(--s-verified)"></i>Closed</span><span><i style="background:var(--s-open)"></i>Still open</span></div>
+      <div id="chCat"></div>
+    </div>
+    <div class="card">
+      <h2>Raised and closed each week</h2>
+      <p class="hint">Weeks start on Monday. Raised is by walk date, closed is by closure date.</p>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Raised</span><span><i style="background:var(--s-verified)"></i>Closed</span></div>
+      <div id="chWeek"></div>
+    </div>
+  </section>
+
+  <section class="sqcdp" id="sqcdp" aria-label="SQCDP link"></section>
+
+  <section class="card" aria-label="Traceability register">
+    <div class="reg-head">
+      <h2>Traceability register</h2>
+      <span class="hint" id="count" style="margin:0"></span>
+    </div>
+    <div class="filters">
+      <label>Status<select id="fStatus"></select></label>
+      <label>Area<select id="fArea"></select></label>
+      <label>Category<select id="fCat"></select></label>
+      <label>Search<input id="fQ" type="search" placeholder="ID, text, owner"></label>
+    </div>
+    <div class="rowhead" aria-hidden="true"><span>ID</span><span>Observation</span><span>Area and walk</span><span>Action and owner</span><span>Due</span><span>Status</span></div>
+    <div class="rows" id="rows"></div>
+  </section>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" id="panel"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+var KEY='gembaTrace.v1';
+var CATS=['Safety','Motion','Waiting','Transport','Inventory','Defects','Over-processing','Overproduction','Skills','Standard work'];
+var SQ={S:'Safety',Q:'Quality',C:'Cost',D:'Delivery',P:'People'};
+var STATS=['Overdue','Open','In progress','Closed','Verified'];
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad(n,l){return String(n).padStart(l,'0');}
+function isoOf(d){return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2);}
+function parse(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function fmt(s){var d=parse(s);return d.getDate()+' '+MON[d.getMonth()];}
+function fmtY(s){return fmt(s)+' '+parse(s).getFullYear();}
+function days(a,b){return Math.round((parse(b)-parse(a))/864e5);}
+var TODAY=isoOf(new Date());
+function cls(s){return s.replace(' ','-');}
+
+/* ---------- example data (anonymised) ---------- */
+function seed(){
+  var walks=[
+    {id:'WALK-001',date:'2026-09-08',area:'Cell 1 Chassis',leader:'Cell leader',focus:'Material presentation'},
+    {id:'WALK-002',date:'2026-09-15',area:'Stores',leader:'Operations lead',focus:'Flow and safe routes'},
+    {id:'WALK-003',date:'2026-09-22',area:'Cell 4 Fit-out',leader:'Cell leader',focus:'Standard work adherence'},
+    {id:'WALK-004',date:'2026-09-29',area:'Dispatch',leader:'EHS rep',focus:'Handling and loading'},
+    {id:'WALK-005',date:'2026-10-06',area:'Cell 1 Chassis',leader:'Cell leader',focus:'Re-walk of WALK-001 actions'},
+    {id:'WALK-006',date:'2026-10-13',area:'Stores',leader:'Operations lead',focus:'Re-walk of WALK-002 actions'},
+    {id:'WALK-007',date:'2026-10-20',area:'Cell 4 Fit-out',leader:'Cell leader',focus:'Re-walk of WALK-003 actions'}
+  ];
+  var n=0;
+  function o(walk,cat,text,sq,sev,action,owner,due,prog,closedOn,evidence,verifiedBy){
+    n++;return {id:'OBS-'+pad(n,3),walk:walk,cat:cat,text:text,sq:sq,sev:sev,action:action,owner:owner,due:due,prog:prog,closedOn:closedOn,evidence:evidence||'',verifiedBy:verifiedBy||null};
+  }
+  var obs=[
+    o('WALK-001','Motion','Operators walk about 12 m to collect fixings mid-task','D',2,'Build a fixings kit trolley at point of use','Team leader B','2026-09-22',false,'2026-09-20','Photo TR-01: trolley in place at station 2','WALK-005'),
+    o('WALK-001','Safety','Loose offcuts left on the walkway beside the chassis line','S',3,'Add an offcut bin and a 5S sweep to the shift checklist','Shift lead','2026-09-10',false,'2026-09-10','Shift checklist rev B signed by cell','WALK-005'),
+    o('WALK-001','Waiting','Chassis waits about 15 min for axle delivery on each build','D',2,'Agree an axle call-off trigger with stores','Stores lead','2026-09-29',false,'2026-09-27','Kanban card agreed, one week trial logged','WALK-005'),
+    o('WALK-001','Defects','Scuffed edges found at end of line, no clear owner','Q',2,'Fit edge protectors at station 3 and add to standard work','Quality rep','2026-10-01',false,'2026-10-02','Standard work SW-12 updated, protectors fitted','WALK-005'),
+    o('WALK-002','Inventory','Two pallets of fixings above the agreed maximum level','C',1,'Reset min and max levels on the fixings bay','Stores lead','2026-09-30',false,'2026-09-29','Bay card updated, stock count matches','WALK-006'),
+    o('WALK-002','Safety','Forklift route crosses the pedestrian path with no marking','S',3,'Mark a pedestrian crossing and fit a mirror','EHS rep','2026-09-25',false,'2026-09-25','Crossing marked, mirror fitted, photo SF-04','WALK-006'),
+    o('WALK-002','Transport','Parts moved three times between the bay and the line','C',2,'Relocate the bay closer to the line as a trial','Stores lead','2026-10-16',false,'2026-10-15','Layout v2 trial complete, two moves removed',null),
+    o('WALK-002','Skills','Operator has label layout ideas but no route to raise them','P',1,'Set up an idea board at the cell','Team leader A','2026-10-09',false,'2026-10-08','Board live with three ideas logged','WALK-006'),
+    o('WALK-003','Defects','A fit-out step is skipped when the operator is interrupted','Q',3,'Add a sign-off check at the end of step 6','Cell leader','2026-10-06',false,'2026-10-05','Check added to build card rev C','WALK-007'),
+    o('WALK-003','Over-processing','Double wipe-down before inspection','C',1,'Agree with quality to remove the duplicate wipe','Quality rep','2026-10-30',true,null,'',null),
+    o('WALK-003','Safety','Extension lead running across the walkway','S',3,'Fit ceiling drop reels at stations 5 and 6','Maintenance','2026-10-10',false,'2026-10-14','Drop reels installed, lead removed','WALK-007'),
+    o('WALK-003','Waiting','Paper work instructions out of date, operators wait for updates','D',2,'Move to a controlled digital copy at the cell','Document controller','2026-10-27',true,null,'',null),
+    o('WALK-003','Skills','Only one operator is trained on station 7','P',2,'Cross-train two operators using the 3x3 matrix','Team leader A','2026-11-06',true,null,'',null),
+    o('WALK-004','Motion','Wrapping station layout forces operators to bend','S',2,'Raise the wrapping table by 150 mm','Maintenance','2026-10-23',false,null,'',null),
+    o('WALK-004','Overproduction','Pre-wrapped stock built ahead of demand','C',2,'Wrap to the dispatch schedule only','Dispatch lead','2026-10-30',false,null,'',null),
+    o('WALK-004','Defects','Damage on loading, no pads on the strap points','Q',2,'Add edge pads and update the loading standard','Dispatch lead','2026-10-18',false,'2026-10-16','Pads in use, loading standard SW-21 issued',null),
+    o('WALK-005','Standard work','Standard work sheet not displayed at station 2','Q',1,'Display laminated sheets at every station','Team leader B','2026-10-20',false,'2026-10-19','Sheets displayed at stations 1 to 6',null),
+    o('WALK-005','Safety','Spill kit not stocked','S',2,'Restock the spill kit and add it to the weekly check','EHS rep','2026-10-12',false,'2026-10-12','Kit stocked, weekly check form updated',null),
+    o('WALK-006','Inventory','Returned stock is unlabelled','C',1,'Label and quarantine the returns area','Stores lead','2026-10-22',false,null,'',null),
+    o('WALK-006','Transport','Trolley route blocked by empty pallets','D',1,'Create an empty pallet return point','Stores lead','2026-11-03',true,null,'',null),
+    o('WALK-007','Waiting','Inspector waits for the last build before releasing','D',2,'Trial staggered release of builds','Quality rep','2026-11-10',false,null,'',null),
+    o('WALK-007','Motion','Tools on the shadow board are out of reach','D',1,'Reposition the shadow board','Cell leader','2026-11-03',true,null,'',null)
+  ];
+  var byId={};walks.forEach(function(w){byId[w.id]=w;});
+  obs.forEach(function(x){
+    var w=byId[x.walk];
+    x.hist=[[w.date,'Observed on '+w.id+', action raised']];
+    if(x.closedOn)x.hist.push([x.closedOn,'Closed with evidence: '+x.evidence]);
+    if(x.verifiedBy)x.hist.push([byId[x.verifiedBy].date,'Verified on re-walk '+x.verifiedBy]);
+  });
+  return {seed:true,walks:walks,obs:obs};
+}
+
+var S=null;
+try{var raw=localStorage.getItem(KEY);if(raw)S=JSON.parse(raw);}catch(e){}
+if(!S||!S.walks||!S.obs)S=seed();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+function walkOf(id){return S.walks.filter(function(w){return w.id===id;})[0];}
+function obsOf(id){return S.obs.filter(function(x){return x.id===id;})[0];}
+function status(x){
+  if(x.verifiedBy)return 'Verified';
+  if(x.closedOn)return 'Closed';
+  if(x.due<TODAY)return 'Overdue';
+  return x.prog?'In progress':'Open';
+}
+function nextId(arr,prefix){var m=0;arr.forEach(function(a){var k=parseInt(a.id.split('-')[1],10);if(k>m)m=k;});return prefix+'-'+pad(m+1,3);}
+function $(id){return document.getElementById(id);}
+
+/* ---------- filters ---------- */
+var F={status:'All',area:'All',cat:'All',q:''};
+
+function fillFilters(){
+  var areas=[];S.walks.forEach(function(w){if(areas.indexOf(w.area)<0)areas.push(w.area);});areas.sort();
+  function opts(list,cur){return ['All'].concat(list).map(function(v){return '<option'+(v===cur?' selected':'')+'>'+esc(v)+'</option>';}).join('');}
+  $('fStatus').innerHTML=opts(STATS,F.status);
+  if(areas.indexOf(F.area)<0)F.area='All';
+  $('fArea').innerHTML=opts(areas,F.area);
+  $('fCat').innerHTML=opts(CATS,F.cat);
+}
+
+/* ---------- KPIs ---------- */
+function median(a){if(!a.length)return null;a=a.slice().sort(function(x,y){return x-y;});var m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2;}
+function renderKpis(){
+  var total=S.obs.length,cnt={};STATS.forEach(function(s){cnt[s]=0;});
+  S.obs.forEach(function(x){cnt[status(x)]++;});
+  var open=cnt.Overdue+cnt.Open+cnt['In progress'];
+  var done=cnt.Closed+cnt.Verified;
+  var walks30=S.walks.filter(function(w){var d=days(w.date,TODAY);return d>=0&&d<=30;}).length;
+  var rate=total?Math.round(done/total*100):0;
+  var vrate=done?Math.round(cnt.Verified/done*100):0;
+  var med=median(S.obs.filter(function(x){return x.closedOn;}).map(function(x){return days(walkOf(x.walk).date,x.closedOn);}));
+  var t=[
+    {l:'Walks, last 30 days',n:walks30,d:S.walks.length+' walks logged in total'},
+    {l:'Observations',n:total,d:'Each one has an action and an owner'},
+    {l:'Open actions',n:open,d:cnt['In progress']+' in progress'},
+    {l:'Overdue',n:cnt.Overdue,d:cnt.Overdue?'Past due date, still open':'Nothing past due',bad:cnt.Overdue>0,f:'Overdue'},
+    {l:'Closure rate',n:rate+'%',d:med==null?'No closures yet':'Median '+med+' days from walk to close'},
+    {l:'Verified on re-walk',n:vrate+'%',d:cnt.Closed+' closed, waiting for a re-walk',good:vrate>=70,f:'Closed'}
+  ];
+  $('kpis').innerHTML=t.map(function(k){
+    var inner='<span class="l">'+esc(k.l)+'</span><span class="n'+(k.bad?' bad':'')+(k.good?' good':'')+'">'+esc(k.n)+'</span><span class="d">'+esc(k.d)+'</span>';
+    return k.f?'<button type="button" class="card kpi" data-f="'+esc(k.f)+'">'+inner+'</button>':'<div class="card kpi">'+inner+'</div>';
+  }).join('');
+}
+
+/* ---------- SQCDP ---------- */
+function renderSq(){
+  $('sqcdp').innerHTML=Object.keys(SQ).map(function(k){
+    var all=S.obs.filter(function(x){return x.sq===k;});
+    var open=all.filter(function(x){return !x.closedOn;}).length;
+    return '<div class="card sq"><b>'+k+'</b><span class="nm">'+SQ[k]+'</span><span class="ct">'+open+' open of '+all.length+'</span></div>';
+  }).join('');
+}
+
+/* ---------- charts ---------- */
+function chartCats(){
+  var m={};
+  S.obs.forEach(function(x){var r=m[x.cat]||(m[x.cat]={done:0,open:0});if(x.closedOn)r.done++;else r.open++;});
+  var rows=Object.keys(m).map(function(k){return {k:k,done:m[k].done,open:m[k].open,t:m[k].done+m[k].open};}).sort(function(a,b){return b.t-a.t||a.k.localeCompare(b.k);});
+  if(!rows.length){$('chCat').innerHTML='<p class="empty">No observations yet. Log your first walk to see this chart.</p>';return;}
+  var W=560,L=124,R=44,rh=30,H=rows.length*rh+8,max=Math.max.apply(null,rows.map(function(r){return r.t;})),sc=(W-L-R)/max;
+  var g='';
+  rows.forEach(function(r,i){
+    var y=i*rh+4,by=y+(rh-16)/2,x=L;
+    g+='<text class="lbl" x="'+(L-10)+'" y="'+(y+rh/2+4)+'" text-anchor="end">'+esc(r.k)+'</text>';
+    if(r.done){g+='<rect class="b-done" x="'+x+'" y="'+by+'" width="'+(r.done*sc)+'" height="16" rx="3"/>';x+=r.done*sc;}
+    if(r.open){g+='<rect class="b-open" x="'+x+'" y="'+by+'" width="'+(r.open*sc)+'" height="16" rx="3"/>';x+=r.open*sc;}
+    g+='<text class="val" x="'+(x+7)+'" y="'+(y+rh/2+4)+'">'+r.t+'</text>';
+  });
+  $('chCat').innerHTML='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Observations by category, closed and still open">'+g+'</svg>';
+}
+function monday(s){var d=parse(s),k=(d.getDay()+6)%7;d.setDate(d.getDate()-k);return isoOf(d);}
+function addDays(s,n){var d=parse(s);d.setDate(d.getDate()+n);return isoOf(d);}
+function chartWeek(){
+  if(!S.walks.length){$('chWeek').innerHTML='<p class="empty">No walks yet. Weekly flow appears after the first walk.</p>';return;}
+  var first=monday(S.walks.map(function(w){return w.date;}).sort()[0]),last=monday(TODAY),wk=[];
+  for(var d=first;d<=last;d=addDays(d,7))wk.push(d);
+  var rs={},cs={};
+  S.obs.forEach(function(x){var a=monday(walkOf(x.walk).date);rs[a]=(rs[a]||0)+1;if(x.closedOn){var c=monday(x.closedOn);cs[c]=(cs[c]||0)+1;}});
+  var mx=1;wk.forEach(function(w){mx=Math.max(mx,rs[w]||0,cs[w]||0);});
+  if(mx%2)mx++;
+  var W=560,H=230,pl=30,pr=8,pt=22,pb=30,pw=W-pl-pr,ph=H-pt-pb,gw=pw/wk.length,bw=Math.min(20,gw*.32),g='';
+  [0,mx/2,mx].forEach(function(v){var y=pt+ph-v/mx*ph;g+='<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'"/><text class="lbl" x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end">'+v+'</text>';});
+  var skip=wk.length>9?2:1;
+  wk.forEach(function(w,i){
+    var cx=pl+gw*i+gw/2,r=rs[w]||0,c=cs[w]||0,rh=r/mx*ph,ch=c/mx*ph;
+    g+='<rect class="b-raised" x="'+(cx-bw-1)+'" y="'+(pt+ph-rh)+'" width="'+bw+'" height="'+rh+'" rx="3"/>';
+    g+='<rect class="b-closed" x="'+(cx+1)+'" y="'+(pt+ph-ch)+'" width="'+bw+'" height="'+ch+'" rx="3"/>';
+    if(r)g+='<text class="val" x="'+(cx-bw/2-1)+'" y="'+(pt+ph-rh-5)+'" text-anchor="middle">'+r+'</text>';
+    if(c)g+='<text class="val" x="'+(cx+bw/2+1)+'" y="'+(pt+ph-ch-5)+'" text-anchor="middle">'+c+'</text>';
+    if(i%skip===0)g+='<text class="lbl" x="'+cx+'" y="'+(H-8)+'" text-anchor="middle">'+esc(fmt(w))+'</text>';
+  });
+  $('chWeek').innerHTML='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Observations raised and closed per week">'+g+'</svg>';
+}
+
+/* ---------- register ---------- */
+function filtered(){
+  var q=F.q.trim().toLowerCase();
+  var rank={Overdue:0,Open:1,'In progress':2,Closed:3,Verified:4};
+  return S.obs.filter(function(x){
+    var w=walkOf(x.walk),st=status(x);
+    if(F.status!=='All'&&st!==F.status)return false;
+    if(F.area!=='All'&&w.area!==F.area)return false;
+    if(F.cat!=='All'&&x.cat!==F.cat)return false;
+    if(q){var hay=[x.id,x.walk,x.text,x.action,x.owner,w.area,x.cat,x.evidence].join(' ').toLowerCase();if(hay.indexOf(q)<0)return false;}
+    return true;
+  }).sort(function(a,b){var ra=rank[status(a)],rb=rank[status(b)];return ra-rb||a.due.localeCompare(b.due)||a.id.localeCompare(b.id);});
+}
+function renderRows(){
+  var list=filtered();
+  $('count').textContent=list.length+' of '+S.obs.length+' shown';
+  if(!list.length){$('rows').innerHTML='<p class="empty">'+(S.obs.length?'Nothing matches these filters.':'No observations yet. Choose Log observation to record your first walk.')+'</p>';return;}
+  $('rows').innerHTML=list.map(function(x){
+    var w=walkOf(x.walk),st=status(x),dueNote='';
+    if(st==='Overdue')dueNote='<small class="late">'+days(x.due,TODAY)+' days late</small>';
+    else if(x.closedOn)dueNote='<small>closed '+esc(fmt(x.closedOn))+'</small>';
+    return '<button type="button" class="row" data-id="'+x.id+'">'+
+      '<span class="c-id"><b>'+x.id+'</b><small>'+x.walk+'</small></span>'+
+      '<span class="c-obs">'+esc(x.text)+'<span class="tags"><span class="tag">'+esc(x.cat)+'</span><span class="tag">'+x.sq+' '+SQ[x.sq]+'</span>'+(x.sev===3?'<span class="tag hi">High</span>':'')+'</span></span>'+
+      '<span class="c-area">'+esc(w.area)+'<small>'+esc(fmt(w.date))+'</small></span>'+
+      '<span class="c-act">'+esc(x.action)+'<small>'+esc(x.owner)+'</small></span>'+
+      '<span class="c-due">'+esc(fmt(x.due))+dueNote+'</span>'+
+      '<span class="c-st"><span class="pill s-'+cls(st)+'">'+st+'</span></span></button>';
+  }).join('');
+}
+function renderAll(){
+  $('banner').hidden=!S.seed;
+  fillFilters();renderKpis();renderSq();chartCats();chartWeek();renderRows();
+}
+
+/* ---------- sheet ---------- */
+var lastTrigger=null,openId=null;
+function openSheet(html,trigger){
+  lastTrigger=trigger||document.activeElement;
+  $('panel').innerHTML=html;$('sheet').hidden=false;
+  var f=$('panel').querySelector('.x');if(f)f.focus();
+}
+function closeSheet(){$('sheet').hidden=true;$('panel').innerHTML='';openId=null;if(lastTrigger&&lastTrigger.focus){try{lastTrigger.focus();}catch(e){}}}
+function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(function(){t.hidden=true;},3200);}
+
+function detailHtml(id){
+  var x=obsOf(id),w=walkOf(x.walk),st=status(x);
+  var steps=[
+    {t:'Walk',d:true,b:'<b>'+esc(w.id)+'</b> on '+esc(fmtY(w.date))+' in '+esc(w.area)+'. Walked by '+esc(w.leader)+'. Focus: '+esc(w.focus)+'.'},
+    {t:'Observation',d:true,b:'<b>'+esc(x.id)+'</b> ('+esc(x.cat)+', '+x.sq+' '+SQ[x.sq]+', '+['','low','medium','high'][x.sev]+' severity). '+esc(x.text)+'.'},
+    {t:'Action and owner',d:true,b:esc(x.action)+'. Owner <b>'+esc(x.owner)+'</b>, due '+esc(fmtY(x.due))+'.'+(x.prog&&!x.closedOn?' Work has started.':'')},
+    {t:'Closed with evidence',d:!!x.closedOn,b:x.closedOn?'Closed '+esc(fmtY(x.closedOn))+', '+days(w.date,x.closedOn)+' days after the walk. Evidence: <b>'+esc(x.evidence)+'</b>':'Not closed yet. Evidence is required to close.'},
+    {t:'Verified on re-walk',d:!!x.verifiedBy,b:x.verifiedBy?'Checked on <b>'+esc(x.verifiedBy)+'</b> ('+esc(fmtY(walkOf(x.verifiedBy).date)+'')+') and the fix held.':(x.closedOn?'Waiting for a re-walk to confirm the fix held.':'Follows closure.')}
+  ];
+  var h='<div class="ph"><div><h2 id="sheetTitle">'+esc(x.id)+'</h2><span class="pill s-'+cls(st)+'">'+st+'</span></div><button class="x" type="button" data-act="close" aria-label="Close">&times;</button></div>';
+  h+='<ol class="chain">'+steps.map(function(s){return '<li class="'+(s.d?'done':'')+'"><h3>'+s.t+'</h3><p>'+s.b+'</p></li>';}).join('')+'</ol>';
+  h+='<div id="msg" class="err" role="alert"></div>';
+  if(!x.closedOn){
+    h+='<div class="box"><h3>Update this action</h3>';
+    if(!x.prog)h+='<div class="btns" style="margin-bottom:10px"><button class="btn sec small" type="button" data-act="prog">Mark in progress</button></div>';
+    h+='<div class="two"><label class="field">Closure date<input id="cDate" type="date" value="'+TODAY+'" min="'+w.date+'"></label><label class="field">Evidence (required)<input id="cEv" type="text" placeholder="Photo ref, document, sign-off"></label></div>';
+    h+='<button class="btn primary small" type="button" data-act="close-act">Close with evidence</button></div>';
+  }else if(!x.verifiedBy){
+    var cand=S.walks.filter(function(v){return v.id!==x.walk&&v.date>=x.closedOn;}).sort(function(a,b){return a.date.localeCompare(b.date);});
+    h+='<div class="box"><h3>Verify on a re-walk</h3>';
+    if(cand.length){
+      h+='<label class="field">Re-walk<select id="vWalk">'+cand.map(function(v){return '<option value="'+v.id+'">'+esc(v.id+', '+fmt(v.date)+', '+v.area)+'</option>';}).join('')+'</select></label><div class="btns"><button class="btn primary small" type="button" data-act="verify">Confirm the fix held</button><button class="btn sec small" type="button" data-act="reopen">Reopen</button></div>';
+    }else{
+      h+='<p class="hint">A re-walk must be logged on or after '+esc(fmt(x.closedOn))+'. Use Log observation to add the walk, then come back here.</p><button class="btn sec small" type="button" data-act="reopen">Reopen</button>';
+    }
+    h+='</div>';
+  }else{
+    h+='<div class="box"><button class="btn sec small" type="button" data-act="reopen">Reopen this action</button></div>';
+  }
+  h+='<div class="box"><h3>History</h3><ul class="hist">'+x.hist.map(function(e){return '<li><span class="mono">'+esc(fmt(e[0]))+'</span><span>'+esc(e[1])+'</span></li>';}).join('')+'</ul></div>';
+  return h;
+}
+function showDetail(id,trigger){openId=id;openSheet(detailHtml(id),trigger);}
+function refreshDetail(){if(openId){$('panel').innerHTML=detailHtml(openId);var f=$('panel').querySelector('.x');if(f)f.focus();}}
+function msg(t){var m=$('msg');if(m)m.textContent=t;}
+
+function logHtml(){
+  var walks=S.walks.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id.localeCompare(a.id);});
+  var areas=[];S.walks.forEach(function(w){if(areas.indexOf(w.area)<0)areas.push(w.area);});
+  var h='<div class="ph"><h2 id="sheetTitle">Log observation</h2><button class="x" type="button" data-act="close" aria-label="Close">&times;</button></div>';
+  h+='<form id="logForm" novalidate><div id="msg" class="err" role="alert"></div>';
+  h+='<label class="field">Walk<select id="lWalk">'+walks.map(function(w){return '<option value="'+w.id+'">'+esc(w.id+', '+fmt(w.date)+', '+w.area)+'</option>';}).join('')+'<option value="__new"'+(walks.length?'':' selected')+'>New walk</option></select></label>';
+  h+='<div id="newWalk" class="box" '+(walks.length?'hidden':'')+'><h3>New walk</h3><div class="two"><label class="field">Date<input id="nDate" type="date" value="'+TODAY+'"></label><label class="field">Area<input id="nArea" list="areaList" type="text" placeholder="Cell, line or department"></label></div><div class="two"><label class="field">Walked by<input id="nLead" type="text"></label><label class="field">Focus<input id="nFocus" type="text" placeholder="What you went to see"></label></div><datalist id="areaList">'+areas.map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist></div>';
+  h+='<div class="two"><label class="field">Category<select id="lCat">'+CATS.map(function(c){return '<option>'+c+'</option>';}).join('')+'</select></label><label class="field">SQCDP measure<select id="lSq">'+Object.keys(SQ).map(function(k){return '<option value="'+k+'">'+k+' '+SQ[k]+'</option>';}).join('')+'</select></label></div>';
+  h+='<label class="field">What you saw<textarea id="lText" placeholder="Describe what is really happening"></textarea></label>';
+  h+='<div class="two"><label class="field">Severity<select id="lSev"><option value="1">Low</option><option value="2" selected>Medium</option><option value="3">High</option></select></label><label class="field">Owner<input id="lOwner" type="text" placeholder="Who will fix it"></label></div>';
+  h+='<label class="field">Action<textarea id="lAct" placeholder="What will change"></textarea></label>';
+  h+='<label class="field">Due date<input id="lDue" type="date" value="'+addDays(TODAY,14)+'"></label>';
+  h+='<div class="btns"><button class="btn primary" type="submit">Save observation</button><button class="btn sec" type="button" data-act="close">Cancel</button></div></form>';
+  return h;
+}
+function csvText(){
+  var head=['Obs ID','Walk ID','Walk date','Area','Walked by','Category','Observation','SQCDP','Severity','Action','Owner','Due','Status','Closed on','Evidence','Verified on walk','Verified date'];
+  function q(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+  var rows=S.obs.map(function(x){var w=walkOf(x.walk),vw=x.verifiedBy?walkOf(x.verifiedBy):null;
+    return [x.id,w.id,w.date,w.area,w.leader,x.cat,x.text,x.sq,['','Low','Medium','High'][x.sev],x.action,x.owner,x.due,status(x),x.closedOn||'',x.evidence,x.verifiedBy||'',vw?vw.date:''].map(q).join(',');});
+  return [head.join(',')].concat(rows).join('\n');
+}
+function csvHtml(){
+  return '<div class="ph"><h2 id="sheetTitle">Export CSV</h2><button class="x" type="button" data-act="close" aria-label="Close">&times;</button></div><p class="hint">One row per observation with its walk, action, evidence and verification.</p><div id="msg" class="err" role="alert"></div><textarea class="csv" id="csvBox" readonly>'+esc(csvText())+'</textarea><div class="btns" style="margin-top:10px"><button class="btn primary" type="button" data-act="copy">Copy CSV</button><button class="btn sec" type="button" data-act="download">Download file</button></div>';
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button,a');if(!t)return;
+  if(t.classList.contains('row')){showDetail(t.getAttribute('data-id'),t);return;}
+  if(t.classList.contains('kpi')){F.status=t.getAttribute('data-f');fillFilters();renderRows();$('rows').scrollIntoView({block:'start'});return;}
+  var a=t.getAttribute('data-act');if(!a)return;
+  var x=openId?obsOf(openId):null;
+  if(a==='close'){closeSheet();return;}
+  if(a==='prog'&&x){x.prog=true;x.hist.push([TODAY,'Marked in progress']);save();renderAll();refreshDetail();return;}
+  if(a==='close-act'&&x){
+    var ev=$('cEv').value.trim(),dt=$('cDate').value,w=walkOf(x.walk);
+    if(!ev){msg('Add the evidence before closing. A closed action with no proof cannot be traced.');$('cEv').focus();return;}
+    if(!dt||dt<w.date){msg('The closure date cannot be before the walk on '+fmt(w.date)+'.');return;}
+    x.closedOn=dt;x.evidence=ev;x.hist.push([dt,'Closed with evidence: '+ev]);save();renderAll();refreshDetail();toast(x.id+' closed');return;
+  }
+  if(a==='verify'&&x){
+    var vid=$('vWalk').value,vw=walkOf(vid);
+    x.verifiedBy=vid;x.hist.push([vw.date,'Verified on re-walk '+vid]);save();renderAll();refreshDetail();toast(x.id+' verified on '+vid);return;
+  }
+  if(a==='reopen'&&x){
+    x.hist.push([TODAY,'Reopened (was closed '+(x.closedOn?fmt(x.closedOn):'n/a')+')']);x.closedOn=null;x.evidence='';x.verifiedBy=null;save();renderAll();refreshDetail();return;
+  }
+  if(a==='copy'){
+    var box=$('csvBox');
+    function fallback(){box.focus();box.select();msg('Select all and copy from the box above.');}
+    try{navigator.clipboard.writeText(box.value).then(function(){toast('CSV copied');},fallback);}catch(err){fallback();}
+    return;
+  }
+  if(a==='download'){
+    try{
+      var b=new Blob([csvText()],{type:'text/csv'}),u=URL.createObjectURL(b),l=document.createElement('a');
+      l.href=u;l.download='gemba-walk-register-'+TODAY+'.csv';document.body.appendChild(l);l.click();l.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);
+      msg('If no file was saved, use Copy CSV instead.');
+    }catch(err){msg('Download is not available here. Use Copy CSV.');}
+    return;
+  }
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('sheet').hidden)closeSheet();});
+$('sheet').addEventListener('mousedown',function(e){if(e.target===$('sheet'))closeSheet();});
+$('btnLog').addEventListener('click',function(e){openId=null;openSheet(logHtml(),e.currentTarget);});
+$('btnCsv').addEventListener('click',function(e){openId=null;openSheet(csvHtml(),e.currentTarget);});
+var clearArmed=false;
+$('btnClear').addEventListener('click',function(){
+  var b=$('btnClear');
+  if(!clearArmed){clearArmed=true;b.textContent='Confirm: remove all example data';b.classList.add('warn');setTimeout(function(){clearArmed=false;b.textContent='Clear example data';b.classList.remove('warn');},5000);return;}
+  S={seed:false,walks:[],obs:[]};save();clearArmed=false;b.textContent='Clear example data';b.classList.remove('warn');F={status:'All',area:'All',cat:'All',q:''};$('fQ').value='';renderAll();toast('Example data cleared');
+});
+['fStatus','fArea','fCat'].forEach(function(id){$(id).addEventListener('change',function(){F[id==='fStatus'?'status':id==='fArea'?'area':'cat']=this.value;renderRows();});});
+$('fQ').addEventListener('input',function(){F.q=this.value;renderRows();});
+
+$('panel').addEventListener('change',function(e){
+  if(e.target.id==='lWalk'){$('newWalk').hidden=e.target.value!=='__new';}
+});
+$('panel').addEventListener('submit',function(e){
+  if(e.target.id!=='logForm')return;
+  e.preventDefault();
+  var wid=$('lWalk').value,text=$('lText').value.trim(),act=$('lAct').value.trim(),owner=$('lOwner').value.trim(),due=$('lDue').value,newW=null;
+  if(wid==='__new'){
+    var d=$('nDate').value,area=$('nArea').value.trim(),lead=$('nLead').value.trim(),focus=$('nFocus').value.trim();
+    if(!d||!area||!lead){msg('A new walk needs a date, an area and who walked it.');return;}
+    newW={id:nextId(S.walks,'WALK'),date:d,area:area,leader:lead,focus:focus||'General walk'};
+  }
+  if(!text||!act||!owner||!due){msg('Add what you saw, the action, the owner and a due date. Nothing is saved without an owner.');return;}
+  var wd=newW?newW.date:walkOf(wid).date;
+  if(due<wd){msg('The due date cannot be before the walk date.');return;}
+  if(newW){S.walks.push(newW);wid=newW.id;}
+  var x={id:nextId(S.obs,'OBS'),walk:wid,cat:$('lCat').value,text:text,sq:$('lSq').value,sev:+$('lSev').value,action:act,owner:owner,due:due,prog:false,closedOn:null,evidence:'',verifiedBy:null,hist:[[wd,'Observed on '+wid+', action raised']]};
+  S.obs.push(x);save();closeSheet();renderAll();toast(x.id+' logged on '+wid);
+});
+
+renderAll();
+})();
+</script>
+
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>
