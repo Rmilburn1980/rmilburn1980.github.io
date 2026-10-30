@@ -29,7 +29,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [SIPOC and Value Stream Map](https://rmilburn1980.github.io/sipoc-vsm-tool.html) | Scope a process with a SIPOC, then map the current state: cycle times, queues, takt, lead time, process cycle efficiency and rolled throughput yield. |
 | [SPC Control Chart Tool](https://rmilburn1980.github.io/spc-control-chart.html) | Limits from a chosen baseline, signal rules, and capability shown only when the baseline is valid. |
 | [Cycle Time and Waste Analysis](https://rmilburn1980.github.io/cycle-time-waste-tool.html) | Time observation study with value-added split, takt comparison and a TIMWOODS waste breakdown. |
-| [Standard Minute Value Tool](https://rmilburn1980.github.io/smv-tool/) | Time study, SMV, line efficiency and production targets, with MOST sequence models. |
+| [Standard Minute Value Tool](https://rmilburn1980.github.io/SMV-TOOL/) | Time study, SMV, line efficiency and production targets, with MOST sequence models. |
 | [Gemba Walk Tracker](https://rmilburn1980.github.io/gemba-walk-tracker.html) | Log what you see on a walk and trace each observation to its owner, the evidence that closed it and the re-walk that checked the fix. Opens with example data. |
 | [7S Audit Dashboard](https://rmilburn1980.github.io/7s-audit-dashboard/) | Workplace organisation audit covering Sort, Set, Shine, Standardize, Sustain, Safety and Spirit. |
 
