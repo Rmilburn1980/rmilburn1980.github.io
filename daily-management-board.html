@@ -109,6 +109,17 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 .grid .c.g{background:var(--low)}.grid .c.a{background:var(--med)}.grid .c.r{background:#ff8f8f}.grid .c.n{background:var(--panel2);color:var(--muted)}.grid .c.off{background:transparent;color:var(--muted)}
 .leg{display:flex;gap:10px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:0 0 10px}
 .ro{font-size:.82rem;color:var(--muted)}
+.sc2{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:16px;align-items:start;margin:0 0 16px}
+@media (max-width:900px){.sc2{grid-template-columns:1fr}}
+.sc2>*{min-width:0}
+.radar{width:100%;height:auto;display:block}
+.radar text{fill:var(--text);font-size:12px;font-family:inherit}.radar .mut{fill:var(--muted);font-size:10px}
+.radar .ring{fill:none;stroke:var(--line);stroke-width:1}.radar .ax{stroke:var(--line);stroke-width:1}
+.radar .cur{fill:rgba(45,212,191,.28);stroke:var(--accent);stroke-width:2.5}.radar .prev{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:6 4}
+.radar .dot{fill:var(--accent);stroke:var(--bg);stroke-width:1.5}
+.cats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:0 0 16px}
+.keyl{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.keyl i{display:inline-block;width:22px;height:0;border-top:3px solid var(--accent);vertical-align:middle;margin-right:6px}.keyl i.p{border-top:2px dashed var(--muted)}
 @media (max-width:760px){.mrow{grid-template-columns:1fr 1fr}.mrow .nmc{grid-column:1/-1}}
 @media print{
   #report .rag{border:1px solid #000;background:#fff;color:#000}
@@ -128,6 +139,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 <nav role="tablist" aria-label="Sections">
   <button role="tab" aria-selected="true" data-tab="board">Board</button>
   <button role="tab" aria-selected="false" data-tab="month">Month</button>
+  <button role="tab" aria-selected="false" data-tab="score">Scorecard</button>
   <button role="tab" aria-selected="false" data-tab="actions">Actions</button>
   <button role="tab" aria-selected="false" data-tab="measures">Measures</button>
   <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
@@ -169,6 +181,16 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <p class="disc">A blank is not a pass. A day with no reading counts as no data, never as on target. Hover or focus a cell on a screen with a pointer to see its value.</p>
 </section>
 
+<section id="tab-score" hidden>
+  <div class="dnav"><label class="sm">Period <select id="scP" aria-label="Scorecard period"><option value="7">Last 7 days</option><option value="14" selected>Last 14 days</option><option value="30">Last 30 days</option></select></label><span class="sm" id="scRange"></span></div>
+  <p class="disc" id="scNote"></p>
+  <div class="cats" id="scCats"></div>
+  <div class="sc2"><div class="card"><h2>Radar</h2><div id="radar"></div><div class="keyl" id="radarKey"></div></div>
+    <div class="card"><h2>By heading</h2><div class="tablewrap"><table id="scHead"></table></div></div></div>
+  <div class="card"><h2>By measure</h2><div class="tablewrap"><table id="scMeas"></table></div></div>
+  <p class="disc">The score is the share of working days in the period on which a measure was on target. A working day with no reading counts against the score, so a board that is not filled in cannot score well. The period ends on the board date, and the dashed line is the period of the same length before it. The score says nothing about whether a reading is true.</p>
+</section>
+
 <section id="tab-actions" hidden>
   <div class="toolbar"><button class="btn" id="btnAddA">Add an action</button>
     <label class="sm">Show <select id="aFilter" aria-label="Filter actions"><option value="open">Open</option><option value="over">Overdue</option><option value="esc">Marked for escalation</option><option value="unver">Done, not checked</option><option value="all">All</option></select></label></div>
@@ -207,6 +229,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li>An action marked done with nobody named as having checked it, or checked by its own owner.</li>
       <li>An action marked for the next tier with no date recorded for when it was raised there.</li>
     </ul></div>
+  <div class="card"><h2>The scorecard and radar</h2>
+    <p>The Scorecard tab turns the readings into one number for each heading: the share of working days in the period on which the measures were on target. A working day with no reading counts against the score, so an empty board cannot look good. The radar draws the five headings on one chart, with the period before as a dashed line. It needs measures under at least three headings. Use it to see where the board is weakest, not to compare people.</p></div>
   <div class="card"><h2>Reading the board</h2>
     <p>A board that is mostly green may mean the targets are too easy or the readings are not being taken honestly. Look at trends, ask the people who do the work, and keep the red limit where it would really trigger a response. Readings you type in are not checked against a source.</p></div>
   <div class="card"><h2>Related tools</h2>
@@ -368,7 +392,7 @@ function nextAid(){var m=0;D.actions.forEach(function(x){if(x.id>m)m=x.id;});ret
 function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
 function sel(list,val,id,blankLabel){var s=h("select",{id:id});if(blankLabel!==null)s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
 function lab(t,c,full){return h("label",{class:full?"full":""},t,c);}
-function renderAll(){renderStatus();renderBoard();renderMonth();renderActions();renderMeasures();renderChecks();$("banner").hidden=!D.example;}
+function renderAll(){renderStatus();renderBoard();renderMonth();renderScore();renderActions();renderMeasures();renderChecks();$("banner").hidden=!D.example;}
 
 function renderStatus(){
   var A=analyse(),el=$("status");el.innerHTML="";
@@ -378,7 +402,7 @@ function renderStatus(){
 }
 
 /* ---------- board ---------- */
-function setDate(d){if(!isDate(d))return;curDate=d;$("bDate").value=d;renderBoard();}
+function setDate(d){if(!isDate(d))return;curDate=d;$("bDate").value=d;renderBoard();renderScore();}
 function renderBoard(){
   var t=$("tiles");t.innerHTML="";var k=$("kpis");k.innerHTML="";var dn=$("dayNote");dn.textContent="";
   if(!D.measures.length){add(t,h("p",{class:"sm",text:"Nothing to show. Add measures first."}));return;}
@@ -452,6 +476,55 @@ function renderMonth(){
   g.appendChild(tb);
 }
 $("mSel").addEventListener("change",function(){if(/^\d{4}-\d{2}$/.test(this.value)){curMonth=this.value;renderMonth();}});
+
+/* ---------- scorecard ---------- */
+function periodDays(end,n){var out=[];for(var i=0;i<n;i++){var d=addDays(end,-i);if(workDay(d)&&d<=today())out.push(d);}return out;}
+function score(end,n){
+  var days=periodDays(end,n),meas=[],cats={};
+  CATS.forEach(function(c){cats[c[0]]={cat:c[0],name:c[1],measures:0,slots:0,g:0,a:0,r:0,n:0,read:0,pct:null};});
+  D.measures.forEach(function(m){
+    var o={m:m,days:days.length,g:0,a:0,r:0,n:0,read:0,sum:0,latest:null,latestOn:""};
+    days.forEach(function(d){var e=reading(m.id,d),v=e&&e.v!==null?e.v:null,r=ragOf(m,v);o[r]++;if(v!==null){o.read++;o.sum+=v;if(!o.latestOn||d>o.latestOn){o.latestOn=d;o.latest=v;}}});
+    o.avg=o.read?o.sum/o.read:null;o.pct=days.length?o.g/days.length*100:null;meas.push(o);
+    var c=cats[m.cat];c.measures++;c.slots+=days.length;c.read+=o.read;c.g+=o.g;c.a+=o.a;c.r+=o.r;c.n+=o.n;});
+  CATS.forEach(function(c){var x=cats[c[0]];x.pct=x.slots?x.g/x.slots*100:null;});
+  return {days:days,end:end,n:n,meas:meas,cats:CATS.map(function(c){return cats[c[0]];})};
+}
+function pctText(v){return v===null?"n/a":Math.round(v)+"%";}
+function radarSvg(cur,prev){
+  var ns="http://www.w3.org/2000/svg",use=cur.cats.filter(function(c){return c.measures>0&&c.slots>0;});
+  function el(t,a){var e=document.createElementNS(ns,t);for(var k in a)e.setAttribute(k,String(a[k]));return e;}
+  if(use.length<3)return null;
+  var s=el("svg",{viewBox:"-30 0 440 360",class:"radar",role:"img","aria-label":"Radar of the share of working days on target for each heading: "+use.map(function(c){return c.name+" "+pctText(c.pct);}).join(", ")+"."}),cx=190,cy=180,R=115,N=use.length;
+  function pt(i,p){var a=-Math.PI/2+i*2*Math.PI/N,r=R*p/100;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+  [25,50,75,100].forEach(function(p){var pts=use.map(function(c,i){return pt(i,p).map(function(x){return x.toFixed(1);}).join(",");}).join(" ");s.appendChild(el("polygon",{points:pts,class:"ring"}));
+    var q=pt(0,p);var tx=el("text",{x:(q[0]+4).toFixed(1),y:(q[1]-2).toFixed(1),class:"mut"});tx.textContent=p+"%";s.appendChild(tx);});
+  use.forEach(function(c,i){var e=pt(i,100);s.appendChild(el("line",{x1:cx,y1:cy,x2:e[0].toFixed(1),y2:e[1].toFixed(1),class:"ax"}));
+    var a=-Math.PI/2+i*2*Math.PI/N,lx=cx+(R+14)*Math.cos(a),ly=cy+(R+14)*Math.sin(a),an=Math.abs(Math.cos(a))<.2?"middle":(Math.cos(a)>0?"start":"end");
+    var tx=el("text",{x:lx.toFixed(1),y:(ly+(Math.sin(a)<-.5?-2:Math.sin(a)>.5?12:4)).toFixed(1),"text-anchor":an});tx.textContent=c.cat+" "+c.name+" "+pctText(c.pct);s.appendChild(tx);});
+  function poly(sc,cls){var map={};sc.cats.forEach(function(c){map[c.cat]=c;});var pts=use.map(function(c,i){var v=map[c.cat].pct;return pt(i,v===null?0:v).map(function(x){return x.toFixed(1);}).join(",");}).join(" ");s.appendChild(el("polygon",{points:pts,class:cls}));}
+  if(prev&&prev.cats.some(function(c){return c.read>0;}))poly(prev,"prev");poly(cur,"cur");
+  use.forEach(function(c,i){var q=pt(i,c.pct===null?0:c.pct);s.appendChild(el("circle",{cx:q[0].toFixed(1),cy:q[1].toFixed(1),r:4,class:"dot"}));});
+  return s;
+}
+function renderScore(){
+  var P=parseInt($("scP").value,10)||30,cur=score(curDate>today()?today():curDate,P),prev=score(addDays(cur.end,-P),P);
+  $("scRange").textContent="Ending "+fmt(cur.end)+". "+plural(cur.days.length,"working day")+" in the period.";
+  $("scNote").textContent=!D.measures.length?"Add measures first.":(!cur.days.length?"There are no working days in this period.":"");
+  var C=$("scCats");C.innerHTML="";
+  cur.cats.forEach(function(c,i){if(!c.measures)return;var pv=prev.cats[i].read?prev.cats[i].pct:null,dl=(c.pct!==null&&pv!==null)?Math.round(c.pct)-Math.round(pv):null;
+    C.appendChild(h("div",{class:"kpi"},h("div",{class:"n",text:pctText(c.pct)}),h("div",{class:"l",text:c.cat+" "+c.name+" on target"}),h("div",{class:"sm",text:dl===null?"No readings in the period before":(dl===0?"No change on the period before":(dl>0?"Up ":"Down ")+Math.abs(dl)+" points on the period before")}))); });
+  var rd=$("radar");rd.innerHTML="";var key=$("radarKey");key.innerHTML="";
+  var sv=radarSvg(cur,prev);
+  if(sv){rd.appendChild(sv);add(key,h("span",{},h("i"),"This period"),prev.cats.some(function(c){return c.read>0;})?h("span",{},h("i",{class:"p"}),"Period before"):null);}
+  else rd.appendChild(h("p",{class:"sm",text:"A radar needs measures under at least three headings, each with working days in the period. The tables still show the scores."}));
+  var T=$("scHead");T.innerHTML="";T.appendChild(h("thead",{},h("tr",{},["Heading","Measures","On target","Amber","Red","No data","Score","Period before"].map(function(x,i){return h("th",{class:i?"num":"",text:x});}))));
+  var tb=h("tbody");cur.cats.forEach(function(c,i){if(!c.measures)return;tb.appendChild(h("tr",{},h("td",{text:c.cat+" "+c.name}),[c.measures,c.g,c.a,c.r,c.n,pctText(c.pct),prev.cats[i].read?pctText(prev.cats[i].pct):"No readings"].map(function(x){return h("td",{class:"num",text:String(x)});})));});T.appendChild(tb);
+  var M=$("scMeas");M.innerHTML="";M.appendChild(h("thead",{},h("tr",{},["Measure","Target","Readings","On target","Amber","Red","No data","Score","Average","Latest"].map(function(x,i){return h("th",{class:i>1?"num":"",text:x});}))));
+  var tb2=h("tbody");cur.meas.forEach(function(o){var m=o.m,u=m.unit?" "+m.unit:"";tb2.appendChild(h("tr",{},h("td",{text:m.cat+" "+(m.name||"(unnamed)")}),h("td",{text:targetText(m).replace("Target ","")}),
+    [o.read+" of "+o.days,o.g,o.a,o.r,o.n,pctText(o.pct),o.avg===null?"n/a":fnum(o.avg)+u,o.latest===null?"n/a":fnum(o.latest)+u+" ("+fmt(o.latestOn)+")"].map(function(x){return h("td",{class:"num",text:String(x)});})));});M.appendChild(tb2);
+}
+$("scP").addEventListener("change",renderScore);
 
 /* ---------- actions ---------- */
 function actState(a){var td=today();
@@ -575,7 +648,12 @@ function buildReport(){
   add(r,h("p",{class:"gapx",text:!D.measures.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on this board until they are dealt with.":"No gaps found by the checks. A competent person must still judge the board."}));
   var t=h("table",{}),hr=h("tr",{});["Heading","Measure","Target","Reading","Status","Note"].forEach(function(x){hr.appendChild(h("th",{text:x}));});t.appendChild(hr);
   D.measures.forEach(function(m){var e=reading(m.id,curDate),rr=ragOf(m,e?e.v:null);t.appendChild(h("tr",{},[m.cat,m.name,targetText(m),e&&e.v!==null?fnum(e.v)+(m.unit?" "+m.unit:""):"No reading",RAGT[rr]+" "+RAGW[rr],e?e.n:""].map(function(x){return h("td",{text:x});})));});
-  add(r,t);add(r,h("h2",{text:"Open actions"}));
+  add(r,t);
+  var sc=score(curDate>td?td:curDate,30);add(r,h("h2",{text:"Scorecard, last 30 days to "+fmt(sc.end)}));
+  var t3=h("table",{}),h3=h("tr",{});["Heading","Measures","On target","Amber","Red","No data","Score"].forEach(function(x){h3.appendChild(h("th",{text:x}));});t3.appendChild(h3);
+  sc.cats.forEach(function(c){if(!c.measures)return;t3.appendChild(h("tr",{},[c.cat+" "+c.name,c.measures,c.g,c.a,c.r,c.n,pctText(c.pct)].map(function(x){return h("td",{text:String(x)});})));});add(r,t3);
+  add(r,h("p",{text:"Score is the share of working days on target. A day with no reading counts against it."}));
+  add(r,h("h2",{text:"Open actions"}));
   var oa=D.actions.filter(function(a){return a.status!=="done";});
   if(!oa.length)add(r,h("p",{text:"None."}));else{var t2=h("table",{}),h2=h("tr",{});["Action","Measure","Owner","Due","Escalation"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);
     oa.forEach(function(a){var m=mById(a.mid);t2.appendChild(h("tr",{},[short(a.text,160),m?m.name:"",a.owner,a.due?fmt(a.due)+(a.due<td?" (overdue)":""):"Not set",a.esc?tierName(a.esc)+(a.escOn?", raised "+fmt(a.escOn):", not dated"):""].map(function(x){return h("td",{text:x});})));});add(r,t2);}
@@ -587,9 +665,9 @@ function buildReport(){
 $("btnPrint").onclick=function(){buildReport();window.print();};
 window.addEventListener("beforeprint",buildReport);
 
-function showTab(t){uiSet("tab",t);["board","month","actions","measures","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+function showTab(t){uiSet("tab",t);["board","month","score","actions","measures","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
   document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
-  if(t==="board")renderBoard();if(t==="month")renderMonth();if(t==="actions")renderActions();if(t==="checks")renderChecks();if(t==="measures")renderMeasures();}
+  if(t==="board")renderBoard();if(t==="month")renderMonth();if(t==="score")renderScore();if(t==="actions")renderActions();if(t==="checks")renderChecks();if(t==="measures")renderMeasures();}
 document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
 $("btnClear").onclick=function(){var b=$("btnClear");
   if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear everything";b.classList.remove("armed");return;}
@@ -629,8 +707,8 @@ function defDate(){var td=today();if(D.example&&!D.entries[td]){var k=Object.key
 var sv=load();if(sv)D=sv;else{D=example();saveNow();}
 curDate=defDate();$("bDate").value=curDate;curMonth=curDate.slice(0,7);$("mSel").value=curMonth;
 renderAll();renderSave();
-var ui=uiGet();showTab(["board","month","actions","measures","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"board");
-window.__tb={analyse:analyse,ragOf:ragOf,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();},monthStats:monthStats,setDate:setDate};
+var ui=uiGet();showTab(["board","month","score","actions","measures","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"board");
+window.__tb={analyse:analyse,ragOf:ragOf,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();},monthStats:monthStats,score:score,setDate:setDate};
 })();
 </script>
 <!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
