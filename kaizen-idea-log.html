@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaizen and Improvement Idea Log</title>
+<meta name="description" content="Capture improvement ideas from the floor with an owner, an expected benefit, a decision and a result. The checks show ideas waiting for a decision, people not told the outcome, and benefits claimed without an independent check.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.fb{font-size:.84rem;margin:6px 0 0;color:var(--muted)}
+.mini td.num,.mini th.num{text-align:right}
+@media print{header{display:none!important}}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Kaizen and Improvement Idea Log</h1>
+    <p>Capture ideas from the people who do the work, decide them quickly, tell the person who raised each one what happened, and measure the result. A benefit only counts once someone other than the owner has checked it.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="log">Ideas</button>
+  <button role="tab" aria-selected="false" data-tab="dash">Dashboard</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records the names or roles of people who raise, own and check ideas. It stays in this browser and in files you save. Nothing is sent to this website. If you enter names, your employer is responsible for that data. Use initials or roles where you can. Describe the idea and the work, not the person, and do not record health detail or anything about an individual's conduct. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every idea tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear log to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add an idea</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn sec" id="btnTrack">Send approved ideas to the tracker</button>
+  <button class="btn danger" id="btnClear">Clear log</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+<p class="sm" id="sendNote" role="status"></p>
+
+<section id="tab-log">
+  <div class="toolbar"><label class="sm">Show <select id="fStatus" aria-label="Filter by status"><option value="open">Not finished</option><option value="wait">Waiting for a decision</option><option value="gap">With gaps</option><option value="done">Done</option><option value="all">All</option></select></label></div>
+  <div class="list" id="list"></div>
+</section>
+
+<section id="tab-dash" hidden>
+  <div class="toolbar"><label class="sm">Period <select id="period" aria-label="Period"><option value="90">Last 90 days</option><option value="365" selected>Last 12 months</option><option value="0">All ideas</option></select></label></div>
+  <div class="kpis" id="kpis"></div>
+  <p class="disc" id="cult"></p>
+  <div class="card"><h2>Benefit, by what was claimed and what was checked</h2><div class="tablewrap"><table id="benTable" class="mini"></table></div>
+    <p class="disc">Benefits are added up only within the same kind and unit, so minutes are never added to pounds. Verified means the result was measured and checked by someone other than the owner.</p></div>
+  <div class="card"><h2>By month raised</h2><div class="tablewrap"><table id="monthTable" class="mini"></table></div></div>
+  <div class="card"><h2>By heading</h2><div class="tablewrap"><table id="catTable" class="mini"></table></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record: ideas waiting too long, decisions with no reason, people not told the outcome, and results claimed with no measurement or independent check. They cannot tell whether an idea is good or a measured result is true.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it is for</h2>
+    <p>Small improvements raised by the people doing the job are one of the best signs of a healthy improvement culture. They also die quickly when ideas disappear without an answer. This log keeps each idea visible from the day it is raised to the day its result is measured, and makes sure the person who raised it hears what happened.</p></div>
+  <div class="card"><h2>The rules the log applies</h2>
+    <ul>
+      <li>An idea left undecided for more than 14 days is a gap. A week is a note.</li>
+      <li>A decision needs a name and a date. Turning an idea down or parking it needs a reason.</li>
+      <li>Every decided idea needs a date on which the person who raised it was told.</li>
+      <li>An approved idea needs an owner and a due date, and is flagged when overdue.</li>
+      <li>A finished idea needs its result measured, a note of how, and a check by someone other than its owner. Without that the benefit shows as claimed, not verified.</li>
+      <li>The result cannot be dated before the idea was finished.</li>
+    </ul></div>
+  <div class="card"><h2>Reading the dashboard</h2>
+    <p>The number of ideas is not the aim, and it should never be turned into a league table of people. The log shows how many different people have contributed, but not who. Look at how quickly ideas get a decision, what share of people were told the outcome, and how much benefit was verified. A fall in ideas can mean people stopped believing anything happens, so ask them.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>For a bigger problem use the <a href="a3-problem-solving.html">A3 Problem Solving Sheet</a>. Follow approved ideas in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>. Problems raised at the board come from the <a href="daily-management-board.html">Daily Management Board</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the ideas are good or the benefits are real. Check your own company procedures. This is decision support only.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Idea</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save idea</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete idea</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your company's procedures. Kaizen and Improvement Idea Log. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how personal data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-kaizen-v1",UIK="rmilburn-kaizen-ui",TK="rmilburn-action-tracker-v1",TBASE=4000000;
+var CATS=[["S","Safety"],["Q","Quality"],["D","Delivery"],["C","Cost"],["P","People"],["O","Other"]];
+var STAT=[["new","New, waiting for a decision"],["approved","Approved"],["doing","In progress"],["done","Done"],["rejected","Not going ahead"],["parked","Parked"]];
+var BT=[["time","Time saved"],["cost","Money saved"],["quality","Scrap or rework avoided"],["safety","Risk removed"],["other","Other"]];
+var EFF=[["S","Small, a day or less"],["M","Medium, a week or less"],["L","Large, more than a week"]];
+var BLAME=/\b(careless\w*|negligen\w*|lazy|stupid\w*|idiot\w*|reckless\w*|human error|operator error|should have|failed to|to blame|at fault|blame\w*)\b/i;
+var MAXI=1000;
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,period=365;
+function blank(){return {example:false,ideas:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function short(s,n){s=String(s||"").trim();return s.length>n?s.slice(0,n-1)+"…":(s||"(no title yet)");}
+function num(v){if(v===null||v===undefined||v==="")return null;var n=typeof v==="number"?v:parseFloat(String(v).replace(/,/g,"."));return (isFinite(n)&&Math.abs(n)<=1e9)?n:null;}
+function fnum(v){return v===null||v===undefined?"":String(Math.round(v*100)/100);}
+function median(a){if(!a.length)return null;var s=a.slice().sort(function(x,y){return x-y;}),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function ref(i){return "KZ-"+String(i.no).padStart(3,"0");}
+function lname(list,v){for(var i=0;i<list.length;i++)if(list[i][0]===v)return list[i][1];return "";}
+
+function cleanIdea(x){
+  if(!x||typeof x!=="object")return null;
+  return {id:parseInt(x.id,10)||0,no:parseInt(x.no,10)||0,title:str(x.title,100),desc:str(x.desc,500),cat:inList(x.cat,CATS),area:str(x.area,60),by:str(x.by,60),raised:dOk(x.raised),effort:inList(x.effort,EFF),
+    bType:inList(x.bType,BT),bUnit:str(x.bUnit,24),bExp:num(x.bExp),bNote:str(x.bNote,200),status:inList(x.status,STAT)||"new",owner:str(x.owner,60),due:dOk(x.due),
+    decBy:str(x.decBy,60),decOn:dOk(x.decOn),reason:str(x.reason,300),doneOn:dOk(x.doneOn),bAct:num(x.bAct),resultNote:str(x.resultNote,300),resultOn:dOk(x.resultOn),verBy:str(x.verBy,60),verOn:dOk(x.verOn),
+    fbBy:str(x.fbBy,60),fbOn:dOk(x.fbOn),ex:x.ex===true};
+}
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;var ids={},nos={},mx=0,mn=0;
+  (Array.isArray(d.ideas)?d.ideas.slice(0,MAXI):[]).forEach(function(x){var c=cleanIdea(x);if(!c)return;if(c.id>mx)mx=c.id;if(c.no>mn)mn=c.no;o.ideas.push(c);});
+  o.ideas.forEach(function(c){if(!c.id||ids[c.id])c.id=++mx;ids[c.id]=1;if(!c.no||nos[c.no])c.no=++mn;nos[c.no]=1;});
+  return o;
+}
+function decided(i){return i.status!=="new";}
+function checked(i){return i.bAct!==null&&i.verBy.trim()&&norm(i.verBy)!==norm(i.owner)&&i.verOn&&i.resultNote.trim();}
+
+/* ---------- checks ---------- */
+function ideaCheck(i){
+  var gaps=[],notes=[],td=today(),age=i.raised?daysBetween(i.raised,td):0;
+  function g(m){gaps.push(m);}function n(m){notes.push(m);}
+  if(!i.title.trim())g("The idea has no title.");
+  if(!i.desc.trim())g("The idea is not described.");
+  if(!i.raised)g("The date it was raised is not set.");else if(i.raised>td)g("The raised date is in the future.");
+  if(!i.by.trim())n("Nobody is recorded as having raised it. If it was anonymous, they cannot be told the outcome.");
+  if(BLAME.test(i.title+" "+i.desc))g("The wording judges a person. Describe the work or the process instead.");
+  if(i.status==="new"){if(age>14)g("It has waited "+plural(age,"day")+" for a decision.");else if(age>7)n("It has waited "+plural(age,"day")+" for a decision.");}
+  if(decided(i)){
+    if(!i.decBy.trim())g("The decision has no name against it.");
+    if(!i.decOn)g("The decision has no date.");else if(i.decOn>td)g("The decision date is in the future.");else if(i.raised&&i.decOn<i.raised)g("The decision is dated before the idea was raised.");
+    if(!i.fbOn)g("The person who raised it has not been told the outcome, or the date is not recorded.");else if(i.fbOn>td)g("The feedback date is in the future.");else if(i.decOn&&i.fbOn<i.decOn)g("Feedback is dated before the decision.");
+  }
+  if(i.status==="rejected"||i.status==="parked"){if(!i.reason.trim())g("It was "+(i.status==="rejected"?"turned down":"parked")+" with no reason given.");}
+  if(i.status==="approved"||i.status==="doing"||i.status==="done"){
+    if(!i.owner.trim())g("It has no owner.");
+    if(i.status!=="done"){if(!i.due)g("It has no due date.");else if(i.due<td)g("It is overdue (due "+fmt(i.due)+").");}
+    if(i.bExp===null)n("No expected benefit is stated.");
+    if(i.bExp!==null&&(!i.bType||!i.bUnit.trim()))g("An expected benefit is entered with no kind or unit.");
+  }
+  if(i.status==="done"){
+    if(!i.doneOn)g("It is marked done with no finish date.");else if(i.doneOn>td)g("The finish date is in the future.");
+    if(i.bAct===null){if(i.bExp!==null)g("Marked done but the benefit was not measured.");else n("Marked done with no benefit stated or measured.");}
+    else{
+      if(!i.resultNote.trim())g("A result is entered with no note of how it was measured.");
+      if(!i.resultOn)g("The result has no date.");else if(i.resultOn>td)g("The result date is in the future.");else if(i.doneOn&&i.resultOn<i.doneOn)g("The result is dated before the idea was finished, so it cannot show its effect.");
+      if(!i.verBy.trim())g("The benefit is claimed with nobody named as having checked it.");
+      else if(norm(i.verBy)===norm(i.owner))g("The benefit was checked by its own owner.");
+      if(!i.verOn)g("The benefit has no check date.");else if(i.verOn>td)g("The check date is in the future.");
+      if((i.bType===""||!i.bUnit.trim()))g("A result is entered with no kind or unit.");
+    }
+  }
+  return {gaps:gaps,notes:notes};
+}
+function analyse(){
+  var gaps=[],notes=[];
+  D.ideas.forEach(function(i){var c=ideaCheck(i);c.gaps.forEach(function(m){gaps.push({id:i.id,msg:ref(i)+": "+m});});c.notes.forEach(function(m){notes.push({id:i.id,msg:ref(i)+": "+m});});});
+  return {gaps:gaps,notes:notes};
+}
+
+/* ---------- persistence ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextNo(){var m=0;D.ideas.forEach(function(i){if(i.no>m)m=i.no;});return m+1;}
+function nextId(){var m=0;D.ideas.forEach(function(i){if(i.id>m)m=i.id;});return m+1;}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderAll(){renderStatus();renderList();renderDash();renderChecks();$("banner").hidden=!D.example;}
+
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.ideas.length){el.className="status st-empty";add(el,h("strong",{text:"No ideas logged yet."}),h("div",{class:"sm",text:"Add an idea, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on this log until they are dealt with."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the ideas are good or the benefits are real."}));}
+}
+function renderList(){
+  var L=$("list");L.innerHTML="";var f=$("fStatus").value,td=today();
+  var list=D.ideas.filter(function(i){var c=ideaCheck(i);
+    if(f==="open")return i.status!=="done"&&i.status!=="rejected";if(f==="wait")return i.status==="new";if(f==="gap")return c.gaps.length>0;if(f==="done")return i.status==="done";return true;});
+  list.sort(function(a,b){return b.no-a.no;});
+  if(!list.length){L.appendChild(h("p",{class:"sm",text:D.ideas.length?"No ideas match this filter.":"Nothing here yet."}));return;}
+  list.forEach(function(i){var c=ideaCheck(i),ver=i.status==="done"&&checked(i);
+    L.appendChild(h("button",{class:"inc "+(c.gaps.length?"gap":"clean")+(i.status==="done"||i.status==="rejected"?" closed":""),type:"button","data-k":"i"+i.id,onclick:function(){openIdea(i.id);}},
+      h("div",{class:"t",text:ref(i)+"  "+short(i.title,100)}),
+      h("div",{class:"m"},h("span",{class:"chip "+(i.status==="done"?"ok":i.status==="new"?"y":i.status==="rejected"||i.status==="parked"?"":"c"),text:lname(STAT,i.status)}),
+        i.cat?h("span",{class:"chip v",text:lname(CATS,i.cat)}):null,
+        c.gaps.length?h("span",{class:"chip g",text:plural(c.gaps.length,"gap")}):h("span",{class:"chip ok",text:"No gaps found"}),
+        i.status==="done"&&i.bAct!==null?h("span",{class:"chip "+(ver?"ok":"y"),text:ver?"Benefit verified":"Benefit claimed, not verified"}):null,
+        i.ex?h("span",{class:"chip",text:"Example"}):null,
+        h("span",{class:"sm",text:(i.owner||"No owner")+(i.raised?" · raised "+fmt(i.raised):"")})))); });
+}
+$("fStatus").addEventListener("change",renderList);
+
+/* ---------- dashboard ---------- */
+function benKey(i){return (i.bType||"?")+"|"+norm(i.bUnit);}
+function renderDash(){
+  var k=$("kpis");k.innerHTML="";var td=today(),all=D.ideas;
+  var L=all.filter(function(i){return period===0||(i.raised&&daysBetween(i.raised,td)<=period);});
+  if(!all.length){$("cult").textContent="";["benTable","monthTable","catTable"].forEach(function(id){$(id).innerHTML="";});return;}
+  var dec=L.filter(decided),waiting=L.filter(function(i){return i.status==="new";}),done=L.filter(function(i){return i.status==="done";});
+  var dd=dec.filter(function(i){return i.raised&&i.decOn&&i.decOn>=i.raised;}).map(function(i){return daysBetween(i.raised,i.decOn);});
+  var fast=dd.filter(function(x){return x<=14;}).length;
+  var dn=done.filter(function(i){return i.raised&&i.doneOn&&i.doneOn>=i.raised;}).map(function(i){return daysBetween(i.raised,i.doneOn);});
+  var told=dec.filter(function(i){return i.fbOn;}).length;
+  var people={};L.forEach(function(i){if(i.by.trim())people[norm(i.by)]=1;});
+  var over=all.filter(function(i){return (i.status==="approved"||i.status==="doing")&&i.due&&i.due<td;}).length;
+  var md=median(dd),mn=median(dn);
+  add(k,kpi(L.length,"Ideas raised in the period"),kpi(Object.keys(people).length,"Different people who raised one"),
+    kpi(waiting.length,"Waiting for a decision",waiting.length?"warn":"ok"),kpi(md===null?"None":md+" days","Median time to a decision"),
+    kpi(dd.length?Math.round(fast/dd.length*100)+"%":"None","Decided within 14 days"),kpi(dec.length?Math.round(told/dec.length*100)+"%":"None","Decided ideas where the person was told",dec.length&&told<dec.length?"warn":"ok"),
+    kpi(done.length,"Done"),kpi(mn===null?"None":mn+" days","Median time from raised to done"),kpi(over,"Approved ideas overdue",over?"crit":"ok"));
+  $("cult").textContent="The number of ideas is not the aim and must not be turned into a league table of people. Look at how fast ideas get an answer, whether people are told, and how much benefit was verified. A fall in ideas can mean people have stopped believing anything happens. Ask them.";
+  /* benefit */
+  var B={};function slot(i){var key=benKey(i);return B[key]||(B[key]={t:i.bType,u:i.bUnit.trim(),ver:0,vn:0,claim:0,cn:0,exp:0,en:0});}
+  all.forEach(function(i){
+    if(i.status==="done"&&i.bAct!==null){var s=slot(i);if(checked(i)){s.ver+=i.bAct;s.vn++;}else{s.claim+=i.bAct;s.cn++;}}
+    else if((i.status==="approved"||i.status==="doing")&&i.bExp!==null){var s2=slot(i);s2.exp+=i.bExp;s2.en++;}});
+  var bt=$("benTable");bt.innerHTML="";var keys=Object.keys(B);
+  bt.appendChild(h("thead",{},h("tr",{},["Kind","Unit","Verified","Claimed, not verified","Expected from open ideas"].map(function(x,i){return h("th",{class:i>1?"num":"",text:x});}))));
+  var tb=h("tbody");if(!keys.length)tb.appendChild(h("tr",{},h("td",{colspan:"5",text:"No benefits recorded yet."})));
+  keys.forEach(function(key){var s=B[key];tb.appendChild(h("tr",{},h("td",{text:lname(BT,s.t)||"No kind"}),h("td",{text:s.u||"No unit"}),h("td",{class:"num",text:fnum(s.ver)+" ("+plural(s.vn,"idea")+")"}),h("td",{class:"num",text:fnum(s.claim)+" ("+plural(s.cn,"idea")+")"}),h("td",{class:"num",text:fnum(s.exp)+" ("+plural(s.en,"idea")+")"})));});
+  bt.appendChild(tb);
+  /* month */
+  var months=[],d=new Date();d.setDate(1);
+  for(var m=11;m>=0;m--){var x=new Date(d.getFullYear(),d.getMonth()-m,1);months.push({key:x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0"),r:0,dn:0,ppl:{}});}
+  all.forEach(function(i){if(i.raised){months.forEach(function(mm){if(mm.key===i.raised.slice(0,7)){mm.r++;if(i.by.trim())mm.ppl[norm(i.by)]=1;}});}if(i.status==="done"&&i.doneOn)months.forEach(function(mm){if(mm.key===i.doneOn.slice(0,7))mm.dn++;});});
+  var mx=1;months.forEach(function(mm){mx=Math.max(mx,mm.r,mm.dn);});
+  var mt=$("monthTable");mt.innerHTML="";mt.appendChild(h("thead",{},h("tr",{},h("th",{text:"Month"}),h("th",{text:"Ideas raised"}),h("th",{text:"Ideas finished"}),h("th",{class:"num",text:"Different people raising"}))));
+  var tb2=h("tbody");months.forEach(function(mm){tb2.appendChild(h("tr",{},h("td",{text:mm.key.slice(5)+"/"+mm.key.slice(0,4)}),h("td",{},h("span",{class:"bar b1",style:"width:"+Math.round(120*mm.r/mx)+"px","aria-hidden":"true"}),String(mm.r)),h("td",{},h("span",{class:"bar b2",style:"width:"+Math.round(120*mm.dn/mx)+"px","aria-hidden":"true"}),String(mm.dn)),h("td",{class:"num",text:String(Object.keys(mm.ppl).length)})));});
+  mt.appendChild(tb2);
+  var ct=$("catTable");ct.innerHTML="";ct.appendChild(h("thead",{},h("tr",{},["Heading","Raised","Waiting","In progress","Done","Not going ahead or parked"].map(function(x,i){return h("th",{class:i?"num":"",text:x});}))));
+  var tb3=h("tbody");CATS.concat([["","No heading"]]).forEach(function(c){var s=L.filter(function(i){return i.cat===c[0];});if(!s.length)return;
+    function cnt(f){return s.filter(f).length;}
+    tb3.appendChild(h("tr",{},h("td",{text:c[1]}),[s.length,cnt(function(i){return i.status==="new";}),cnt(function(i){return i.status==="approved"||i.status==="doing";}),cnt(function(i){return i.status==="done";}),cnt(function(i){return i.status==="rejected"||i.status==="parked";})].map(function(x){return h("td",{class:"num",text:String(x)});})));});
+  ct.appendChild(tb3);
+}
+$("period").addEventListener("change",function(){period=parseInt(this.value,10)||0;renderDash();});
+
+/* ---------- dialog ---------- */
+function lab(t,c,full){return h("label",{class:full?"full":""},t,c);}
+function sel(list,val,id,blankLabel){var s=h("select",{id:id});if(blankLabel!==null)s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
+function showDlg(){var d=$("dlg");if(typeof d.showModal==="function"){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function closeDlg(){var d=$("dlg"),k=draft?"i"+draft.id:"";if(d.close)d.close();else d.removeAttribute("open");draft=null;draftNew=false;var b=k&&document.querySelector('[data-k="'+k+'"]');if(b)b.focus();else{var a=$("btnAdd");if(a)a.focus();}}
+$("dlgCancel").onclick=closeDlg;$("dlgX").onclick=closeDlg;
+$("dlg").addEventListener("cancel",function(){draft=null;draftNew=false;});
+function openIdea(id){var cur=null;D.ideas.forEach(function(i){if(i.id===id)cur=i;});if(!cur)return;draft=JSON.parse(JSON.stringify(cur));draftNew=false;buildDlg();showDlg();}
+$("btnAdd").onclick=function(){if(D.ideas.length>=MAXI)return;
+  if(D.example){if(!confirm("The example is still loaded. Clear it first so your ideas are not mixed with made-up ones?"))return;D=blank();touch();renderAll();}
+  draft=cleanIdea({id:nextId(),no:nextNo(),raised:today(),status:"new"});draftNew=true;buildDlg();showDlg();};
+function val(id){var e=$(id);return e?e.value:"";}
+function pull(){if(!draft)return;var d=draft;
+  d.title=val("kT").slice(0,100);d.desc=val("kD").slice(0,500);d.cat=inList(val("kC"),CATS);d.area=val("kA").slice(0,60);d.by=val("kBy").slice(0,60);d.raised=dOk(val("kR"));d.effort=inList(val("kE"),EFF);
+  d.bType=inList(val("kBt"),BT);d.bUnit=val("kBu").slice(0,24);d.bExp=num(val("kBe"));d.bNote=val("kBn").slice(0,200);
+  d.status=inList(val("kS"),STAT)||"new";d.owner=val("kO").slice(0,60);d.due=dOk(val("kDue"));d.decBy=val("kDb").slice(0,60);d.decOn=dOk(val("kDo"));d.reason=val("kRs").slice(0,300);
+  d.doneOn=dOk(val("kDn"));d.bAct=num(val("kBa"));d.resultNote=val("kRn").slice(0,300);d.resultOn=dOk(val("kRo"));d.verBy=val("kVb").slice(0,60);d.verOn=dOk(val("kVo"));d.fbBy=val("kFb").slice(0,60);d.fbOn=dOk(val("kFo"));}
+function buildDlg(){
+  var b=$("dlgB"),d=draft;b.innerHTML="";$("dlgT").textContent=ref(d)+(draftNew?" (new)":"")+(d.ex?" (Example)":"");
+  b.appendChild(h("fieldset",{},h("legend",{text:"1. The idea"}),h("div",{class:"f"},
+    lab("Title",h("input",{type:"text",id:"kT",value:d.title,maxlength:"100"}),true),
+    lab("What is the idea, and what problem does it fix?",h("textarea",{id:"kD",maxlength:"500",rows:"3"}),true),
+    lab("Heading",sel(CATS,d.cat,"kC","Choose")),lab("Area",h("input",{type:"text",id:"kA",value:d.area,maxlength:"60"})),
+    lab("Raised by (name or role)",h("input",{type:"text",id:"kBy",value:d.by,maxlength:"60"})),lab("Date raised",h("input",{type:"date",id:"kR",value:d.raised})),
+    lab("Effort",sel(EFF,d.effort,"kE","Not set")))));
+  $("kD").value=d.desc;
+  b.appendChild(h("fieldset",{},h("legend",{text:"2. Expected benefit"}),h("div",{class:"f"},
+    lab("Kind of benefit",sel(BT,d.bType,"kBt","Choose")),lab("Unit, for example minutes per day or £ per month",h("input",{type:"text",id:"kBu",value:d.bUnit,maxlength:"24"})),
+    lab("Expected amount",h("input",{type:"number",step:"any",id:"kBe",value:d.bExp===null?"":String(d.bExp)})),lab("How was that worked out?",h("input",{type:"text",id:"kBn",value:d.bNote,maxlength:"200"})))));
+  b.appendChild(h("fieldset",{},h("legend",{text:"3. Decision"}),h("div",{class:"f"},
+    lab("Status",sel(STAT,d.status,"kS",null)),lab("Owner",h("input",{type:"text",id:"kO",value:d.owner,maxlength:"60"})),
+    lab("Due",h("input",{type:"date",id:"kDue",value:d.due})),lab("Decided by",h("input",{type:"text",id:"kDb",value:d.decBy,maxlength:"60"})),
+    lab("Decision date",h("input",{type:"date",id:"kDo",value:d.decOn})),lab("Reason (needed if turned down or parked)",h("input",{type:"text",id:"kRs",value:d.reason,maxlength:"300"})),
+    lab("Person who told the one who raised it",h("input",{type:"text",id:"kFb",value:d.fbBy,maxlength:"60"})),lab("Date they were told",h("input",{type:"date",id:"kFo",value:d.fbOn})))));
+  b.appendChild(h("fieldset",{},h("legend",{text:"4. Result"}),h("div",{class:"f"},
+    lab("Date finished",h("input",{type:"date",id:"kDn",value:d.doneOn})),lab("Measured result, in the same unit",h("input",{type:"number",step:"any",id:"kBa",value:d.bAct===null?"":String(d.bAct)})),
+    lab("How was it measured?",h("input",{type:"text",id:"kRn",value:d.resultNote,maxlength:"300"}),true),
+    lab("Date measured",h("input",{type:"date",id:"kRo",value:d.resultOn})),lab("Result checked by (someone other than the owner)",h("input",{type:"text",id:"kVb",value:d.verBy,maxlength:"60"})),
+    lab("Date checked",h("input",{type:"date",id:"kVo",value:d.verOn})))));
+  b.appendChild(h("p",{class:"sm",text:"The benefit counts as verified only when it is measured, the method is noted, and someone other than the owner has checked it."}));
+  $("dlgDel").hidden=draftNew;
+}
+$("dlgOk").onclick=function(){if(!draft)return;pull();
+  if(draftNew)D.ideas.push(draft);else D.ideas=D.ideas.map(function(i){return i.id===draft.id?draft:i;});
+  touch();var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");draft=null;draftNew=false;renderAll();};
+$("dlgDel").onclick=function(){var b=$("dlgDel");
+  if(armed==="del"){D.ideas=D.ideas.filter(function(i){return i.id!==draft.id;});armed=null;touch();var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");draft=null;renderAll();return;}
+  armed="del";b.textContent="Confirm: delete";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Delete idea";b.classList.remove("armed");},4000);};
+
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.ideas.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){showTab("log");openIdea(x.id);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the log."}));
+}
+
+/* ---------- exports ---------- */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Ref","Title","Heading","Area","Raised","Status","Owner","Due","Decided by","Decision date","Reason","Told on","Benefit kind","Unit","Expected","Measured","Checked by","Verified","Gaps","Example"];
+  var rows=D.ideas.map(function(i){return [ref(i),i.title,lname(CATS,i.cat),i.area,i.raised,lname(STAT,i.status),i.owner,i.due,i.decBy,i.decOn,i.reason,i.fbOn,lname(BT,i.bType),i.bUnit,i.bExp===null?"":i.bExp,i.bAct===null?"":i.bAct,i.verBy,i.status==="done"&&checked(i)?"Yes":"No",ideaCheck(i).gaps.length,i.ex?"Example":""];});
+  download("kaizen-ideas.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+$("btnTrack").onclick=function(){
+  var note=$("sendNote"),list=D.ideas.filter(function(i){return (i.status==="approved"||i.status==="doing"||i.status==="done")&&i.title.trim();});
+  if(!list.length){note.textContent="There are no approved ideas to send.";return;}
+  var cur={actions:[]};try{var d=JSON.parse(localStorage.getItem(TK));if(d&&Array.isArray(d.actions))cur=d;}catch(e){}
+  var ids={};list.forEach(function(i){ids[TBASE+i.id]=1;});
+  var kept=cur.actions.filter(function(z){return !(z&&ids[z.id]);});
+  list.forEach(function(i){
+    kept.push({id:TBASE+i.id,example:i.ex===true,title:i.title.trim().slice(0,140),detail:("Improvement idea "+ref(i)+": "+i.desc).slice(0,400),source:"Kaizen idea",hoc:"",riskId:null,riskText:"",
+      owner:i.owner,raised:i.decOn||i.raised||today(),due:i.due,status:i.status==="done"?"done":"open",doneDate:i.status==="done"?i.doneOn:"",doneNote:"",verifier:"",verDate:"",verNote:"",result:"",cancel:"",log:[]});});
+  try{localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+    note.textContent="Sent "+plural(list.length,"idea")+" to the tracker as actions. Sending again updates them, and replaces anything changed on them there. Checks are not carried across, so each one needs its own check in the tracker.";
+  }catch(e){note.textContent="This browser would not let the page write to the tracker. Nothing was sent.";}
+};
+function buildReport(){
+  var r=$("report"),A=analyse();r.innerHTML="";add(r,h("h1",{text:"Improvement idea report"}));
+  if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  add(r,h("p",{text:"Printed "+fmt(today())+". "+plural(D.ideas.length,"idea")+"."}));
+  add(r,h("p",{class:"gapx",text:!D.ideas.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not treat this log as complete.":"No gaps found by the checks. A competent person must still judge the log."}));
+  var t=h("table",{}),hr=h("tr",{});["Ref","Idea","Raised","Status","Owner","Result"].forEach(function(x){hr.appendChild(h("th",{text:x}));});t.appendChild(hr);
+  D.ideas.slice().sort(function(a,b){return b.no-a.no;}).forEach(function(i){t.appendChild(h("tr",{},[ref(i),short(i.title,80),fmt(i.raised),lname(STAT,i.status),i.owner,i.status==="done"&&i.bAct!==null?fnum(i.bAct)+" "+i.bUnit+(checked(i)?" (verified)":" (NOT verified)"):""].map(function(x){return h("td",{text:x});})));});
+  add(r,t);add(r,h("h2",{text:"Gaps and notes"}));
+  var l=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Decision support only. Measured results are as entered and have not been checked against a source."}));
+}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["log","dash","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="dash")renderDash();if(t==="checks")renderChecks();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear log";b.classList.remove("armed");return;}
+  if(!D.ideas.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear log";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();touch();renderAll();showTab("log");};
+$("btnSave").onclick=function(){download("kaizen-ideas.json",JSON.stringify({app:"kaizen-log",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>3000000){alert("That file is too large to be a kaizen data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="kaizen-log"||!d.data)throw 0;D=clean(d.data);touch();renderAll();}catch(e){alert("That file could not be read. It is not a kaizen log data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank();o.example=true;var n=0;
+  function I(p){n++;var b={id:n,no:n,ex:true,title:"",desc:"",cat:"Q",area:"Example Line 2",by:"Example Operator A",raised:off(-30),effort:"S",bType:"time",bUnit:"minutes per day",bExp:null,bNote:"",status:"new",owner:"",due:"",decBy:"",decOn:"",reason:"",doneOn:"",bAct:null,resultNote:"",resultOn:"",verBy:"",verOn:"",fbBy:"",fbOn:""};
+    for(var k in p)b[k]=p[k];o.ideas.push(cleanIdea(b));}
+  I({title:"Example: Move the gauge to the start of the line",desc:"Example: Operators walk 30 metres to the gauge for every first-off check. Moving it to the station saves the walk.",cat:"D",bExp:20,bNote:"Example: 4 checks a day, 5 minutes each",status:"done",owner:"Example Team Leader",due:off(-15),decBy:"Example Supervisor",decOn:off(-27),fbBy:"Example Supervisor",fbOn:off(-26),doneOn:off(-18),bAct:18,resultNote:"Example: Timed 5 first-off checks before and after",resultOn:off(-12),verBy:"Example Quality Lead",verOn:off(-11),raised:off(-34)});
+  I({title:"Example: Colour-code the tote bins by part family",desc:"Example: Wrong parts are picked from similar bins. Colour-coding would make them easier to tell apart.",cat:"Q",bType:"quality",bUnit:"wrong parts per week",bExp:3,status:"done",owner:"Example Team Leader",due:off(-8),decBy:"Example Supervisor",decOn:off(-20),fbBy:"Example Supervisor",fbOn:off(-19),doneOn:off(-9),bAct:3,resultNote:"Example: Counted wrong-part reports over 2 weeks",resultOn:off(-2),verBy:"Example Team Leader",verOn:off(-1),raised:off(-25)});
+  I({title:"Example: Add a mirror at the aisle corner",desc:"Example: Fork trucks and walkers cannot see each other at the end of aisle 3.",cat:"S",bType:"safety",bUnit:"",status:"approved",owner:"Example Engineer",due:off(-4),decBy:"Example Safety Lead",decOn:off(-12),fbBy:"Example Safety Lead",fbOn:off(-10),raised:off(-14)});
+  I({title:"Example: Swap the shift briefing to the line",desc:"Example: The briefing room is a walk away, so the briefing runs long. Holding it at the line would save time.",cat:"P",bType:"time",bUnit:"minutes per day",bExp:10,status:"rejected",decBy:"Example Supervisor",decOn:off(-6),reason:"",raised:off(-9)});
+  I({title:"Example: Label the spare blade drawer",desc:"Example: Spare blades are hard to find in the drawer and the wrong size is often picked.",cat:"Q",by:"Example Operator B",raised:off(-22)});
+  I({title:"Example: Reuse the offcuts for the foam packing",desc:"Example: Offcuts from the cutting station are binned. They could be used as foam padding for small parts.",cat:"C",bType:"cost",bUnit:"£ per month",bExp:120,status:"doing",owner:"Example Engineer",due:off(10),decBy:"Example Operations Manager",decOn:off(-3),raised:off(-6),by:"Example Operator C"});
+  return o;
+}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+renderAll();renderSave();
+var ui=uiGet();showTab(["log","dash","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"log");
+window.__kz={analyse:analyse,ideaCheck:ideaCheck,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>

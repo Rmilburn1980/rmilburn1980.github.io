@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule Adherence</title>
+<meta name="description" content="Record planned against actual output by hour or by day, with the reason for every miss. Shows how many blocks hit plan, the units short and over, and a Pareto of the reasons, using the same reason list as the OEE log.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.chartbox{overflow-x:auto}
+.sa{width:100%;height:auto;display:block;min-width:520px}
+.sa text{fill:var(--text);font-size:11px;font-family:inherit}.sa .mut{fill:var(--muted);font-size:10px}
+.sa .grid{stroke:var(--line);stroke-width:1}.sa .pl{fill:var(--muted)}.sa .ac{fill:var(--accent)}.sa .cum{fill:none;stroke:var(--med);stroke-width:2.5}.sa .cd{fill:var(--med)}
+.keyl{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.keyl i{display:inline-block;width:14px;height:12px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.keyl i.p{background:var(--muted)}.keyl i.a{background:var(--accent)}.keyl i.c{background:var(--med);height:3px}
+td.num,th.num{text-align:right}
+@media print{header{display:none!important}}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Schedule Adherence</h1>
+    <p>Record what was planned and what was made, by hour or by day, and the reason for every miss. It shows how many blocks hit plan, the units short and over, and which reasons cost the most. Making more than planned is not counted as a pass for another block.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="log">Records</button>
+  <button role="tab" aria-selected="false" data-tab="dash">Dashboard</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records production output, which can reveal how a team or shift performed. It stays in this browser and in files you save. Nothing is sent to this website. Name lines or cells, not people. Do not use it to rank individuals, and do not record who was absent or why. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every record tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear everything to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add a record</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn danger" id="btnClear">Clear everything</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+
+<section id="tab-log">
+  <div class="toolbar"><label class="sm">Show <select id="fRange" aria-label="Range"><option value="14" selected>Last 14 days</option><option value="31">Last 31 days</option><option value="0">All records</option></select></label>
+    <label class="sm">A block counts as met when actual is at least <input type="number" id="tol" min="0" max="50" step="1" style="width:70px" aria-label="Tolerance percent"> % below plan or better</label>
+    <label class="sm">Overbuild noted above <input type="number" id="ovr" min="1" max="200" step="1" style="width:70px" aria-label="Overbuild percent"> % over plan</label></div>
+  <div class="tablewrap"><table id="rows"></table></div>
+  <p class="sm" id="rowNote"></p>
+</section>
+
+<section id="tab-dash" hidden>
+  <div class="toolbar">
+    <label class="sm">Period <select id="period" aria-label="Period"><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="31" selected>Last 31 days</option><option value="0">All records</option></select></label>
+    <label class="sm">Line <select id="lineSel" aria-label="Line"></select></label>
+    <label class="sm">Unit <select id="unitSel" aria-label="Unit"></select></label></div>
+  <p class="disc" id="dashNote"></p>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h2>Planned and actual by day</h2><div class="chartbox" id="chDay"></div><div class="keyl"><span><i class="p"></i>Planned</span><span><i class="a"></i>Actual</span></div><div class="tablewrap" style="margin-top:10px"><table id="dayTable"></table></div></div>
+  <div class="card"><h2>Units short, by reason</h2><div class="chartbox" id="chPar"></div><div class="keyl"><span><i class="a"></i>Units short</span><span><i class="c"></i>Cumulative share</span></div><div class="tablewrap" style="margin-top:10px"><table id="parTable"></table></div></div>
+  <div class="card"><h2>By line</h2><div class="tablewrap"><table id="lineTable"></table></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record: blocks with no plan or no actual, misses with no reason, duplicates and dates in the future. They cannot tell whether the plan was a fair one or the counts are true.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it measures</h2>
+    <ul>
+      <li><strong>A block</strong> is one planned period for one line: an hour, a shift or a day. Use the same size of block for a line. Do not record both a day total and the hours inside it.</li>
+      <li><strong>Blocks on plan</strong> is the share of blocks where actual met plan, within the tolerance you set. This is the main measure, because it cannot be hidden by one good block covering a bad one.</li>
+      <li><strong>Attainment</strong> is total actual divided by total planned, for blocks that have both. It can look healthy when overbuild covers a shortfall, so read it beside blocks on plan.</li>
+      <li><strong>Units short</strong> adds up the shortfall on every missed block. <strong>Units over</strong> adds up the overbuild. They are not netted off.</li>
+    </ul></div>
+  <div class="card"><h2>The rules the log applies</h2>
+    <ul>
+      <li>A block with no plan, or a plan of zero, cannot be judged and is flagged.</li>
+      <li>A past block with no actual recorded is a gap. It is left out of the results and counted separately, never treated as met.</li>
+      <li>A missed block needs a reason, taken from the same list as the OEE and Downtime Log. "Other" needs a note.</li>
+      <li>Building well over plan is noted. It is waste, and it can mean the plan was wrong.</li>
+      <li>Results are added up only within one unit, so cars are never added to parts.</li>
+      <li>If most misses are put down to "plan changed", the original plan is being rewritten. Record the plan as it stood at the start of the block.</li>
+    </ul></div>
+  <div class="card"><h2>Reading the charts</h2>
+    <p>The Pareto ranks the reasons by units short. Work on the top one or two first. Reasons are only as good as the people recording them, so check a few against what the line was doing, and see the <a href="oee-downtime-log.html">OEE and Downtime Log</a> for the stop times behind them.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Misses that repeat belong on the <a href="daily-management-board.html">Daily Management Board</a>. Work a cause through on an <a href="a3-problem-solving.html">A3 sheet</a> or with the <a href="5-whys-tool.html">5 Whys Tool</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the plan was right or the counts are true. This is decision support only.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Record</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save record</button><button class="btn sec" id="dlgAgain" type="button">Save and add another</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete record</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your company's procedures. Schedule Adherence. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-schedule-v1",UIK="rmilburn-schedule-ui";
+var REASONS=[["breakdown","Breakdown or equipment fault"],["changeover","Changeover or setup"],["material","Waiting for material"],["labour","Waiting for people or cover"],["quality","Quality hold or rework stop"],["maint","Planned maintenance overrun"],["startup","Start-up or shutdown"],["minor","Minor stoppages"],["plan","Plan changed or released late"],["other","Other (say what in the note)"]];
+var MAXR=3000;
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,range=14,period=31,lineF="",unitF="";
+function blank(){return {example:false,tol:0,ovr:10,rows:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function num(v){if(v===null||v===undefined||v==="")return null;var n=typeof v==="number"?v:parseFloat(String(v).replace(/,/g,"."));return (isFinite(n)&&n>=0&&n<=1e9)?n:null;}
+function fnum(v){return v===null||v===undefined?"":String(Math.round(v*100)/100);}
+function pc(v){return v===null?"n/a":Math.round(v)+"%";}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function rname(v){for(var i=0;i<REASONS.length;i++)if(REASONS[i][0]===v)return REASONS[i][1];return "No reason";}
+
+function cleanRow(x){
+  if(!x||typeof x!=="object")return null;
+  return {id:parseInt(x.id,10)||0,date:dOk(x.date),line:str(x.line,40),block:str(x.block,20),planned:num(x.planned),actual:num(x.actual),unit:str(x.unit,12),reason:inList(x.reason,REASONS),note:str(x.note,200),ex:x.ex===true};
+}
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;
+  var t=parseFloat(d.tol),v=parseFloat(d.ovr);o.tol=isFinite(t)?Math.min(50,Math.max(0,t)):0;o.ovr=isFinite(v)?Math.min(200,Math.max(1,v)):10;
+  var ids={},mx=0;
+  (Array.isArray(d.rows)?d.rows.slice(0,MAXR):[]).forEach(function(x){var c=cleanRow(x);if(!c)return;if(c.id>mx)mx=c.id;o.rows.push(c);});
+  o.rows.forEach(function(c){if(!c.id||ids[c.id])c.id=++mx;ids[c.id]=1;});
+  return o;
+}
+
+/* ---------- judging a block ---------- */
+function judge(r){
+  if(r.planned===null||r.planned<=0)return "noplan";
+  if(r.actual===null)return "noact";
+  return r.actual>=r.planned*(1-D.tol/100)?"met":"miss";
+}
+function shortOf(r){return (r.planned!==null&&r.actual!==null)?Math.max(r.planned-r.actual,0):0;}
+function overOf(r){return (r.planned!==null&&r.actual!==null)?Math.max(r.actual-r.planned,0):0;}
+function key(r){return r.date+"|"+norm(r.line)+"|"+norm(r.block);}
+
+/* ---------- aggregation ---------- */
+function summarise(rows){
+  var s={blocks:0,met:0,miss:0,noact:0,noplan:0,planned:0,actual:0,short:0,over:0,missReason:0,days:{},reasons:{},lines:{}};
+  rows.forEach(function(r){
+    var j=judge(r);
+    var L=s.lines[r.line.trim()||"(no line)"]||(s.lines[r.line.trim()||"(no line)"]={blocks:0,met:0,planned:0,actual:0,short:0,over:0,noact:0});
+    if(j==="noplan"){s.noplan++;return;}
+    if(j==="noact"){s.noact++;L.noact++;return;}
+    s.blocks++;L.blocks++;s.planned+=r.planned;s.actual+=r.actual;L.planned+=r.planned;L.actual+=r.actual;
+    var dy=s.days[r.date]||(s.days[r.date]={planned:0,actual:0,blocks:0,met:0});dy.planned+=r.planned;dy.actual+=r.actual;dy.blocks++;
+    if(j==="met"){s.met++;L.met++;dy.met++;}else{s.miss++;var sh=shortOf(r);s.short+=sh;L.short+=sh;if(r.reason)s.missReason++;
+      var rk=r.reason||"none";var R=s.reasons[rk]||(s.reasons[rk]={units:0,count:0});R.units+=sh;R.count++;}
+    var ov=overOf(r);s.over+=ov;L.over+=ov;
+  });
+  s.onPlan=s.blocks?s.met/s.blocks*100:null;s.att=s.planned>0?s.actual/s.planned*100:null;
+  return s;
+}
+function inScope(r,days,line,unit){var td=today();if(!r.date||r.date>td)return false;if(days&&daysBetween(r.date,td)>=days)return false;if(line&&r.line.trim()!==line)return false;if(unit!==null&&unit!==undefined&&r.unit.trim()!==unit)return false;return true;}
+
+/* ---------- checks ---------- */
+function analyse(){
+  var gaps=[],notes=[],td=today(),seen={},misses=0,planChg=0;
+  function g(r,m){gaps.push({id:r?r.id:0,msg:(r?lab(r)+": ":"")+m});}
+  function n(r,m){notes.push({id:r?r.id:0,msg:(r?lab(r)+": ":"")+m});}
+  D.rows.forEach(function(r){
+    if(!r.date){g(r,"The date is not set.");return;}
+    if(!r.line.trim())g(r,"No line or area is named.");
+    if(!r.unit.trim())g(r,"No unit is given.");
+    var k=key(r);if(seen[k])g(r,"Another record has the same date, line and block. Combine them or change the block.");seen[k]=1;
+    if(r.date>td){if(r.actual!==null)g(r,"An actual is recorded for a date in the future.");return;}
+    var j=judge(r);
+    if(j==="noplan")g(r,"There is no plan, or the plan is zero, so this block cannot be judged.");
+    else if(j==="noact"){if(r.date<td)g(r,"No actual is recorded. It is left out of the results, not counted as met.");else n(r,"No actual is recorded yet.");}
+    else if(j==="miss"){misses++;if(r.reason==="plan")planChg++;
+      if(!r.reason)g(r,"Missed plan by "+fnum(shortOf(r))+" "+(r.unit||"units")+" and no reason is recorded.");
+      else if(r.reason==="other"&&!r.note.trim())n(r,"The reason is Other with no note saying what it was.");}
+    if(j==="met"||j==="miss"){var ov=overOf(r);if(r.planned>0&&ov>r.planned*D.ovr/100)n(r,"Built "+fnum(ov)+" over plan ("+Math.round(ov/r.planned*100)+"%). Overbuild is waste and may mean the plan was wrong.");}
+  });
+  if(misses>=4&&planChg/misses>0.25)n(null,"More than a quarter of misses ("+planChg+" of "+misses+") are put down to the plan changing. Record the plan as it stood at the start of each block, so misses are not rewritten away.");
+  return {gaps:gaps,notes:notes};
+}
+function lab(r){return fmt(r.date)+" "+(r.line||"(no line)")+(r.block?" "+r.block:"");}
+
+/* ---------- persistence ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextId(){var m=0;D.rows.forEach(function(i){if(i.id>m)m=i.id;});return m+1;}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderAll(){$("tol").value=String(D.tol);$("ovr").value=String(D.ovr);renderStatus();renderRows();renderDash();renderChecks();$("banner").hidden=!D.example;}
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.rows.length){el.className="status st-empty";add(el,h("strong",{text:"No records yet."}),h("div",{class:"sm",text:"Add a record, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on these results until they are dealt with."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the plan was right or the counts are true."}));}
+}
+
+/* ---------- records ---------- */
+function renderRows(){
+  var t=$("rows");t.innerHTML="";var td=today();
+  var list=D.rows.filter(function(r){return !range||!r.date||r.date>td||daysBetween(r.date,td)<range;});
+  list.sort(function(a,b){return (b.date||"").localeCompare(a.date||"")||a.line.localeCompare(b.line)||a.block.localeCompare(b.block);});
+  var shown=list.slice(0,300);
+  t.appendChild(h("thead",{},h("tr",{},["Date","Line","Block","Planned","Actual","Of plan","Result","Reason",""].map(function(x,i){return h("th",{class:(i>=3&&i<=5)?"num":"",text:x});}))));
+  var tb=h("tbody");
+  if(!shown.length)tb.appendChild(h("tr",{},h("td",{colspan:"9",text:D.rows.length?"No records in this range.":"Nothing here yet."})));
+  shown.forEach(function(r){var j=judge(r),res={met:["ok","On plan"],miss:["r","Missed"],noact:["y","No actual"],noplan:["y","No plan"]}[j];
+    tb.appendChild(h("tr",{},h("td",{text:fmt(r.date)}),h("td",{text:r.line}),h("td",{text:r.block}),h("td",{class:"num",text:fnum(r.planned)+(r.unit&&r.planned!==null?" "+r.unit:"")}),h("td",{class:"num",text:fnum(r.actual)}),
+      h("td",{class:"num",text:(r.planned>0&&r.actual!==null)?Math.round(r.actual/r.planned*100)+"%":""}),h("td",{},h("span",{class:"chip "+res[0],text:res[1]}),r.ex?h("span",{class:"chip",text:"Example"}):null),h("td",{text:j==="miss"?rname(r.reason):""}),
+      h("td",{},h("button",{class:"btn sec small",type:"button","data-k":"r"+r.id,text:"Edit",onclick:function(){openRow(r.id);}}))));});
+  t.appendChild(tb);
+  $("rowNote").textContent=list.length>shown.length?"Showing the latest 300 of "+list.length+" records. Use the range to narrow it.":"";
+}
+$("fRange").addEventListener("change",function(){range=parseInt(this.value,10)||0;renderRows();});
+$("tol").addEventListener("change",function(){var v=parseFloat(this.value);D.tol=isFinite(v)?Math.min(50,Math.max(0,v)):0;this.value=String(D.tol);touch();renderAll();});
+$("ovr").addEventListener("change",function(){var v=parseFloat(this.value);D.ovr=isFinite(v)?Math.min(200,Math.max(1,v)):10;this.value=String(D.ovr);touch();renderAll();});
+
+/* ---------- dashboard ---------- */
+function niceMax(v){if(v<=0)return 1;var p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p,n=f<=1?1:f<=2?2:f<=5?5:10;return n*p;}
+function svgEl(t,a){var e=document.createElementNS("http://www.w3.org/2000/svg",t);for(var k in a)e.setAttribute(k,String(a[k]));return e;}
+function txt(s,x,y,a,cls){var e=svgEl("text",{x:x,y:y,"text-anchor":a||"start",class:cls||""});e.textContent=s;return e;}
+function dayChart(days){
+  var keys=Object.keys(days).sort().slice(-31),W=640,H=280,L=48,B=44,T=12,R=12,pw=W-L-R,ph=H-T-B;
+  var s=svgEl("svg",{viewBox:"0 0 "+W+" "+H,class:"sa",role:"img","aria-label":"Planned and actual output for each of "+keys.length+" days. The table below gives every figure."});
+  var mx=0;keys.forEach(function(k){mx=Math.max(mx,days[k].planned,days[k].actual);});mx=niceMax(mx);
+  for(var i=0;i<=4;i++){var y=T+ph-ph*i/4;s.appendChild(svgEl("line",{x1:L,x2:W-R,y1:y,y2:y,class:"grid"}));s.appendChild(txt(String(Math.round(mx*i/4*100)/100),L-6,y+4,"end","mut"));}
+  var gw=pw/Math.max(keys.length,1),bw=Math.min(18,gw*0.38);
+  keys.forEach(function(k,i){var cx=L+gw*i+gw/2,p=days[k].planned/mx*ph,a=days[k].actual/mx*ph;
+    s.appendChild(svgEl("rect",{x:(cx-bw-1).toFixed(1),y:(T+ph-p).toFixed(1),width:bw.toFixed(1),height:Math.max(p,0).toFixed(1),class:"pl"}));
+    s.appendChild(svgEl("rect",{x:(cx+1).toFixed(1),y:(T+ph-a).toFixed(1),width:bw.toFixed(1),height:Math.max(a,0).toFixed(1),class:"ac"}));
+    if(keys.length<=16||i%Math.ceil(keys.length/12)===0)s.appendChild(txt(k.slice(8)+"/"+k.slice(5,7),cx,H-B+16,"middle","mut"));});
+  return s;
+}
+function parChart(list){
+  var W=640,H=300,L=48,B=40,T=14,R=48,pw=W-L-R,ph=H-T-B,tot=0;list.forEach(function(x){tot+=x.units;});
+  var s=svgEl("svg",{viewBox:"0 0 "+W+" "+H,class:"sa",role:"img","aria-label":"Pareto of units short by reason. The table below gives every figure."});
+  var mx=niceMax(list.length?list[0].units:1);
+  for(var i=0;i<=4;i++){var y=T+ph-ph*i/4;s.appendChild(svgEl("line",{x1:L,x2:W-R,y1:y,y2:y,class:"grid"}));s.appendChild(txt(String(Math.round(mx*i/4*100)/100),L-6,y+4,"end","mut"));s.appendChild(txt(String(i*25)+"%",W-R+6,y+4,"start","mut"));}
+  var gw=pw/Math.max(list.length,1),bw=Math.min(40,gw*0.6),cum=0,pts=[];
+  list.forEach(function(x,i){var cx=L+gw*i+gw/2,hh=x.units/mx*ph;cum+=x.units;
+    s.appendChild(svgEl("rect",{x:(cx-bw/2).toFixed(1),y:(T+ph-hh).toFixed(1),width:bw.toFixed(1),height:Math.max(hh,0).toFixed(1),class:"ac"}));
+    s.appendChild(txt(String(i+1),cx,H-B+16,"middle"));pts.push([cx,T+ph-(tot?cum/tot:0)*ph]);});
+  if(pts.length){s.appendChild(svgEl("polyline",{points:pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1);}).join(" "),class:"cum"}));pts.forEach(function(p){s.appendChild(svgEl("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:3.5,class:"cd"}));});}
+  return s;
+}
+function renderDash(){
+  var td=today(),k=$("kpis");k.innerHTML="";
+  var lines={};D.rows.forEach(function(r){if(r.date&&r.date<=td&&(!period||daysBetween(r.date,td)<period)&&r.line.trim())lines[r.line.trim()]=1;});
+  var ls=$("lineSel"),us=$("unitSel"),keepL=lineF,keepU=unitF;ls.innerHTML="";ls.appendChild(h("option",{value:"",text:"All lines"}));Object.keys(lines).sort().forEach(function(l){ls.appendChild(h("option",{value:l,text:l,selected:l===keepL}));});
+  if(keepL&&!lines[keepL]){lineF="";}ls.value=lineF;
+  var uc={};D.rows.forEach(function(r){if(inScope(r,period,lineF,null)){var u=r.unit.trim();uc[u]=(uc[u]||0)+1;}});
+  var us2=Object.keys(uc).sort(function(a,b){return uc[b]-uc[a];});us.innerHTML="";us2.forEach(function(u){us.appendChild(h("option",{value:u,text:u||"(no unit)"}));});
+  if(us2.indexOf(keepU)<0)unitF=us2.length?us2[0]:"";us.value=unitF;
+  var rows=D.rows.filter(function(r){return inScope(r,period,lineF,unitF);}),other=D.rows.filter(function(r){return inScope(r,period,lineF,null);}).length-rows.length;
+  $("dashNote").textContent=!D.rows.length?"":(other>0?plural(other,"record")+" in other units "+(other===1?"is":"are")+" not included. Pick another unit to see "+(other===1?"it":"them")+".":"");
+  ["dayTable","parTable","lineTable"].forEach(function(id){$(id).innerHTML="";});$("chDay").innerHTML="";$("chPar").innerHTML="";
+  if(!rows.length){$("dashNote").textContent=D.rows.length?"No records in this selection.":"";return;}
+  var S=summarise(rows),short=S.short,missRs=S.miss?Math.round(S.missReason/S.miss*100)+"%":"None missed";
+  add(k,kpi(pc(S.onPlan),"Blocks on plan ("+S.met+" of "+S.blocks+")",S.onPlan!==null&&S.onPlan<100?"warn":"ok"),kpi(pc(S.att),"Attainment, total actual over total planned"),kpi(fnum(S.planned),"Planned"+(unitF?" ("+unitF+")":"")),kpi(fnum(S.actual),"Actual"),
+    kpi(fnum(short),"Units short, on missed blocks",short?"crit":"ok"),kpi(fnum(S.over),"Units over, on all blocks",S.over?"warn":""),kpi(missRs,"Missed blocks with a reason"),kpi(S.noact+S.noplan,"Left out: no actual or no plan",(S.noact+S.noplan)?"warn":"ok"));
+  /* day */
+  $("chDay").appendChild(dayChart(S.days));
+  var dt=$("dayTable"),dk=Object.keys(S.days).sort();dt.appendChild(h("thead",{},h("tr",{},["Date","Planned","Actual","Of plan","Blocks on plan"].map(function(x,i){return h("th",{class:i?"num":"",text:x});}))));
+  var tb=h("tbody");dk.slice().reverse().forEach(function(d){var x=S.days[d];tb.appendChild(h("tr",{},h("td",{text:fmt(d)}),[fnum(x.planned),fnum(x.actual),x.planned>0?Math.round(x.actual/x.planned*100)+"%":"n/a",x.met+" of "+x.blocks].map(function(v){return h("td",{class:"num",text:v});})));});dt.appendChild(tb);
+  /* pareto */
+  var pl=Object.keys(S.reasons).map(function(r){return {r:r,units:S.reasons[r].units,count:S.reasons[r].count};}).sort(function(a,b){return b.units-a.units||b.count-a.count;});
+  var pt=$("parTable");
+  if(pl.length){$("chPar").appendChild(parChart(pl));pt.appendChild(h("thead",{},h("tr",{},["#","Reason","Missed blocks","Units short","Share","Cumulative"].map(function(x,i){return h("th",{class:i>1?"num":"",text:x});}))));
+    var tb2=h("tbody"),cum=0;pl.forEach(function(x,i){cum+=x.units;tb2.appendChild(h("tr",{},h("td",{text:String(i+1)}),h("td",{text:rname(x.r)}),[x.count,fnum(x.units),short?Math.round(x.units/short*100)+"%":"n/a",short?Math.round(cum/short*100)+"%":"n/a"].map(function(v){return h("td",{class:"num",text:String(v)});})));});pt.appendChild(tb2);}
+  else $("chPar").appendChild(h("p",{class:"sm",text:"No missed blocks in this selection."}));
+  /* lines */
+  var lt=$("lineTable");lt.appendChild(h("thead",{},h("tr",{},["Line","Blocks","On plan","Of plan","Units short","Units over","No actual"].map(function(x,i){return h("th",{class:i?"num":"",text:x});}))));
+  var tb3=h("tbody");Object.keys(S.lines).sort().forEach(function(n){var x=S.lines[n];tb3.appendChild(h("tr",{},h("td",{text:n}),[x.blocks,x.blocks?Math.round(x.met/x.blocks*100)+"%":"n/a",x.planned>0?Math.round(x.actual/x.planned*100)+"%":"n/a",fnum(x.short),fnum(x.over),x.noact].map(function(v){return h("td",{class:"num",text:String(v)});})));});lt.appendChild(tb3);
+}
+$("period").addEventListener("change",function(){period=parseInt(this.value,10)||0;renderDash();});
+$("lineSel").addEventListener("change",function(){lineF=this.value;renderDash();});
+$("unitSel").addEventListener("change",function(){unitF=this.value;renderDash();});
+
+/* ---------- dialog ---------- */
+function lb(t,c,full){return h("label",{class:full?"full":""},t,c);}
+function sel(list,val,id,blankLabel){var s=h("select",{id:id});s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
+function showDlg(){var d=$("dlg");if(typeof d.showModal==="function"){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function hideDlg(){var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");}
+function closeDlg(){var k=draft?"r"+draft.id:"";hideDlg();draft=null;draftNew=false;var b=k&&document.querySelector('[data-k="'+k+'"]');if(b)b.focus();else{var a=$("btnAdd");if(a)a.focus();}}
+$("dlgCancel").onclick=closeDlg;$("dlgX").onclick=closeDlg;
+$("dlg").addEventListener("cancel",function(){draft=null;draftNew=false;});
+function openRow(id){var cur=null;D.rows.forEach(function(i){if(i.id===id)cur=i;});if(!cur)return;draft=JSON.parse(JSON.stringify(cur));draftNew=false;buildDlg();showDlg();}
+function newRow(from){if(D.rows.length>=MAXR)return;
+  if(D.example){if(!confirm("The example is still loaded. Clear it first so your records are not mixed with made-up ones?"))return;D=blank();touch();renderAll();from=null;}
+  draft=cleanRow({id:nextId(),date:from?from.date:today(),line:from?from.line:"",block:from?from.block:"Day",unit:from?from.unit:"units"});draftNew=true;buildDlg();showDlg();}
+$("btnAdd").onclick=function(){var last=D.rows.length?D.rows[D.rows.length-1]:null;newRow(last);};
+function val(id){var e=$(id);return e?e.value:"";}
+function pull(){if(!draft)return;draft.date=dOk(val("sD"));draft.line=val("sL").slice(0,40);draft.block=val("sB").slice(0,20);draft.unit=val("sU").slice(0,12);draft.planned=num(val("sP"));draft.actual=num(val("sA"));draft.reason=inList(val("sR"),REASONS);draft.note=val("sN").slice(0,200);}
+function buildDlg(){
+  var b=$("dlgB"),d=draft;b.innerHTML="";$("dlgT").textContent=(draftNew?"New record":"Record")+(d.ex?" (Example)":"");
+  b.appendChild(h("div",{class:"f"},
+    lb("Date",h("input",{type:"date",id:"sD",value:d.date})),lb("Line or area",h("input",{type:"text",id:"sL",value:d.line,maxlength:"40"})),
+    lb("Block, for example 06:00-07:00 or Day",h("input",{type:"text",id:"sB",value:d.block,maxlength:"20"})),lb("Unit",h("input",{type:"text",id:"sU",value:d.unit,maxlength:"12"})),
+    lb("Planned, as it stood at the start of the block",h("input",{type:"number",id:"sP",min:"0",step:"any",value:d.planned===null?"":String(d.planned)})),lb("Actual",h("input",{type:"number",id:"sA",min:"0",step:"any",value:d.actual===null?"":String(d.actual)})),
+    lb("Reason, if the block missed plan",sel(REASONS,d.reason,"sR","Not recorded"),true),lb("Note",h("input",{type:"text",id:"sN",value:d.note,maxlength:"200"}),true)));
+  b.appendChild(h("p",{class:"sm",text:"Record the plan as it stood at the start of the block. If the plan changed, say so in the reason rather than editing the plan."}));
+  $("dlgDel").hidden=draftNew;$("dlgAgain").hidden=!draftNew;
+}
+function saveDraft(){if(!draft)return null;pull();var d=draft;if(draftNew)D.rows.push(d);else D.rows=D.rows.map(function(i){return i.id===d.id?d:i;});touch();return d;}
+$("dlgOk").onclick=function(){saveDraft();hideDlg();draft=null;draftNew=false;renderAll();};
+$("dlgAgain").onclick=function(){var d=saveDraft();if(!d)return;renderAll();draft=cleanRow({id:nextId(),date:d.date,line:d.line,block:"",unit:d.unit});draftNew=true;buildDlg();};
+$("dlgDel").onclick=function(){var b=$("dlgDel");
+  if(armed==="del"){D.rows=D.rows.filter(function(i){return i.id!==draft.id;});armed=null;touch();hideDlg();draft=null;renderAll();return;}
+  armed="del";b.textContent="Confirm: delete";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Delete record";b.classList.remove("armed");},4000);};
+
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.rows.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});if(x.id)li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){showTab("log");openRow(x.id);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the results."}));
+}
+
+/* ---------- exports ---------- */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Date","Line","Block","Unit","Planned","Actual","Of plan %","Result","Units short","Units over","Reason","Note","Example"];
+  var rows=D.rows.slice().sort(function(a,b){return (a.date||"").localeCompare(b.date||"");}).map(function(r){var j=judge(r);return [r.date,r.line,r.block,r.unit,r.planned===null?"":r.planned,r.actual===null?"":r.actual,(r.planned>0&&r.actual!==null)?Math.round(r.actual/r.planned*1000)/10:"",{met:"On plan",miss:"Missed",noact:"No actual",noplan:"No plan"}[j],shortOf(r),overOf(r),j==="miss"?rname(r.reason):"",r.note,r.ex?"Example":""];});
+  download("schedule-adherence.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+function buildReport(){
+  var r=$("report"),A=analyse();r.innerHTML="";add(r,h("h1",{text:"Schedule adherence report"}));
+  if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  var rows=D.rows.filter(function(x){return inScope(x,period,lineF,unitF);}),S=summarise(rows);
+  add(r,h("p",{text:"Printed "+fmt(today())+". "+(period?"Last "+period+" days":"All records")+(lineF?", "+lineF:", all lines")+(unitF?", unit "+unitF:"")+". Met means within "+D.tol+"% of plan or better."}));
+  add(r,h("p",{class:"gapx",text:!D.rows.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on these results until they are dealt with.":"No gaps found by the checks. A competent person must still judge the results."}));
+  var t=h("table",{});[["Blocks on plan",S.blocks?pc(S.onPlan)+" ("+S.met+" of "+S.blocks+")":"n/a"],["Attainment (total actual over total planned)",pc(S.att)],["Planned",fnum(S.planned)],["Actual",fnum(S.actual)],["Units short on missed blocks",fnum(S.short)],["Units over",fnum(S.over)],["Left out: no actual or no plan",String(S.noact+S.noplan)]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
+  add(r,h("h2",{text:"Reasons for missed blocks"}));
+  var pl=Object.keys(S.reasons).map(function(k){return {r:k,u:S.reasons[k].units,c:S.reasons[k].count};}).sort(function(a,b){return b.u-a.u;});
+  if(!pl.length)add(r,h("p",{text:"No missed blocks."}));else{var t2=h("table",{}),h2=h("tr",{});["Reason","Missed blocks","Units short"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);pl.forEach(function(x){t2.appendChild(h("tr",{},[rname(x.r),x.c,fnum(x.u)].map(function(v){return h("td",{text:String(v)});})));});add(r,t2);}
+  add(r,h("h2",{text:"Gaps and notes"}));
+  var l=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.slice(0,60).forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Decision support only. Counts are as entered and have not been checked against a source."}));
+}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["log","dash","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="dash")renderDash();if(t==="checks")renderChecks();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear everything";b.classList.remove("armed");return;}
+  if(!D.rows.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear everything";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();lineF="";unitF="";touch();renderAll();showTab("log");};
+$("btnSave").onclick=function(){download("schedule-adherence.json",JSON.stringify({app:"schedule-adherence",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>5000000){alert("That file is too large to be a schedule adherence data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="schedule-adherence"||!d.data)throw 0;D=clean(d.data);lineF="";unitF="";touch();renderAll();}catch(e){alert("That file could not be read. It is not a schedule adherence data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank();o.example=true;var id=0,seed=20261030;
+  function rnd(){seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296;}
+  function R(p){id++;var b={id:id,ex:true,date:"",line:"",block:"Day",planned:null,actual:null,unit:"units",reason:"",note:""};for(var k in p)b[k]=p[k];o.rows.push(cleanRow(b));}
+  var days=[],i=1;while(days.length<10&&i<30){var d=off(-i),w=new Date(d+"T12:00:00").getDay();if(w>0&&w<6)days.push(d);i++;}days.reverse();
+  var why=["breakdown","material","changeover","labour","breakdown","quality","material"];
+  days.forEach(function(d,k){
+    var a1=Math.round(120*(0.88+rnd()*0.2));R({date:d,line:"Example Line 1",planned:120,actual:a1,reason:a1<120?(k%4===2?"":why[k%why.length]):""});
+    var a2=k===3?0:Math.round(80*(0.8+rnd()*0.28));R({date:d,line:"Example Line 2",planned:80,actual:a2,reason:a2<80?(k===3?"breakdown":why[(k+2)%why.length]):"",note:k===5?"":""});});
+  days.slice(-3).forEach(function(d,k){for(var h2=6;h2<14;h2++){var pl=12,ac=Math.round(pl*(0.75+rnd()*0.45));var blk=String(h2).padStart(2,"0")+":00-"+String(h2+1).padStart(2,"0")+":00";
+    R({date:d,line:"Example Line 3",block:blk,planned:pl,actual:ac,reason:ac<pl?(h2===6?"startup":h2===9?"plan":h2===11?"other":"minor"):""});}});
+  R({date:days[days.length-1],line:"Example Line 4",planned:60,actual:null});
+  return clean(o);
+}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+renderAll();renderSave();
+var ui=uiGet();showTab(["log","dash","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"log");
+window.__sa={analyse:analyse,judge:judge,summarise:summarise,inScope:inScope,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>

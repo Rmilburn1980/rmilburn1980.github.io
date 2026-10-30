@@ -14,6 +14,8 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Skills Matrix Builder](skills-matrix-builder.html) | Build a matrix for any team. A level only counts once someone other than the operator has signed it off, sign-offs expire, and SOP numbers are recorded per skill. |
 | [OEE and Downtime Log](oee-downtime-log.html) | Shift records and stops. Works out availability, performance, quality and OEE, ranks downtime reasons in a Pareto, and leaves out runs with impossible, over-100% or unchecked figures. |
 | [Daily Management Board](daily-management-board.html) | A tier meeting board. Safety, Quality, Delivery, Cost and People readings against target, the reason for each miss, actions with owners, escalation to the next tier, and checks for missing readings, misses with no action and actions not independently verified. |
+| [Kaizen and Improvement Idea Log](kaizen-idea-log.html) | Ideas from the floor with owner, expected benefit, decision and result. Flags ideas waiting too long, people not told the outcome, and benefits claimed without an independent check. |
+| [Schedule Adherence](schedule-adherence.html) | Planned against actual output by hour or day, with a reason for every miss. Blocks on plan, units short and over, and a Pareto of reasons using the OEE reason list. |
 | [Company Skills Dashboard](company-skills-dashboard.html) | Rolls up every team's matrix: cover against target, critical skills with too few signed-off people, sign-offs about to expire, and where the matrix claims more than the checks support. |
 
 ### Continuous improvement
