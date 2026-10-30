@@ -24,6 +24,10 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 ### EHS
 EHS Readiness dashboard, 7S audit dashboard, Risk Assessment dashboard, Swiss Cheese Model dashboard, Corrective Action Tracker, Bow-tie Builder, Causal Tree Builder, Incident and Near-Miss Log (with a RIDDOR check) and the Quick Exposure Check dashboard.
 
+## About the figures
+
+The results quoted on the homepage and in the case studies are my own. They come from my CV, an export of the SafetyQube incident log (April 2025 to March 2026) and my line performance tracker (August 2023 to July 2025). Where a figure rests on my own records and has not been independently checked, the page says so. Example data in the tools is always labelled Example.
+
 ## How the safety tools behave
 
 The safety and skills tools are built to show gaps, not to reassure. They never say "safe" or "compliant". They say either "Gaps found" or "No gaps found by these checks", and they remind the user that a competent person must still judge the result. Examples:
