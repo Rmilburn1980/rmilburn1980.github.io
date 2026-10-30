@@ -167,7 +167,7 @@
     <h1>DMAIC Project Board</h1>
     <div class="sub">Lean Six Sigma Green Belt project: First Pass Yield at Stage 8, caravan assembly line</div>
     <div class="sub">Richard Milburn, Erwin Hymer Group UK (Elddis), Cell Leader</div>
-    <div class="obj">Objective: raise Stage 8 First Pass Yield towards 96%+</div>
+    <div class="obj">Objective: raise first pass yield at the end of the line (Stage 8 PDI)</div>
   </header>
 
   <div class="board">
@@ -219,12 +219,13 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>Baseline data</h4>
-          <div class="stat-row"><span class="lbl">Pre-programme mean FPY</span><span class="val bad">68.8%</span></div>
-          <div class="stat-row"><span class="lbl">Post-programme mean FPY</span><span class="val good">82.4%</span></div>
-          <div class="stat-row"><span class="lbl">Individual weeks reaching</span><span class="val good">100%</span></div>
-          <div class="stat-row"><span class="lbl">Peak weeks</span><span class="val">96%+</span></div>
-          <p class="note">The 68.8% and 82.4% figures are the average first pass yield before and after the programme. Peak weeks reached 96%+ and individual weeks reached 100%.</p>
+          <h4>First pass yield data</h4>
+          <div class="stat-row"><span class="lbl">Year to Aug 2024, average</span><span class="val">71.8%</span></div>
+          <div class="stat-row"><span class="lbl">Sep 2024 to Mar 2025, average</span><span class="val bad">57.7%</span></div>
+          <div class="stat-row"><span class="lbl">Lowest month (Sep 2024)</span><span class="val bad">43.2%</span></div>
+          <div class="stat-row"><span class="lbl">Jul 2025 (to the 15th, 12 days)</span><span class="val good">92.4%</span></div>
+          <div class="stat-row"><span class="lbl">Weeks at 100%</span><span class="val good">2 of 97</span></div>
+          <p class="note">Share of vans out of PDI that passed first time (A vans out divided by all vans out), added up across the days in each period. Source: Caravan Combined Performance Tracker, daily records from 1 Aug 2023 to 15 Jul 2025. The two 100% weeks are 2025 week 17 and week 30, each from 3 recorded days.</p>
         </div>
 
         <div class="card">
@@ -246,9 +247,9 @@
         </div>
 
         <div class="card">
-          <h4>FPY trend (illustrative)</h4>
-          <p class="small" style="margin-bottom:6px;">Illustrative only: these values are not the real weekly data. They show the shape of a rise from a lower to a higher level. A formal weekly tracking gap existed between wk3 and wk16 before the programme was fully established.</p>
-          <div class="chart-box"><canvas id="fpyChart" role="img" aria-label="Illustrative weekly First Pass Yield trend, rising over time, with a tracking gap between week 3 and week 16"></canvas></div>
+          <h4>Monthly first pass yield (tracker data)</h4>
+          <p class="small" style="margin-bottom:6px;">Real monthly figures from the performance tracker. Months with fewer recorded days or vans are less reliable: Aug 2024 has 7 days, Jul 2025 has 12. One day in Aug 2024 was left out because it recorded more A vans than vans out.</p>
+          <div class="chart-box"><canvas id="fpyChart" role="img" aria-label="Monthly first pass yield, August 2023 to July 2025. Most months fall between 43% and 84%, with a low of 43% in September 2024 and 92% in July 2025."></canvas></div>
         </div>
 
       </div>
@@ -311,11 +312,11 @@
         <div class="card">
           <h4>Result</h4>
           <div class="arrow-flow">
-            <span class="bignum bad">68.8%</span>
+            <span class="bignum bad">57.7%</span>
             <span class="to">to</span>
-            <span class="bignum good">82.4%</span>
+            <span class="bignum good">92.4%</span>
           </div>
-          <p style="margin-top:4px;">Average first pass yield, before and after. Peak weeks reached 96%+, with individual weeks at 100%.</p>
+          <p style="margin-top:4px;">Average Sep 2024 to Mar 2025, then July 2025 to the 15th. Individual weeks reached 100%. The tracker ends on 15 Jul 2025, so it does not show whether this held.</p>
         </div>
 
         <div class="card">
@@ -361,7 +362,7 @@
 
         <div class="card">
           <h4>Note on scope</h4>
-          <p class="small">C&amp;E matrix and PFMEA scoring shown here reflect the Green Belt project workup built from this data. The FPY averages and peaks are as stated by the project owner. The trend chart above is illustrative, not the weekly data.</p>
+          <p class="small">C&amp;E matrix and PFMEA scoring shown here reflect the Green Belt project workup built from this data. The first pass yield figures on this page come from the Caravan Combined Performance Tracker and measure the whole line at PDI. Stage 8 end-of-line figures on the SQCDP dashboard come from a different source and have not been reconciled with these.</p>
         </div>
 
       </div>
@@ -380,30 +381,20 @@
   const cs = getComputedStyle(document.body);
   Chart.defaults.font.family = cs.fontFamily;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mLabels=["2023-08", "2023-09", "2023-10", "2023-11", "2023-12", "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12", "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07"];
+  const mVals=[59.5, 69.7, 75.5, 71.0, 84.4, 71.1, 74.2, 72.7, 79.0, 64.1, 75.2, 63.3, 77.8, 43.2, 73.1, 51.6, 53.0, 55.3, 60.0, 67.9, 78.5, 58.7, 68.2, 92.4];
+  const mVans=[242, 360, 424, 411, 180, 242, 252, 227, 186, 167, 226, 188, 45, 176, 227, 190, 132, 94, 95, 81, 79, 75, 85, 66];
+  const mDays=[14, 21, 23, 22, 14, 21, 21, 20, 21, 21, 21, 19, 7, 18, 19, 17, 13, 16, 16, 17, 17, 15, 17, 12];
   new Chart(document.getElementById('fpyChart').getContext('2d'), {
-    type: 'line',
-    data: {
-      labels: ['wk42','wk43','wk44','wk45','wk46','wk47','wk48','wk49','wk50','wk51','wk52','wk1','wk2','wk3','(gap: not tracked)','wk16','wk17','wk18','wk19','wk20','wk21','wk22','wk23','wk24','wk25','wk26'],
-      datasets: [{
-        label: 'FPY %',
-        data: [58,62,55,64,70,66,72,68,74,71,69,73,75,72,null,78,84,88,91,96,94,100,97,95,98,96],
-        borderColor: '#00D9C0',
-        backgroundColor: 'rgba(0,217,192,0.15)',
-        borderWidth: 2,
-        pointRadius: 2,
-        spanGaps: false,
-        tension: 0.3,
-        fill: true
-      }]
-    },
+    type: 'bar',
+    data: { labels: mLabels, datasets: [{ label: 'First pass yield %', data: mVals, backgroundColor: mVals.map(v => v >= 90 ? '#34d399' : (v < 60 ? '#f87171' : '#00D9C0')), borderRadius: 3 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
+      responsive: true, maintainAspectRatio: false,
       animation: reduce ? false : undefined,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.parsed.y + '% from ' + mVans[c.dataIndex] + ' vans over ' + mDays[c.dataIndex] + ' days' } } },
       scales: {
-        x: { ticks: { color: '#8B9CB5', font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: '#2A3A52' } },
-        y: { min: 40, max: 100, ticks: { color: '#8B9CB5', font: { size: 11 }, callback: v => v + '%' }, grid: { color: '#2A3A52' } }
+        x: { ticks: { color: '#8B9CB5', font: { size: 10 }, maxRotation: 60, minRotation: 60, autoSkip: true, maxTicksLimit: 12 }, grid: { color: '#2A3A52' } },
+        y: { min: 0, max: 100, ticks: { color: '#8B9CB5', font: { size: 11 }, callback: v => v + '%' }, grid: { color: '#2A3A52' } }
       }
     }
   });
