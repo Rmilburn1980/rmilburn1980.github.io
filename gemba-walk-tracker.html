@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui}[hidden]{display:none!important}img{max-width:100%}</style>
 <title>Gemba Walk Tracker</title>
-<meta name="description" content="Gemba walk register that traces every observation from the walk to an owner, closing evidence and a re-walk that proved the fix held. Opens with example data.">
+<meta name="description" content="Gemba walk register that traces every observation from the walk to an owner, closing evidence and a re-walk that checked the fix. Opens with example data.">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://rmilburn1980.github.io/fonts/fonts.css">
 <style>
@@ -155,7 +155,7 @@ textarea.csv{font-family:var(--f-mono);font-size:12px;min-height:240px;width:100
       <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
       <p class="eyebrow">Go see. Ask why. Show respect.</p>
       <h1>Gemba Walk Tracker</h1>
-      <p class="sub">Every observation is traced from the walk, to the action and its owner, to the evidence that closed it, to the re-walk that proved the fix held.</p>
+      <p class="sub">Every observation is traced from the walk, to the action and its owner, to the evidence that closed it, to the re-walk that checked the fix.</p>
     </div>
     <div class="actions">
       <button class="btn primary" id="btnLog" type="button">Log observation</button>
@@ -164,7 +164,7 @@ textarea.csv{font-family:var(--f-mono);font-size:12px;min-height:240px;width:100
   </header>
 
   <div class="banner" id="banner" hidden>
-    <span>Example data is loaded so you can see how the trace works. Clear it before logging real walks.</span>
+    <span>Example data is loaded so you can see how the trace works. Clear it before logging real walks. Entries are saved only in this browser on this device.</span>
     <button class="btn sec small" id="btnClear" type="button">Clear example data</button>
   </div>
 
@@ -431,7 +431,7 @@ function detailHtml(id){
     {t:'Observation',d:true,b:'<b>'+esc(x.id)+'</b> ('+esc(x.cat)+', '+x.sq+' '+SQ[x.sq]+', '+['','low','medium','high'][x.sev]+' severity). '+esc(x.text)+'.'},
     {t:'Action and owner',d:true,b:esc(x.action)+'. Owner <b>'+esc(x.owner)+'</b>, due '+esc(fmtY(x.due))+'.'+(x.prog&&!x.closedOn?' Work has started.':'')},
     {t:'Closed with evidence',d:!!x.closedOn,b:x.closedOn?'Closed '+esc(fmtY(x.closedOn))+', '+days(w.date,x.closedOn)+' days after the walk. Evidence: <b>'+esc(x.evidence)+'</b>':'Not closed yet. Evidence is required to close.'},
-    {t:'Verified on re-walk',d:!!x.verifiedBy,b:x.verifiedBy?'Checked on <b>'+esc(x.verifiedBy)+'</b> ('+esc(fmtY(walkOf(x.verifiedBy).date)+'')+') and the fix held.':(x.closedOn?'Waiting for a re-walk to confirm the fix held.':'Follows closure.')}
+    {t:'Verified on re-walk',d:!!x.verifiedBy,b:x.verifiedBy?'Checked on <b>'+esc(x.verifiedBy)+'</b> ('+esc(fmtY(walkOf(x.verifiedBy).date)+'')+') and the fix was seen in place.':(x.closedOn?'Waiting for a re-walk to check the fix is in place.':'Follows closure.')}
   ];
   var h='<div class="ph"><div><h2 id="sheetTitle">'+esc(x.id)+'</h2><span class="pill s-'+cls(st)+'">'+st+'</span></div><button class="x" type="button" data-act="close" aria-label="Close">&times;</button></div>';
   h+='<ol class="chain">'+steps.map(function(s){return '<li class="'+(s.d?'done':'')+'"><h3>'+s.t+'</h3><p>'+s.b+'</p></li>';}).join('')+'</ol>';
@@ -445,7 +445,7 @@ function detailHtml(id){
     var cand=S.walks.filter(function(v){return v.id!==x.walk&&v.date>=x.closedOn;}).sort(function(a,b){return a.date.localeCompare(b.date);});
     h+='<div class="box"><h3>Verify on a re-walk</h3>';
     if(cand.length){
-      h+='<label class="field">Re-walk<select id="vWalk">'+cand.map(function(v){return '<option value="'+v.id+'">'+esc(v.id+', '+fmt(v.date)+', '+v.area)+'</option>';}).join('')+'</select></label><div class="btns"><button class="btn primary small" type="button" data-act="verify">Confirm the fix held</button><button class="btn sec small" type="button" data-act="reopen">Reopen</button></div>';
+      h+='<label class="field">Re-walk<select id="vWalk">'+cand.map(function(v){return '<option value="'+v.id+'">'+esc(v.id+', '+fmt(v.date)+', '+v.area)+'</option>';}).join('')+'</select></label><div class="btns"><button class="btn primary small" type="button" data-act="verify">Record the re-walk check</button><button class="btn sec small" type="button" data-act="reopen">Reopen</button></div>';
     }else{
       h+='<p class="hint">A re-walk must be logged on or after '+esc(fmt(x.closedOn))+'. Use Log observation to add the walk, then come back here.</p><button class="btn sec small" type="button" data-act="reopen">Reopen</button>';
     }
