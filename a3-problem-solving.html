@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A3 Problem Solving Sheet</title>
+<meta name="description" content="Build a one-page A3 problem solving sheet: background, current condition, goal, root cause, countermeasures and follow-up. The checks show where the root cause is unconfirmed, a countermeasure has no independent check, or the result has not been measured.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.a3{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+@media (max-width:900px){.a3{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.box h2{margin:0 0 10px;font-size:.98rem;display:flex;gap:8px;align-items:center}
+.box h2 .no{display:inline-block;min-width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;background:var(--b1);color:var(--ink);font-size:.8rem;font-weight:700}
+.box label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted);margin:0 0 10px}
+.box input,.box textarea,.box select{width:100%}
+.box .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:560px){.box .two,.box .three{grid-template-columns:1fr}}
+.why{display:grid;grid-template-columns:28px 1fr;gap:8px;margin:0 0 10px;align-items:start}
+.why .n{font-weight:700;color:var(--muted);padding-top:8px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:0 0 14px}
+.meta label:first-child{grid-column:span 2}
+.meta label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.meta input,.meta select{width:100%}
+.prog{font-size:.88rem;margin:4px 0 10px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px}
+.edbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0;margin:0 0 10px;border-bottom:1px solid var(--line)}
+#report .a3p{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#report .bx{border:1px solid #000;padding:6px 8px;break-inside:avoid;margin:0}
+#report .bx h2{margin:0 0 4px;font-size:.95rem}
+#report .bx p{margin:2px 0;font-size:.85rem;white-space:pre-wrap}
+#report .mt{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:.85rem;margin:4px 0 8px}
+@page{size:A3 landscape;margin:10mm}
+@media print{header{display:none!important}}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>A3 Problem Solving Sheet</h1>
+    <p>Work a problem through on one page: why it matters, what is happening now, the goal, the root cause, the countermeasures and how you will know they worked. A sheet is only closed when the result has been measured, the new way is standardised, and someone other than its owner has signed it off.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="sheets">Sheets</button>
+  <button role="tab" aria-selected="false" data-tab="edit">Sheet</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records the names or roles of people who own and check problems and actions. It stays in this browser and in files you save. Nothing is sent to this website. If you enter names, your employer is responsible for that data. Use initials or roles where you can. Describe what happened and what the process allowed, not who was to blame, and keep health detail and anything about an individual's conduct out of it. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every sheet tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear everything to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">New sheet</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnTrack">Send countermeasures to the tracker</button>
+  <button class="btn danger" id="btnClear">Clear everything</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+<p class="sm" id="sendNote" role="status"></p>
+
+<section id="tab-sheets"><div class="list" id="list"></div></section>
+
+<section id="tab-edit" hidden>
+  <div class="edbar toolbar"><button class="btn sec small" id="edBack" type="button">Back to sheets</button><button class="btn small" id="edPrint" type="button">Print this sheet</button><button class="btn sec small" id="edImport" type="button">Copy from the 5 Whys tool</button><span style="flex:1"></span><button class="btn danger small" id="edDel" type="button">Delete sheet</button></div>
+  <p class="sm" id="impNote" role="status"></p>
+  <div class="status st-empty" id="edStatus" role="status" aria-live="polite"></div>
+  <div id="ed"></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the sheet: missing facts, an unconfirmed root cause, countermeasures with no owner, date or independent check, a result that was not measured, and a close-out that skipped a step. They cannot tell whether the root cause is right or the countermeasures will work.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What an A3 is</h2>
+    <p>An A3 is a one-page record of a problem being solved, named after the paper size. It makes the thinking visible so someone else can challenge it. The layout follows plan, do, check, act. Boxes 1 to 4 are plan, box 5 is do, box 6 is check and box 7 is act.</p></div>
+  <div class="card"><h2>The seven boxes</h2>
+    <ul>
+      <li><strong>1 Background.</strong> Why this problem matters now, in terms of customers, safety, cost or delivery.</li>
+      <li><strong>2 Current condition.</strong> What is happening, where, since when, and how big. Facts and measures, not blame and not a solution.</li>
+      <li><strong>3 Goal.</strong> A measure with a baseline, a target and a date.</li>
+      <li><strong>4 Root cause analysis.</strong> A chain of whys, each marked with how you know. Then the root cause, and how it was confirmed.</li>
+      <li><strong>5 Countermeasures.</strong> What will be done about the root cause, who owns each, and by when. They should change the process, not only remind people.</li>
+      <li><strong>6 Follow-up.</strong> The result, measured against the goal, on a date after the countermeasures were checked.</li>
+      <li><strong>7 Standardise and learn.</strong> What now changes in the standard work, and what you learned.</li>
+    </ul></div>
+  <div class="card"><h2>What the checks look for</h2>
+    <ul>
+      <li>Blame wording, such as "careless" or "human error", anywhere on the sheet. A cause that stops at a person is not yet a root cause.</li>
+      <li>A current condition that reads like a solution rather than a fact.</li>
+      <li>A goal with no baseline, no target, or a target that is not better than the baseline.</li>
+      <li>Fewer than three whys, or whys resting on an assumption.</li>
+      <li>Countermeasures planned before the root cause is confirmed.</li>
+      <li>A countermeasure with no owner or date, an overdue one, or one marked done with no check by someone other than its owner.</li>
+      <li>A countermeasure set made up only of procedure, training or reminders.</li>
+      <li>A result not measured, or measured before the countermeasures were checked.</li>
+      <li>A closed sheet with the target missed and no explanation, the change not standardised, or signed off by its own owner.</li>
+    </ul></div>
+  <div class="card"><h2>Printing</h2><p>Print this sheet sets the page to A3 landscape. On an A4 printer choose "fit to page" in the print dialogue. The printed sheet carries its own gap count so the page is not mistaken for a finished one.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Work the whys first in the <a href="5-whys-tool.html">5 Whys Tool</a> and copy them across. For a serious event use the <a href="causal-tree-builder.html">Causal Tree Builder</a>. Follow countermeasures in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>. Problems raised at the board come from the <a href="daily-management-board.html">Daily Management Board</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the root cause is right or the problem is solved. Confirm the cause by testing it, and measure the result over long enough to be sure. This is decision support only.</p></div>
+</section>
+</main>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your company's procedures. A3 Problem Solving Sheet. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how personal data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-a3-v1",UIK="rmilburn-a3-ui",TK="rmilburn-action-tracker-v1",TBASE=5000000,W5="fivewhys-tool-v1";
+var KINDS=[["remove","Removes or designs out the cause"],["safeguard","Builds in a safeguard or check"],["procedure","Procedure or training"],["reminder","Reminder, sign or instruction"]];
+var BASIS=[["gemba","Seen at the work place"],["data","Data or records"],["assumed","Assumption, not checked"]];
+var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*|forgot|didn'?t bother|not paying attention)\b/i;
+var SOLN=/\b(needs? to|should|must|install\w*|buy|purchase\w*|train(ing)?|implement\w*|introduce\w*|add a|fit a|we need)\b/i;
+var MAXS=100,MAXW=8,MAXC=12;
+var D=blank(),dirty=false,storeOk=true,saveT=null,edT=null,armed=null,armT=null,curId=0;
+function blank(){return {example:false,sheets:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function short(s,n){s=String(s||"").trim();return s.length>n?s.slice(0,n-1)+"…":(s||"(untitled)");}
+function num(v){if(v===null||v===undefined||v==="")return null;var n=typeof v==="number"?v:parseFloat(String(v).replace(/,/g,"."));return (isFinite(n)&&Math.abs(n)<=1e9)?n:null;}
+function fnum(v){return v===null||v===undefined?"":String(Math.round(v*100)/100);}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function ref(s){return "A3-"+String(s.no).padStart(3,"0");}
+function sById(id){for(var i=0;i<D.sheets.length;i++)if(D.sheets[i].id===id)return D.sheets[i];return null;}
+function kindName(k){for(var i=0;i<KINDS.length;i++)if(KINDS[i][0]===k)return KINDS[i][1];return "";}
+
+function cleanSheet(x){
+  if(!x||typeof x!=="object")return null;
+  var o={id:parseInt(x.id,10)||0,no:parseInt(x.no,10)||0,title:str(x.title,120),owner:str(x.owner,60),sponsor:str(x.sponsor,60),date:dOk(x.date),area:str(x.area,80),
+    background:str(x.background,600),current:str(x.current,800),mName:str(x.mName,80),mUnit:str(x.mUnit,12),mDir:x.mDir==="higher"?"higher":"lower",mBase:num(x.mBase),mTarget:num(x.mTarget),goal:str(x.goal,300),goalDate:dOk(x.goalDate),
+    whys:[],root:str(x.root,300),rcOk:(x.rcOk==="yes"||x.rcOk==="no")?x.rcOk:"",rcEv:str(x.rcEv,300),cms:[],
+    checkDate:dOk(x.checkDate),result:num(x.result),resultOn:dOk(x.resultOn),outcome:str(x.outcome,400),standard:(x.standard==="yes"||x.standard==="no")?x.standard:"",stdNote:str(x.stdNote,400),learnt:str(x.learnt,400),
+    status:x.status==="closed"?"closed":"open",closedBy:str(x.closedBy,60),closedOn:dOk(x.closedOn),ex:x.ex===true};
+  (Array.isArray(x.whys)?x.whys.slice(0,MAXW):[]).forEach(function(w){if(!w||typeof w!=="object")return;o.whys.push({text:str(w.text,300),basis:inList(w.basis,BASIS)});});
+  var seen={},mx=0;
+  (Array.isArray(x.cms)?x.cms.slice(0,MAXC):[]).forEach(function(c){if(!c||typeof c!=="object")return;var id=parseInt(c.id,10)||0;if(id>mx)mx=id;
+    o.cms.push({id:id,text:str(c.text,300),owner:str(c.owner,60),due:dOk(c.due),kind:inList(c.kind,KINDS),status:c.status==="done"?"done":"open",verBy:str(c.verBy,60),verOn:dOk(c.verOn)});});
+  o.cms.forEach(function(c){if(!c.id||seen[c.id])c.id=++mx;seen[c.id]=1;});
+  return o;
+}
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;var ids={},nos={},mx=0,mn=0;
+  (Array.isArray(d.sheets)?d.sheets.slice(0,MAXS):[]).forEach(function(x){var c=cleanSheet(x);if(!c)return;if(c.id>mx)mx=c.id;if(c.no>mn)mn=c.no;o.sheets.push(c);});
+  o.sheets.forEach(function(c){if(!c.id||ids[c.id])c.id=++mx;ids[c.id]=1;if(!c.no||nos[c.no])c.no=++mn;nos[c.no]=1;});
+  return o;
+}
+
+/* ---------- measures of progress ---------- */
+function reached(s){if(s.result===null||s.mTarget===null)return null;return s.mDir==="lower"?s.result<=s.mTarget:s.result>=s.mTarget;}
+function progress(s){if(s.result===null||s.mBase===null||s.mTarget===null||s.mBase===s.mTarget)return null;return (s.result-s.mBase)/(s.mTarget-s.mBase)*100;}
+function verified(c){return c.status==="done"&&c.verBy.trim()&&norm(c.verBy)!==norm(c.owner)&&c.verOn;}
+
+/* ---------- checks ---------- */
+function sheetCheck(s){
+  var gaps=[],notes=[],td=today();
+  function g(m){gaps.push(m);}function n(m){notes.push(m);}
+  var cl=s.status==="closed";
+  if(!s.title.trim())g("The sheet has no title.");
+  if(!s.owner.trim())g("The sheet has no owner.");
+  if(!s.date)g("The start date is not set.");
+  if(!s.background.trim())g("Box 1: say why this problem matters.");
+  if(!s.current.trim())g("Box 2: describe the current condition, with what, where, since when and how big.");
+  [["Box 1",s.background],["Box 2",s.current],["Box 4",s.root]].concat(s.whys.map(function(w,i){return ["Box 4, why "+(i+1),w.text];})).concat([["Box 4 root cause note",s.rcEv]]).forEach(function(p){
+    if(p[1]&&BLAME.test(p[1]))g(p[0]+" uses wording that judges a person. Say what the process or equipment allowed to happen instead.");});
+  if(s.current&&SOLN.test(s.current))n("Box 2 reads like it contains a solution. Keep the current condition to facts and measures.");
+  if(!s.mName.trim())g("Box 3: name the measure the goal is about.");
+  if(s.mBase===null)g("Box 3: the baseline is not set.");
+  if(s.mTarget===null)g("Box 3: the target is not set.");
+  if(s.mBase!==null&&s.mTarget!==null&&(s.mDir==="lower"?s.mTarget>=s.mBase:s.mTarget<=s.mBase))g("Box 3: the target is not better than the baseline, given that "+(s.mDir==="lower"?"lower":"higher")+" is better.");
+  if(!s.goal.trim())g("Box 3: write the goal in words.");
+  var ws=s.whys.filter(function(w){return w.text.trim();});
+  if(s.root.trim()&&ws.length<3)n("Box 4: only "+plural(ws.length,"why")+" recorded. Stopping early often leaves a symptom, not the cause.");
+  var weak=ws.filter(function(w){return !w.basis||w.basis==="assumed";}).length;
+  if(weak){var m4="Box 4: "+weak+" of "+plural(ws.length,"why")+(weak===1?" rests":" rest")+" on an assumption or "+(weak===1?"has":"have")+" no basis stated.";if(cl)g(m4);else n(m4);}
+  if(!s.root.trim())g("Box 4: the root cause is not written.");
+  if(s.root.trim()&&s.rcOk==="yes"&&!s.rcEv.trim())g("Box 4: the root cause is marked confirmed with no note of how it was confirmed.");
+  if(s.cms.length&&s.rcOk!=="yes")g("Box 5: countermeasures are planned but the root cause is not confirmed. Test the cause first.");
+  if(s.root.trim()&&!s.cms.length)g("Box 5: no countermeasures yet.");
+  var lastVer="";
+  s.cms.forEach(function(c,j){var l="Countermeasure "+(j+1);
+    if(!c.text.trim())g(l+" has no wording.");
+    if(!c.owner.trim())g(l+" has no owner.");
+    if(!c.due)g(l+" has no due date.");else if(c.status!=="done"&&c.due<td)g(l+" is overdue (due "+fmt(c.due)+").");
+    if(!c.kind)n(l+": say what kind it is.");
+    if(c.status==="done"){
+      if(!c.verBy.trim())g(l+" is marked done with nobody named as having checked it worked.");
+      else if(norm(c.verBy)===norm(c.owner))g(l+" is marked done, but its owner checked their own work.");
+      if(!c.verOn)g(l+" is marked done with no date for the check.");else if(c.verOn>td)g(l+" has a check date in the future.");
+      if(c.verOn&&c.verOn>lastVer)lastVer=c.verOn;
+    }});
+  if(s.cms.length&&s.cms.every(function(c){return c.kind==="procedure"||c.kind==="reminder"||!c.kind;}))n("Box 5: every countermeasure relies on people remembering or following instructions. Look for one that changes the process or equipment.");
+  if(s.cms.length&&!s.checkDate)g("Box 6: no date set for measuring the result.");
+  if(s.checkDate&&s.result===null&&s.checkDate<td)g("Box 6: the result check was due on "+fmt(s.checkDate)+" and no result is recorded.");
+  if(s.result!==null&&!s.resultOn)g("Box 6: the result has no date.");
+  if(s.resultOn&&s.resultOn>td)g("Box 6: the result date is in the future.");
+  if(s.result!==null&&s.resultOn&&lastVer&&s.resultOn<lastVer)g("Box 6: the result is dated before the last countermeasure was checked, so it cannot show their effect.");
+  if(s.result!==null&&reached(s)===false&&!s.outcome.trim()&&!cl)n("Box 6: the target was not reached. Say what that means and what happens next.");
+  if(cl){
+    if(s.result===null)g("Closed with no result measured.");
+    else if(reached(s)===false&&!s.outcome.trim())g("Closed with the target missed and no explanation in box 6.");
+    if(s.rcOk!=="yes")g("Closed with the root cause not confirmed.");
+    if(s.cms.some(function(c){return !verified(c);}))g("Closed with countermeasures that are open or not independently checked.");
+    if(s.standard!=="yes")g("Closed but the change is not marked as standardised in box 7.");
+    else if(!s.stdNote.trim())g("Box 7: say what standard, procedure or instruction was changed.");
+    if(!s.learnt.trim())n("Box 7: nothing recorded as learnt.");
+    if(!s.closedBy.trim())g("Closed with nobody named as having signed it off.");
+    else if(norm(s.closedBy)===norm(s.owner))g("Closed, but signed off by the sheet's own owner.");
+    if(!s.closedOn)g("Closed with no sign-off date.");
+  }
+  return {gaps:gaps,notes:notes};
+}
+function analyse(){
+  var gaps=[],notes=[];
+  D.sheets.forEach(function(s){var c=sheetCheck(s);c.gaps.forEach(function(m){gaps.push({id:s.id,msg:ref(s)+": "+m});});c.notes.forEach(function(m){notes.push({id:s.id,msg:ref(s)+": "+m});});});
+  return {gaps:gaps,notes:notes};
+}
+
+/* ---------- persistence ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextNo(){var m=0;D.sheets.forEach(function(i){if(i.no>m)m=i.no;});return m+1;}
+function nextId(){var m=0;D.sheets.forEach(function(i){if(i.id>m)m=i.id;});return m+1;}
+function renderAll(){renderStatus();renderList();renderChecks();if(curId&&sById(curId))buildEd();else if(!$("tab-edit").hidden)showTab("sheets");$("banner").hidden=!D.example;}
+
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.sheets.length){el.className="status st-empty";add(el,h("strong",{text:"No sheets yet."}),h("div",{class:"sm",text:"Start a new sheet, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on these sheets until they are dealt with."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+" across "+plural(D.sheets.length,"sheet")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the root causes are right or the problems are solved."}));}
+}
+function renderList(){
+  var L=$("list");L.innerHTML="";
+  if(!D.sheets.length){L.appendChild(h("p",{class:"sm",text:"Nothing here yet."}));return;}
+  D.sheets.slice().sort(function(a,b){return b.no-a.no;}).forEach(function(s){var c=sheetCheck(s),p=progress(s);
+    L.appendChild(h("button",{class:"inc "+(c.gaps.length?"gap":"clean")+(s.status==="closed"?" closed":""),type:"button","data-k":"s"+s.id,onclick:function(){openSheet(s.id);}},
+      h("div",{class:"t",text:ref(s)+"  "+short(s.title,100)}),
+      h("div",{class:"m"},h("span",{class:"chip "+(s.status==="closed"?"ok":"c"),text:s.status==="closed"?"Closed":"Open"}),
+        h("span",{class:"chip "+(c.gaps.length?"g":"ok"),text:c.gaps.length?plural(c.gaps.length,"gap"):"No gaps found"}),
+        s.result!==null&&reached(s)!==null?h("span",{class:"chip "+(reached(s)?"ok":"r"),text:reached(s)?"Target reached":"Target not reached"}):h("span",{class:"chip",text:"No result yet"}),
+        p!==null?h("span",{class:"sm",text:Math.round(p)+"% of the way from baseline to target"}):null,
+        s.ex?h("span",{class:"chip",text:"Example"}):null,
+        h("span",{class:"sm",text:(s.owner||"No owner")})))); });
+}
+
+/* ---------- editor ---------- */
+function edTouch(){touch();clearTimeout(edT);edT=setTimeout(function(){renderEdStatus();renderStatus();renderList();renderChecks();},300);}
+function T(label,s,key,max,rows,full){var el=rows?h("textarea",{maxlength:String(max),rows:String(rows)}):h("input",{type:"text",maxlength:String(max)});el.value=s[key];el.addEventListener("input",function(){s[key]=el.value.slice(0,max);edTouch();});return h("label",{class:full?"full":""},label,el);}
+function DT(label,s,key){var el=h("input",{type:"date",value:s[key]});el.addEventListener("change",function(){s[key]=dOk(el.value);edTouch();});return h("label",{},label,el);}
+function NM(label,s,key){var el=h("input",{type:"number",step:"any",inputmode:"decimal",value:s[key]===null?"":String(s[key])});el.addEventListener("input",function(){s[key]=num(el.value);edTouch();if(key==="result"||key==="mBase"||key==="mTarget")renderProg();});return h("label",{},label,el);}
+function SL(label,s,key,list,blankLabel,after){var el=h("select",{});if(blankLabel!==null)el.appendChild(h("option",{value:"",text:blankLabel}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===s[key])op.selected=true;el.appendChild(op);});
+  el.addEventListener("change",function(){s[key]=el.value;edTouch();if(after)after();});return h("label",{},label,el);}
+function armBtn(text,key,fn,cls){var b=h("button",{class:"btn danger small "+(cls||""),type:"button",text:text});
+  b.onclick=function(){if(armed===key){armed=null;clearTimeout(armT);fn();return;}armed=key;b.textContent="Confirm: "+text.toLowerCase();b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent=text;b.classList.remove("armed");},4000);};return b;}
+function box(no,title,kids){return h("div",{class:"box"},h("h2",{},h("span",{class:"no",text:String(no)}),title),kids);}
+function renderEdStatus(){
+  var s=sById(curId),el=$("edStatus");if(!s)return;el.innerHTML="";var c=sheetCheck(s);
+  if(c.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found on this sheet. Do not treat it as complete."}),h("div",{class:"sm",text:plural(c.gaps.length,"gap")+" and "+plural(c.notes.length,"note")+"."}));
+    var ul=h("ul",{class:"fl"});c.gaps.forEach(function(m){ul.appendChild(h("li",{class:"g",text:m}));});c.notes.forEach(function(m){ul.appendChild(h("li",{class:"o",text:"Note: "+m}));});el.appendChild(ul);}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the root cause is right or the problem is solved."}));
+    if(c.notes.length){var u2=h("ul",{class:"fl"});c.notes.forEach(function(m){u2.appendChild(h("li",{class:"o",text:"Note: "+m}));});el.appendChild(u2);}}
+}
+function renderProg(){
+  var s=sById(curId),el=$("prog");if(!s||!el)return;var p=progress(s),r=reached(s);
+  el.textContent=s.result===null?"No result recorded yet.":("Result "+fnum(s.result)+(s.mUnit?" "+s.mUnit:"")+" against a target of "+(s.mTarget===null?"not set":fnum(s.mTarget)+(s.mUnit?" "+s.mUnit:""))+". "+(r===null?"":(r?"Target reached. ":"Target not reached. "))+(p===null?"":"That is "+Math.round(p)+"% of the way from the baseline to the target. "))+"One reading can be luck, so look at the result over long enough to be sure.";
+}
+function buildEd(){
+  var s=sById(curId),ed=$("ed");if(!s)return;var y=window.scrollY;ed.innerHTML="";
+  ed.appendChild(h("div",{class:"meta"},T("Title (the problem, in a few words)",s,"title",120,0),T("Owner (name or role)",s,"owner",60,0),T("Sponsor or reviewer",s,"sponsor",60,0),DT("Started",s,"date"),T("Area",s,"area",80,0),SL("Status",s,"status",[["open","Open"],["closed","Closed"]],null,function(){buildEd();})));
+  var left=h("div",{class:"a3l"}),right=h("div",{class:"a3r"});
+  /* box 1-3 */
+  var b1=box(1,"Background",T("Why does this matter now? Customers, safety, cost, delivery.",s,"background",600,3));
+  var b2=box(2,"Current condition",T("What is happening, where, since when, and how big? Facts and measures only.",s,"current",800,5));
+  var b3=box(3,"Goal",[h("div",{class:"two"},T("Measure",s,"mName",80,0),T("Unit",s,"mUnit",12,0)),
+    SL("Better when",s,"mDir",[["lower","Lower"],["higher","Higher"]],null,function(){renderProg();}),
+    h("div",{class:"three"},NM("Baseline",s,"mBase"),NM("Target",s,"mTarget"),DT("Target date",s,"goalDate")),T("The goal in words",s,"goal",300,2)]);
+  /* box 4 */
+  var wl=h("div",{});
+  s.whys.forEach(function(w,i){
+    var ta=h("textarea",{maxlength:"300",rows:"2","aria-label":"Why "+(i+1)});ta.value=w.text;ta.addEventListener("input",function(){w.text=ta.value.slice(0,300);edTouch();});
+    var bs=h("select",{"aria-label":"How do you know, why "+(i+1)});bs.appendChild(h("option",{value:"",text:"How do you know?"}));BASIS.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===w.basis)op.selected=true;bs.appendChild(op);});bs.addEventListener("change",function(){w.basis=bs.value;edTouch();});
+    wl.appendChild(h("div",{class:"why"},h("div",{class:"n",text:"Why "+(i+1)}),h("div",{},ta,h("div",{class:"toolbar",style:"margin:6px 0 0"},bs,s.whys.length>1?armBtn("Remove","w"+i,function(){s.whys.splice(i,1);edTouch();buildEd();}):null))));});
+  var addW=h("button",{class:"btn sec small",type:"button",text:"Add a why",onclick:function(){if(s.whys.length<MAXW){s.whys.push({text:"",basis:""});edTouch();buildEd();}}});if(s.whys.length>=MAXW)addW.disabled=true;
+  var b4=box(4,"Root cause analysis",[wl,addW,h("div",{style:"height:10px"}),T("Root cause",s,"root",300,2),SL("Has the root cause been confirmed, for example by a test, a trial or checking it at the work place?",s,"rcOk",[["yes","Yes"],["no","No, not yet"]],"Not answered"),T("How was it confirmed?",s,"rcEv",300,2)]);
+  /* box 5 */
+  var cl=h("div",{});
+  s.cms.forEach(function(c,j){
+    cl.appendChild(h("div",{class:"ac"},h("strong",{text:"Countermeasure "+(j+1)}),
+      T("What will be done, and what will be different afterwards?",c,"text",300,2),
+      h("div",{class:"two"},T("Owner",c,"owner",60,0),DT("Due",c,"due")),
+      h("div",{class:"two"},SL("Kind",c,"kind",KINDS,"Choose"),SL("Status",c,"status",[["open","Open"],["done","Done"]],null)),
+      h("div",{class:"two"},T("Checked by (someone other than the owner)",c,"verBy",60,0),DT("Check date",c,"verOn")),
+      armBtn("Remove","c"+c.id,function(){s.cms=s.cms.filter(function(z){return z.id!==c.id;});edTouch();buildEd();})));});
+  var addC=h("button",{class:"btn sec small",type:"button",text:"Add a countermeasure",onclick:function(){if(s.cms.length<MAXC){var m=0;s.cms.forEach(function(c){if(c.id>m)m=c.id;});s.cms.push({id:m+1,text:"",owner:"",due:"",kind:"",status:"open",verBy:"",verOn:""});edTouch();buildEd();}}});if(s.cms.length>=MAXC)addC.disabled=true;
+  var b5=box(5,"Countermeasures",[cl,addC,h("p",{class:"sm",text:"Done means the change is in place and someone else has looked and confirmed it is working. The check is the evidence, not the tick."})]);
+  /* box 6, 7 */
+  var b6=box(6,"Follow-up and results",[h("div",{class:"two"},DT("Date the result will be measured",s,"checkDate"),DT("Date the result was measured",s,"resultOn")),NM("Result",s,"result"),h("div",{class:"prog",id:"prog",role:"status"}),T("What did the result tell you? If the target was missed, what happens next?",s,"outcome",400,3)]);
+  var b7=box(7,"Standardise and learn",[SL("Has the change been built into standard work, procedures or training?",s,"standard",[["yes","Yes"],["no","No, not yet"]],"Not answered"),T("What was changed, and where is it written down?",s,"stdNote",400,2),T("What did you learn that others could use?",s,"learnt",400,3),
+    h("div",{class:"two"},T("Signed off by (not the owner)",s,"closedBy",60,0),DT("Sign-off date",s,"closedOn"))]);
+  add(left,b1,b2,b3,b4);add(right,b5,b6,b7);
+  [left,right].forEach(function(c){c.style.display="grid";c.style.gap="14px";});
+  ed.appendChild(h("div",{class:"a3"},left,right));
+  renderProg();renderEdStatus();window.scrollTo(0,y);
+}
+function openSheet(id){curId=id;uiSet("sheet",id);$("impNote").textContent="";buildEd();showTab("edit");window.scrollTo(0,0);}
+$("edBack").onclick=function(){showTab("sheets");var b=document.querySelector('[data-k="s'+curId+'"]');if(b)b.focus();};
+$("edDel").replaceWith((function(){var b=armBtn("Delete sheet","dsheet",function(){D.sheets=D.sheets.filter(function(s){return s.id!==curId;});curId=0;touch();renderAll();showTab("sheets");});b.id="edDel";return b;})());
+$("btnAdd").onclick=function(){
+  if(D.sheets.length>=MAXS)return;
+  if(D.example){if(!confirm("The example is still loaded. Clear it first so your sheets are not mixed with made-up ones?"))return;D=blank();touch();}
+  var s=cleanSheet({id:nextId(),no:nextNo(),date:today(),whys:[{},{},{}],cms:[]});D.sheets.push(s);touch();renderAll();openSheet(s.id);};
+$("edImport").onclick=function(){
+  var s=sById(curId),note=$("impNote");if(!s)return;var o=null;
+  try{o=JSON.parse(localStorage.getItem(W5));}catch(e){}
+  if(!o||typeof o!=="object"||!o.problem||!Array.isArray(o.whys)){note.textContent="No 5 Whys work was found in this browser. Fill in the 5 Whys Tool first, in the same browser.";return;}
+  var p=o.problem,done=[],skip=[];
+  function fill(k,v,max,label){v=str(v,max);if(!v.trim())return;if(!String(s[k]).trim()){s[k]=v;done.push(label);}else skip.push(label);}
+  fill("title",p.statement,120,"title");fill("area",p.area,80,"area");fill("owner",p.owner,60,"owner");
+  var cur=str(p.statement,600)+(str(p.size,200).trim()?"\nSize: "+str(p.size,200):"");fill("current",cur,800,"current condition");
+  var rt=str(o.rootText,300);fill("root",rt,300,"root cause");
+  var src=o.whys.filter(function(w){return w&&typeof w.why==="string"&&w.why.trim();}).slice(0,MAXW);
+  var mapB={gemba:"gemba",data:"data",assumed:"assumed"};
+  if(src.length){if(s.whys.every(function(w){return !w.text.trim();})){s.whys=src.map(function(w){return {text:str(w.why,300),basis:mapB[w.status]||""};});done.push("whys");}else skip.push("whys");}
+  edTouch();buildEd();
+  note.textContent=(done.length?"Copied: "+done.join(", ")+". ":"Nothing new to copy. ")+(skip.length?"Left alone because they already have content: "+skip.join(", ")+". ":"")+"Check the wording, and note that the 5 Whys tool does not record whether the root cause was confirmed.";};
+$("edPrint").onclick=function(){buildReport();window.print();};
+
+/* ---------- checks view ---------- */
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.sheets.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){openSheet(x.id);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the sheets."}));
+}
+
+/* ---------- exports ---------- */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Ref","Title","Owner","Started","Status","Measure","Unit","Better when","Baseline","Target","Result","Result date","Target reached","Root cause","Root cause confirmed","Countermeasures","Standardised","Signed off by","Gaps","Example"];
+  var rows=D.sheets.map(function(s){var r=reached(s);return [ref(s),s.title,s.owner,s.date,s.status,s.mName,s.mUnit,s.mDir,s.mBase===null?"":s.mBase,s.mTarget===null?"":s.mTarget,s.result===null?"":s.result,s.resultOn,r===null?"":(r?"Yes":"No"),s.root,s.rcOk,s.cms.length,s.standard,s.closedBy,sheetCheck(s).gaps.length,s.ex?"Example":""];});
+  download("a3-sheets.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+$("btnTrack").onclick=function(){
+  var note=$("sendNote"),list=[];
+  D.sheets.forEach(function(s){s.cms.forEach(function(c){if(c.text.trim())list.push({s:s,c:c});});});
+  if(!list.length){note.textContent="There are no countermeasures with wording to send.";return;}
+  var cur={actions:[]};try{var d=JSON.parse(localStorage.getItem(TK));if(d&&Array.isArray(d.actions))cur=d;}catch(e){}
+  var ids={};list.forEach(function(x){ids[TBASE+x.s.id*1000+x.c.id]=1;});
+  var kept=cur.actions.filter(function(z){return !(z&&ids[z.id]);});
+  list.forEach(function(x){var s=x.s,c=x.c;
+    kept.push({id:TBASE+s.id*1000+c.id,example:s.ex===true,title:c.text.trim().slice(0,140),detail:("From "+ref(s)+": "+(s.title||"")+(s.root?". Root cause: "+s.root:"")).slice(0,400),source:"A3 sheet",hoc:"",riskId:null,riskText:"",
+      owner:c.owner,raised:s.date||today(),due:c.due,status:c.status==="done"?"done":"open",doneDate:c.status==="done"?c.verOn:"",doneNote:"",verifier:"",verDate:"",verNote:"",result:"",cancel:"",log:[]});});
+  try{localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+    note.textContent="Sent "+plural(list.length,"countermeasure")+" to the tracker. Sending again updates them, and replaces anything changed on them there. Checks are not carried across, so each one needs its own check in the tracker.";
+  }catch(e){note.textContent="This browser would not let the page write to the tracker. Nothing was sent.";}
+};
+function P(t){return h("p",{text:t&&t.trim()?t:"(not filled in)"});}
+function buildReport(){
+  var r=$("report");r.innerHTML="";var s=sById(curId);
+  if(!s){add(r,h("p",{text:"Open a sheet to print it."}));return;}
+  var c=sheetCheck(s);
+  add(r,h("h1",{text:ref(s)+"  "+(s.title||"(untitled)")}));
+  if(s.ex||D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  add(r,h("div",{class:"mt"},h("span",{text:"Owner: "+(s.owner||"not set")}),h("span",{text:"Sponsor: "+(s.sponsor||"not set")}),h("span",{text:"Area: "+(s.area||"not set")}),h("span",{text:"Started: "+(s.date?fmt(s.date):"not set")}),h("span",{text:"Status: "+(s.status==="closed"?"Closed":"Open")}),h("span",{text:"Printed: "+fmt(today())})));
+  add(r,h("p",{class:"gapx",text:c.gaps.length?"Gaps found ("+c.gaps.length+"). Do not treat this sheet as complete: "+c.gaps.slice(0,6).join(" ")+(c.gaps.length>6?" And "+(c.gaps.length-6)+" more.":""):"No gaps found by the checks. A competent person must still judge the sheet."}));
+  var g=h("div",{class:"a3p"}),L=h("div",{}),R=h("div",{});
+  function B(no,title,kids){return h("div",{class:"bx"},h("h2",{text:no+" "+title}),kids);}
+  var u=s.mUnit?" "+s.mUnit:"";
+  add(L,B(1,"Background",P(s.background)),B(2,"Current condition",P(s.current)),
+    B(3,"Goal",[P(s.goal),P("Measure: "+(s.mName||"not set")+". Baseline "+(s.mBase===null?"not set":fnum(s.mBase)+u)+", target "+(s.mTarget===null?"not set":fnum(s.mTarget)+u)+" ("+(s.mDir==="lower"?"lower":"higher")+" is better)"+(s.goalDate?", by "+fmt(s.goalDate):"")+".")]),
+    B(4,"Root cause analysis",[s.whys.filter(function(w){return w.text.trim();}).map(function(w,i){var b=w.basis?{gemba:"seen at the work place",data:"data or records",assumed:"assumption, not checked"}[w.basis]:"basis not stated";return h("p",{text:"Why "+(i+1)+": "+w.text+" ["+b+"]"});}),P("Root cause: "+(s.root||"not written")),P("Confirmed: "+(s.rcOk==="yes"?"Yes. "+s.rcEv:s.rcOk==="no"?"No, not yet.":"Not answered."))]));
+  var cmk=s.cms.length?s.cms.map(function(m,j){return h("p",{text:(j+1)+". "+(m.text||"(no wording)")+" | Owner: "+(m.owner||"none")+" | Due: "+(m.due?fmt(m.due):"not set")+" | "+(kindName(m.kind)||"kind not set")+" | "+(m.status==="done"?(verified(m)?"Done, checked by "+m.verBy+" on "+fmt(m.verOn):"Done, NOT independently checked"):"Open")});}):P("");
+  var prg=progress(s);
+  add(R,B(5,"Countermeasures",cmk),
+    B(6,"Follow-up and results",[P("Result: "+(s.result===null?"not measured":fnum(s.result)+u+(s.resultOn?" on "+fmt(s.resultOn):"")+(reached(s)===null?"":(reached(s)?". Target reached.":". Target NOT reached."))+(prg===null?"":" ("+Math.round(prg)+"% of the way from baseline to target)"))+(s.checkDate&&s.result===null?". Due to be measured "+fmt(s.checkDate):"")),P(s.outcome)]),
+    B(7,"Standardise and learn",[P("Standardised: "+(s.standard==="yes"?"Yes. "+s.stdNote:s.standard==="no"?"No, not yet.":"Not answered.")),P("Learnt: "+(s.learnt||"nothing recorded")),P("Signed off by: "+(s.closedBy||"nobody")+(s.closedOn?" on "+fmt(s.closedOn):""))]));
+  add(g,L,R);add(r,g);add(r,h("p",{text:"Decision support only. A competent person must judge the root cause and the result."}));
+}
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["sheets","edit","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="edit"&&!sById(curId)){$("ed").innerHTML="";$("edStatus").innerHTML="";add($("ed"),h("p",{class:"sm",text:"Pick a sheet from the Sheets tab, or start a new one."}));}
+  if(t==="checks")renderChecks();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();curId=0;armed=null;touch();renderAll();showTab("sheets");b.textContent="Clear everything";b.classList.remove("armed");return;}
+  if(!D.sheets.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear everything";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();curId=0;touch();renderAll();showTab("sheets");};
+$("btnSave").onclick=function(){download("a3-sheets.json",JSON.stringify({app:"a3-sheets",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>3000000){alert("That file is too large to be an A3 data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="a3-sheets"||!d.data)throw 0;D=clean(d.data);curId=0;touch();renderAll();showTab("sheets");}catch(e){alert("That file could not be read. It is not an A3 sheets data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank();o.example=true;
+  function W(t,b){return {text:t,basis:b};}
+  o.sheets=[
+   {id:1,no:1,ex:true,title:"Example: Scrap rises at the end of each run on Line 2",owner:"Example Supervisor",sponsor:"Example Operations Manager",date:off(-28),area:"Example Line 2",
+    background:"Example: Scrap on Line 2 is the largest single cost loss in the area and the customer has raised it at the last two reviews.",
+    current:"Example: Over the last 4 weeks, scrap on Line 2 averaged 2.6% against 1.1% on Line 1. The extra scrap is in the last 40 minutes of each run. Rejects are undersize on the cut length.",
+    mName:"Scrap rate",mUnit:"%",mDir:"lower",mBase:2.6,mTarget:1.5,goal:"Example: Bring Line 2 scrap to 1.5% or less by the end of next month.",goalDate:off(20),
+    whys:[W("Cut length drifts undersize late in the run.","data"),W("The blade position creeps as the machine warms up.","gemba"),W("The clamp that holds the blade setting loosens with heat cycles.","gemba"),W("The clamp has no locking feature and is not on the maintenance schedule.","gemba")],
+    root:"Example: The blade clamp loosens under heat cycling because it has no lock and no scheduled check.",rcOk:"yes",rcEv:"Example: Clamp torque was measured at start and end of a run on two days. It dropped each time. A locked clamp held its setting in a trial run.",
+    cms:[{id:1,text:"Example: Fit a locking nut to the blade clamp.",owner:"Example Engineer",due:off(-10),kind:"remove",status:"done",verBy:"Example Quality Lead",verOn:off(-8)},
+         {id:2,text:"Example: Add the clamp torque to the weekly maintenance schedule.",owner:"Example Engineer",due:off(-5),kind:"safeguard",status:"done",verBy:"",verOn:""},
+         {id:3,text:"Example: Brief all shifts on the new clamp check.",owner:"Example Supervisor",due:off(-2),kind:"procedure",status:"open",verBy:"",verOn:""}],
+    checkDate:off(5),result:null,resultOn:"",outcome:"",standard:"no",stdNote:"",learnt:"",status:"open",closedBy:"",closedOn:""},
+   {id:2,no:2,ex:true,title:"Example: Pallets slipping on Line 3 racking",owner:"Example Team Leader",sponsor:"Example Safety Lead",date:off(-90),area:"Example Warehouse",
+    background:"Example: Three near misses in two months where a pallet moved on the racking beam. Nobody was hurt.",
+    current:"Example: 3 pallet slips on the 2.4 m beams in 8 weeks, all on pallets with the old chipped base.",
+    mName:"Pallet slips per month",mUnit:"",mDir:"lower",mBase:1.5,mTarget:0,goal:"Example: No pallet slips for 6 weeks.",goalDate:off(-20),
+    whys:[W("Pallet bases were damaged.","gemba"),W("Damaged pallets were put in the racking.","gemba"),W("There was no check of pallet condition at put-away.","gemba")],
+    root:"Example: There was no pallet condition check at put-away, so damaged pallets entered the racking.",rcOk:"yes",rcEv:"Example: Reviewed the last 12 put-aways. 4 of 12 pallets were damaged and none was rejected.",
+    cms:[{id:1,text:"Example: Add a go and no-go gauge for the pallet base at the put-away station.",owner:"Example Engineer",due:off(-60),kind:"safeguard",status:"done",verBy:"Example Safety Lead",verOn:off(-55)},
+         {id:2,text:"Example: Fit beam support bars on the 2.4 m beams.",owner:"Example Engineer",due:off(-50),kind:"remove",status:"done",verBy:"Example Safety Lead",verOn:off(-45)}],
+    checkDate:off(-20),result:0,resultOn:off(-18),outcome:"Example: No slips in the 6 weeks after the changes.",standard:"yes",stdNote:"Example: Put-away work instruction changed to include the gauge check. Gauge added to the line audit.",learnt:"Example: The gauge is cheaper than the support bars and would have prevented all three events on its own.",
+    status:"closed",closedBy:"Example Operations Manager",closedOn:off(-15)},
+   {id:3,no:3,ex:true,title:"Example: Late deliveries from the packing area",owner:"Example Team Leader",sponsor:"",date:off(-5),area:"Example Packing",
+    background:"Example: Late orders are up.",
+    current:"Example: The operators are careless with order priority and we need to install a new scheduling board.",
+    mName:"On-time dispatch",mUnit:"%",mDir:"higher",mBase:92,mTarget:90,goal:"",goalDate:"",
+    whys:[W("Orders are packed in the wrong order.",""),W("Operators did not follow the priority list.","assumed")],
+    root:"Example: Human error in packing order.",rcOk:"",rcEv:"",
+    cms:[{id:1,text:"Example: Retrain the operators on order priority.",owner:"",due:"",kind:"procedure",status:"open",verBy:"",verOn:""}],
+    checkDate:"",result:null,resultOn:"",outcome:"",standard:"",stdNote:"",learnt:"",status:"open",closedBy:"",closedOn:""}];
+  return clean(o);
+}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+renderAll();renderSave();
+var ui=uiGet();var want=["sheets","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"sheets";
+if(ui.tab==="edit"&&sById(parseInt(ui.sheet,10))){curId=parseInt(ui.sheet,10);buildEd();want="edit";}
+showTab(want);
+window.__a3={analyse:analyse,sheetCheck:sheetCheck,progress:progress,reached:reached,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before
+</body>
+</html>

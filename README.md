@@ -13,10 +13,11 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Skills Matrix and Cross-Training Dashboard](skills-matrix-dashboard.html) | Results from my own team: coverage, the 3x3 cross-training programme and how I developed people. |
 | [Skills Matrix Builder](skills-matrix-builder.html) | Build a matrix for any team. A level only counts once someone other than the operator has signed it off, sign-offs expire, and SOP numbers are recorded per skill. |
 | [OEE and Downtime Log](oee-downtime-log.html) | Shift records and stops. Works out availability, performance, quality and OEE, ranks downtime reasons in a Pareto, and leaves out runs with impossible, over-100% or unchecked figures. |
+| [Daily Management Board](daily-management-board.html) | A tier meeting board. Safety, Quality, Delivery, Cost and People readings against target, the reason for each miss, actions with owners, escalation to the next tier, and checks for missing readings, misses with no action and actions not independently verified. |
 | [Company Skills Dashboard](company-skills-dashboard.html) | Rolls up every team's matrix: cover against target, critical skills with too few signed-off people, sign-offs about to expire, and where the matrix claims more than the checks support. |
 
 ### Continuous improvement
-5 Whys Root Cause Tool, DMAIC project board (first pass yield), SIPOC and Value Stream Map tool, SPC Control Chart Tool (limits from a chosen baseline, signal rules, capability only when stable), Cycle Time and Waste Analysis tool, and the SMV tool.
+5 Whys Root Cause Tool, DMAIC project board (first pass yield), SIPOC and Value Stream Map tool, A3 Problem Solving Sheet (one page from root cause to follow-up, flags an unconfirmed cause and a close-out with no measured result), SPC Control Chart Tool (limits from a chosen baseline, signal rules, capability only when stable), Cycle Time and Waste Analysis tool, and the SMV tool.
 
 ### EHS
 EHS Readiness dashboard, 7S audit dashboard, Risk Assessment dashboard, Swiss Cheese Model dashboard, Corrective Action Tracker, Bow-tie Builder, Causal Tree Builder, Incident and Near-Miss Log (with a RIDDOR check) and the Quick Exposure Check dashboard.

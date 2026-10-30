@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Management Board</title>
+<meta name="description" content="A daily tier meeting board: Safety, Quality, Delivery, Cost and People measures against target, the reason for each miss, the actions raised, who owns them, what was escalated, and which actions have not been independently checked.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.mrow{display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(110px,.8fr) 110px 90px minmax(140px,1.4fr);gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.mrow:last-child{border-bottom:none}
+.mrow .nm{font-weight:600}.mrow .tg{font-size:.78rem;color:var(--muted)}
+.mrow input{width:100%}
+.cat{display:inline-block;min-width:26px;text-align:center;border-radius:6px;padding:1px 6px;font-weight:700;font-size:.75rem;background:var(--b1);color:var(--ink);margin-right:6px}
+.rag{display:inline-block;min-width:74px;text-align:center;padding:3px 9px;border-radius:999px;font-size:.76rem;font-weight:700;color:var(--ink)}
+.rag.g{background:var(--low)}.rag.a{background:var(--med)}.rag.r{background:#ff8f8f}.rag.n{background:#a9b8cf}
+.dnav{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.grid th,.grid td{padding:4px 5px;text-align:center;font-size:.74rem}
+.grid td.nm,.grid th.nm{text-align:left;position:sticky;left:0;background:var(--panel);min-width:150px;font-size:.8rem}
+.grid .c{font-weight:700;color:var(--ink);min-width:24px}
+.grid .c.g{background:var(--low)}.grid .c.a{background:var(--med)}.grid .c.r{background:#ff8f8f}.grid .c.n{background:var(--panel2);color:var(--muted)}.grid .c.off{background:transparent;color:var(--muted)}
+.leg{display:flex;gap:10px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:0 0 10px}
+.ro{font-size:.82rem;color:var(--muted)}
+@media (max-width:760px){.mrow{grid-template-columns:1fr 1fr}.mrow .nmc{grid-column:1/-1}}
+@media print{
+  #report .rag{border:1px solid #000;background:#fff;color:#000}
+}
+@media print{header{display:none!important}}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Daily Management Board</h1>
+    <p>Record each day's Safety, Quality, Delivery, Cost and People readings against target, note why a miss happened, and raise an action with an owner and a date. Anything that cannot be fixed at the board is marked for the next tier. An action only counts as done when someone other than its owner has checked it.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="board">Board</button>
+  <button role="tab" aria-selected="false" data-tab="month">Month</button>
+  <button role="tab" aria-selected="false" data-tab="actions">Actions</button>
+  <button role="tab" aria-selected="false" data-tab="measures">Measures</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records the names or roles of people who own and check actions. It stays in this browser and in files you save. Nothing is sent to this website. If you enter names, your employer is responsible for that data. Use initials or roles where you can, and do not record who was absent or why, health detail, or anything about an individual's conduct. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every measure, reading and action tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear everything to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download readings CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn sec" id="btnTrack">Send actions to the tracker</button>
+  <button class="btn danger" id="btnClear">Clear everything</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+<p class="sm" id="sendNote" role="status"></p>
+
+<section id="tab-board">
+  <div class="dnav">
+    <button class="btn sec small" id="dPrev" type="button">Previous day</button>
+    <label class="sm">Date <input type="date" id="bDate" aria-label="Board date"></label>
+    <button class="btn sec small" id="dNext" type="button">Next day</button>
+    <button class="btn sec small" id="dToday" type="button">Today</button>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <p class="sm" id="dayNote" role="status"></p>
+  <div id="tiles"></div>
+</section>
+
+<section id="tab-month" hidden>
+  <div class="dnav"><label class="sm">Month <input type="month" id="mSel" aria-label="Month"></label></div>
+  <div class="leg"><span><span class="rag g">G</span> on target</span><span><span class="rag a">A</span> between target and red limit</span><span><span class="rag r">R</span> past the red limit</span><span><span class="rag n">–</span> no reading or no target</span><span>· not a working day</span></div>
+  <div class="tablewrap"><table class="grid" id="grid"></table></div>
+  <p class="disc">A blank is not a pass. A day with no reading counts as no data, never as on target. Hover or focus a cell on a screen with a pointer to see its value.</p>
+</section>
+
+<section id="tab-actions" hidden>
+  <div class="toolbar"><button class="btn" id="btnAddA">Add an action</button>
+    <label class="sm">Show <select id="aFilter" aria-label="Filter actions"><option value="open">Open</option><option value="over">Overdue</option><option value="esc">Marked for escalation</option><option value="unver">Done, not checked</option><option value="all">All</option></select></label></div>
+  <div class="list" id="alist"></div>
+</section>
+
+<section id="tab-measures" hidden>
+  <div class="card"><h2>Measures</h2>
+    <p class="sm">Set a target and a red limit for each. For a measure where lower is better, on target is at or below the target and red is above the red limit. For a measure where higher is better, on target is at or above the target and red is below the red limit. Between the two is amber. With no red limit there is no amber band.</p>
+    <div class="tablewrap"><table id="mtable"></table></div>
+    <div class="toolbar"><button class="btn sec" id="btnAddM">Add a measure</button></div>
+  </div>
+  <div class="card"><h2>Working days</h2><p class="sm">Days with no reading on a working day are counted as missing. Pick the days your shift or site actually runs.</p><div class="toolbar" id="wdays"></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record: missing readings, misses with no action, actions with no owner or date, escalations not recorded, and actions not independently checked. They cannot tell whether a reading is true or whether an action will work.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it is for</h2>
+    <p>A tier meeting is a short, standing meeting held at the same place and time each day, working up from the team to the area to the site. Each tier looks at the same five headings, Safety, Quality, Delivery, Cost and People, and deals with what it can. What it cannot fix goes up to the next tier. This tool holds the numbers, the reasons and the actions for one board. It does not run the meeting.</p></div>
+  <div class="card"><h2>How a reading is judged</h2>
+    <ul>
+      <li>Green is at or better than target. Amber is worse than target but not past the red limit. Red is past the red limit. With no red limit, a reading is either green or red.</li>
+      <li>A blank reading is "no data". It is never shown as green.</li>
+      <li>A measure with no target cannot be judged, and the checks say so.</li>
+      <li>Colour is never the only signal. Each status also has a letter.</li>
+    </ul></div>
+  <div class="card"><h2>What the checks look for</h2>
+    <ul>
+      <li>A measure with no target, or a red limit on the wrong side of the target.</li>
+      <li>Missing readings on working days in the last five.</li>
+      <li>A measure that is red now with no open action against it.</li>
+      <li>A measure red on three readings in a row with nothing escalated.</li>
+      <li>An action with no wording, owner or due date, or one that is overdue.</li>
+      <li>An action marked done with nobody named as having checked it, or checked by its own owner.</li>
+      <li>An action marked for the next tier with no date recorded for when it was raised there.</li>
+    </ul></div>
+  <div class="card"><h2>Reading the board</h2>
+    <p>A board that is mostly green may mean the targets are too easy or the readings are not being taken honestly. Look at trends, ask the people who do the work, and keep the red limit where it would really trigger a response. Readings you type in are not checked against a source.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Work out why with the <a href="5-whys-tool.html">5 Whys Tool</a> or write a full <a href="a3-problem-solving.html">A3 problem solving sheet</a>. Follow actions in the <a href="corrective-action-tracker.html">Corrective Action Tracker</a>. Safety events go in the <a href="incident-log.html">Incident and Near-Miss Log</a>. For loss and downtime figures see the <a href="oee-downtime-log.html">OEE and Downtime Log</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the board is right or the process is under control. Check your own company procedures. This is decision support only.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Action</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save action</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete action</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your company's procedures. Daily Management Board. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how personal data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-tier-board-v1",UIK="rmilburn-tier-board-ui",TK="rmilburn-action-tracker-v1",TBASE=6000000;
+var CATS=[["S","Safety"],["Q","Quality"],["D","Delivery"],["C","Cost"],["P","People"]];
+var TIERS=[["t2","To tier 2 (area)"],["t3","To tier 3 (site)"],["site","To site leadership"]];
+var DAYN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var MAXM=40,MAXA=300,MAXD=800;
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,curDate="",curMonth="";
+function blank(){return {example:false,days:[false,true,true,true,true,true,false],measures:[],entries:{},actions:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function addDays(d,n){var p=d.split("-").map(Number);return dstr(new Date(p[0],p[1]-1,p[2]+n));}
+function daysBetween(a,b){var x=a.split("-").map(Number),y=b.split("-").map(Number);return Math.round((new Date(y[0],y[1]-1,y[2])-new Date(x[0],x[1]-1,x[2]))/86400000);}
+function dow(d){var p=d.split("-").map(Number);return new Date(p[0],p[1]-1,p[2]).getDay();}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function short(s,n){s=String(s||"").trim();return s.length>n?s.slice(0,n-1)+"…":(s||"(no wording yet)");}
+function num(v){if(v===null||v===undefined||v==="")return null;var n=typeof v==="number"?v:parseFloat(String(v).replace(/,/g,"."));return (isFinite(n)&&Math.abs(n)<=1e9)?n:null;}
+function fnum(v){if(v===null||v===undefined)return "";return String(Math.round(v*100)/100);}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function catName(c){for(var i=0;i<CATS.length;i++)if(CATS[i][0]===c)return CATS[i][1];return "";}
+function tierName(c){for(var i=0;i<TIERS.length;i++)if(TIERS[i][0]===c)return TIERS[i][1];return "";}
+function mById(id){for(var i=0;i<D.measures.length;i++)if(D.measures[i].id===id)return D.measures[i];return null;}
+
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;
+  if(Array.isArray(d.days)&&d.days.length===7)o.days=d.days.map(function(x){return x===true;});
+  var ids={},mx=0;
+  (Array.isArray(d.measures)?d.measures.slice(0,MAXM):[]).forEach(function(m){if(!m||typeof m!=="object")return;
+    var c={id:parseInt(m.id,10)||0,cat:inList(m.cat,CATS)||"S",name:str(m.name,80),unit:str(m.unit,12),dir:m.dir==="higher"?"higher":"lower",target:num(m.target),red:num(m.red),ex:m.ex===true};
+    if(c.id>mx)mx=c.id;o.measures.push(c);});
+  o.measures.forEach(function(m){if(!m.id||ids[m.id])m.id=++mx;ids[m.id]=1;});
+  var keys=Object.keys(d.entries&&typeof d.entries==="object"?d.entries:{}).filter(isDate).sort().slice(-MAXD);
+  keys.forEach(function(k){var src=d.entries[k];if(!src||typeof src!=="object")return;var day={},any=false;
+    Object.keys(src).forEach(function(mid){var id=parseInt(mid,10);if(!ids[id])return;var e=src[mid];if(!e||typeof e!=="object")return;
+      var v=num(e.v),n=str(e.n,160);if(v===null&&!n.trim())return;day[id]={v:v,n:n};any=true;});
+    if(any)o.entries[k]=day;});
+  var aid={},am=0;
+  (Array.isArray(d.actions)?d.actions.slice(0,MAXA):[]).forEach(function(a){if(!a||typeof a!=="object")return;
+    var c={id:parseInt(a.id,10)||0,date:dOk(a.date),mid:ids[parseInt(a.mid,10)]?parseInt(a.mid,10):0,text:str(a.text,300),owner:str(a.owner,60),due:dOk(a.due),status:a.status==="done"?"done":"open",
+      verBy:str(a.verBy,60),verOn:dOk(a.verOn),esc:inList(a.esc,TIERS),escOn:dOk(a.escOn),escNote:str(a.escNote,200),ex:a.ex===true};
+    if(c.id>am)am=c.id;o.actions.push(c);});
+  o.actions.forEach(function(a){if(!a.id||aid[a.id])a.id=++am;aid[a.id]=1;});
+  return o;
+}
+
+/* ---------- judging a reading ---------- */
+function ragOf(m,v){
+  if(!m||v===null||v===undefined||!isFinite(v)||m.target===null)return "n";
+  if(m.dir==="lower"){if(v<=m.target)return "g";if(m.red!==null&&v<=m.red)return "a";return "r";}
+  if(v>=m.target)return "g";if(m.red!==null&&v>=m.red)return "a";return "r";
+}
+var RAGT={g:"G",a:"A",r:"R",n:"–"},RAGW={g:"On target",a:"Amber",r:"Red",n:"No data"};
+function reading(mid,date){var d=D.entries[date];return d&&d[mid]?d[mid]:null;}
+function workDay(date){return D.days[dow(date)]===true;}
+function lastWork(n){var out=[],i=1;while(out.length<n&&i<=21){var d=off(-i);if(workDay(d))out.push(d);i++;}return out;}
+function limitBad(m){return m.target!==null&&m.red!==null&&(m.dir==="lower"?m.red<m.target:m.red>m.target);}
+function targetText(m){
+  if(m.target===null)return "No target set";
+  var u=m.unit?" "+m.unit:"";
+  if(m.dir==="lower")return "Target "+fnum(m.target)+u+" or lower"+(m.red!==null?", red above "+fnum(m.red)+u:"");
+  return "Target "+fnum(m.target)+u+" or higher"+(m.red!==null?", red below "+fnum(m.red)+u:"");
+}
+function openLinked(mid){return D.actions.filter(function(a){return a.mid===mid&&a.status!=="done";});}
+
+/* ---------- checks ---------- */
+function analyse(){
+  var gaps=[],notes=[],td=today();
+  function g(msg,o){gaps.push({msg:msg,a:o&&o.a||0,m:o&&o.m||0});}
+  function n(msg,o){notes.push({msg:msg,a:o&&o.a||0,m:o&&o.m||0});}
+  var anyRecent=false;
+  D.measures.forEach(function(m){
+    var nm=(catName(m.cat)||"")+": "+(m.name.trim()||"(unnamed measure)");
+    if(!m.name.trim())g("A measure has no name.",{m:m.id});
+    if(m.target===null)g(nm+" has no target, so its readings cannot be judged.",{m:m.id});
+    else if(limitBad(m))g(nm+": the red limit is on the wrong side of the target. Check both.",{m:m.id});
+    var days=Object.keys(D.entries).filter(function(k){return D.entries[k][m.id]&&D.entries[k][m.id].v!==null;}).sort();
+    var wk=lastWork(5),miss=wk.filter(function(d){var e=reading(m.id,d);return !e||e.v===null;});
+    if(days.length&&days[days.length-1]>=off(-7))anyRecent=true;
+    if(miss.length&&m.name.trim())g(nm+": no reading on "+miss.length+" of the last "+wk.length+" working days ("+miss.slice().reverse().map(fmt).join(", ")+").",{m:m.id});
+    /* latest reading within a week */
+    var last=days.length?days[days.length-1]:"";
+    if(last&&daysBetween(last,td)<=7){
+      var e=reading(m.id,last),r=ragOf(m,e.v),lk=openLinked(m.id);
+      if(r==="r"&&!lk.length)g(nm+" was red on "+fmt(last)+" ("+fnum(e.v)+(m.unit?" "+m.unit:"")+") and has no open action against it.",{m:m.id});
+      /* streak of red readings */
+      var st=0;for(var i=days.length-1;i>=0;i--){if(ragOf(m,reading(m.id,days[i]).v)==="r")st++;else break;}
+      if(st>=3&&!lk.some(function(a){return a.esc;}))g(nm+" has been red on "+st+" readings in a row and nothing is marked for the next tier.",{m:m.id});
+    }
+  });
+  if(D.measures.length&&!anyRecent)g("No readings in the last 7 days. Either the board is not being filled in, or the readings are being kept elsewhere.");
+  D.actions.forEach(function(a,j){
+    var l="Action "+(j+1)+" ("+short(a.text,50)+")",o={a:a.id};
+    if(!a.text.trim())g("Action "+(j+1)+" has no wording.",o);
+    if(!a.owner.trim())g(l+" has no owner.",o);
+    if(!a.due)g(l+" has no due date.",o);else if(a.status!=="done"&&a.due<td)g(l+" is overdue (due "+fmt(a.due)+").",o);
+    if(a.status==="done"){
+      if(!a.verBy.trim())g(l+" is marked done with nobody named as having checked it worked.",o);
+      else if(norm(a.verBy)===norm(a.owner))g(l+" is marked done, but its owner checked their own work.",o);
+      if(!a.verOn)g(l+" is marked done with no date for the check.",o);else if(a.verOn>td)g(l+" has a check date in the future.",o);
+    }
+    if(a.esc){
+      if(!a.escOn)g(l+" is marked "+tierName(a.esc).toLowerCase()+" but there is no date for when it was raised there.",o);
+      else if(a.escOn>td)g(l+" has an escalation date in the future.",o);
+      if(!a.escNote.trim())n(l+": say what you are asking the next tier to do.",o);
+    }
+    if(a.mid===0)n(l+" is not linked to a measure.",o);
+    if(a.status!=="done"&&a.date&&daysBetween(a.date,td)>30)n(l+" has been open for "+plural(daysBetween(a.date,td),"day")+".",o);
+  });
+  return {gaps:gaps,notes:notes};
+}
+
+/* ---------- persistence ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextMid(){var m=0;D.measures.forEach(function(x){if(x.id>m)m=x.id;});return m+1;}
+function nextAid(){var m=0;D.actions.forEach(function(x){if(x.id>m)m=x.id;});return m+1;}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function sel(list,val,id,blankLabel){var s=h("select",{id:id});if(blankLabel!==null)s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
+function lab(t,c,full){return h("label",{class:full?"full":""},t,c);}
+function renderAll(){renderStatus();renderBoard();renderMonth();renderActions();renderMeasures();renderChecks();$("banner").hidden=!D.example;}
+
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.measures.length){el.className="status st-empty";add(el,h("strong",{text:"No measures yet."}),h("div",{class:"sm",text:"Add measures on the Measures tab, or load the example."}));return;}
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on this board until they are dealt with."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+". Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the readings are true or the process is under control."}));}
+}
+
+/* ---------- board ---------- */
+function setDate(d){if(!isDate(d))return;curDate=d;$("bDate").value=d;renderBoard();}
+function renderBoard(){
+  var t=$("tiles");t.innerHTML="";var k=$("kpis");k.innerHTML="";var dn=$("dayNote");dn.textContent="";
+  if(!D.measures.length){add(t,h("p",{class:"sm",text:"Nothing to show. Add measures first."}));return;}
+  var td=today(),fut=curDate>td,wd=workDay(curDate),cnt={g:0,a:0,r:0,n:0};
+  D.measures.forEach(function(m){var e=reading(m.id,curDate);cnt[ragOf(m,e?e.v:null)]++;});
+  var op=D.actions.filter(function(a){return a.status!=="done";}),ov=op.filter(function(a){return a.due&&a.due<td;});
+  add(k,kpi(cnt.g,"On target","ok"),kpi(cnt.a,"Amber",cnt.a?"warn":""),kpi(cnt.r,"Red",cnt.r?"crit":""),kpi(cnt.n,"No data or no target",cnt.n?"warn":""),kpi(op.length+" / "+ov.length,"Open / overdue actions",ov.length?"crit":(op.length?"warn":"ok")));
+  if(fut)dn.textContent="This date is in the future. Readings cannot be entered for a day that has not happened.";
+  else if(!wd)dn.textContent=DAYN[dow(curDate)]+" is not set as a working day, so a blank here is not counted as missing. You can still enter readings.";
+  CATS.forEach(function(c){
+    var ms=D.measures.filter(function(m){return m.cat===c[0];});if(!ms.length)return;
+    var card=h("div",{class:"card"},h("h2",{},h("span",{class:"cat",text:c[0]}),c[1]));
+    ms.forEach(function(m){
+      var e=reading(m.id,curDate),r=ragOf(m,e?e.v:null),chip=h("span",{class:"rag "+r,text:RAGT[r]+" "+RAGW[r].replace("On target","")},""),lk=openLinked(m.id);
+      chip.textContent=RAGT[r]+"  "+RAGW[r];
+      var inp=h("input",{type:"number",step:"any",inputmode:"decimal","aria-label":"Reading for "+m.name,value:e&&e.v!==null?String(e.v):"",disabled:fut}),
+          note=h("input",{type:"text",maxlength:"160","aria-label":"Reason or note for "+m.name,placeholder:"Reason, if off target",value:e?e.n:"",disabled:fut});
+      function commit(){
+        if(mById(m.id)!==m)return;
+        var v=num(inp.value),n=note.value.slice(0,160),day=D.entries[curDate]||(D.entries[curDate]={});
+        if(inp.value.trim()!==""&&v===null){inp.setAttribute("aria-invalid","true");return;}inp.removeAttribute("aria-invalid");
+        if(v===null&&!n.trim()){delete day[m.id];if(!Object.keys(day).length)delete D.entries[curDate];}else day[m.id]={v:v,n:n};
+        var rr=ragOf(m,v);chip.className="rag "+rr;chip.textContent=RAGT[rr]+"  "+RAGW[rr];touch();renderStatus();renderChecks();renderMonth();renderKpisOnly();
+      }
+      inp.addEventListener("change",commit);note.addEventListener("change",commit);
+      card.appendChild(h("div",{class:"mrow"},
+        h("div",{class:"nmc"},h("div",{class:"nm",text:m.name||"(unnamed)"}),h("div",{class:"tg",text:targetText(m)+(m.unit&&false?"":"")})),
+        h("div",{},inp,m.unit?h("span",{class:"tg",text:" "+m.unit}):null),
+        h("div",{},chip),
+        h("div",{},lk.length?h("button",{class:"linkbtn",type:"button",text:plural(lk.length,"open action"),onclick:function(){$("aFilter").value="open";showTab("actions");}}):(r==="r"?h("button",{class:"linkbtn",type:"button",text:"Add an action",onclick:function(){newAction(m.id);}}):null)),
+        note));
+    });
+    t.appendChild(card);
+  });
+}
+function renderKpisOnly(){
+  var k=$("kpis");k.innerHTML="";var td=today(),cnt={g:0,a:0,r:0,n:0};
+  D.measures.forEach(function(m){var e=reading(m.id,curDate);cnt[ragOf(m,e?e.v:null)]++;});
+  var op=D.actions.filter(function(a){return a.status!=="done";}),ov=op.filter(function(a){return a.due&&a.due<td;});
+  add(k,kpi(cnt.g,"On target","ok"),kpi(cnt.a,"Amber",cnt.a?"warn":""),kpi(cnt.r,"Red",cnt.r?"crit":""),kpi(cnt.n,"No data or no target",cnt.n?"warn":""),kpi(op.length+" / "+ov.length,"Open / overdue actions",ov.length?"crit":(op.length?"warn":"ok")));
+}
+$("bDate").addEventListener("change",function(){setDate(this.value);});
+$("dPrev").onclick=function(){setDate(addDays(curDate,-1));};
+$("dNext").onclick=function(){setDate(addDays(curDate,1));};
+$("dToday").onclick=function(){setDate(today());};
+
+/* ---------- month ---------- */
+function monthStats(m,ym){
+  var y=parseInt(ym.slice(0,4),10),mo=parseInt(ym.slice(5,7),10),dim=new Date(y,mo,0).getDate(),s={g:0,a:0,r:0,n:0,work:0,days:dim};
+  for(var d=1;d<=dim;d++){var ds=ym+"-"+String(d).padStart(2,"0");if(!workDay(ds)||ds>today())continue;s.work++;var e=reading(m.id,ds);s[ragOf(m,e?e.v:null)]++;}
+  return s;
+}
+function renderMonth(){
+  var g=$("grid");g.innerHTML="";
+  if(!D.measures.length){return;}
+  var ym=curMonth,y=parseInt(ym.slice(0,4),10),mo=parseInt(ym.slice(5,7),10),dim=new Date(y,mo,0).getDate();
+  var hr=h("tr",{},h("th",{class:"nm",text:"Measure"}));
+  for(var d=1;d<=dim;d++)hr.appendChild(h("th",{text:String(d),title:DAYN[dow(ym+"-"+String(d).padStart(2,"0"))]}));
+  ["Green","Amber","Red","No data"].forEach(function(x){hr.appendChild(h("th",{text:x}));});
+  g.appendChild(h("thead",{},hr));var tb=h("tbody");
+  D.measures.forEach(function(m){
+    var tr=h("tr",{},h("td",{class:"nm",text:(m.cat)+" "+(m.name||"(unnamed)")}));
+    for(var d=1;d<=dim;d++){var ds=ym+"-"+String(d).padStart(2,"0"),e=reading(m.id,ds);
+      if(!workDay(ds)&&!(e&&e.v!==null))tr.appendChild(h("td",{class:"c off",text:"·"}));
+      else if(ds>today())tr.appendChild(h("td",{class:"c off",text:""}));
+      else{var r=ragOf(m,e?e.v:null);tr.appendChild(h("td",{class:"c "+r,text:RAGT[r],title:e&&e.v!==null?m.name+" "+fmt(ds)+": "+fnum(e.v)+(m.unit?" "+m.unit:""):m.name+" "+fmt(ds)+": no reading"}));}}
+    var s=monthStats(m,ym);
+    [s.g,s.a,s.r,s.n].forEach(function(x){tr.appendChild(h("td",{text:String(x)}));});
+    tb.appendChild(tr);
+  });
+  g.appendChild(tb);
+}
+$("mSel").addEventListener("change",function(){if(/^\d{4}-\d{2}$/.test(this.value)){curMonth=this.value;renderMonth();}});
+
+/* ---------- actions ---------- */
+function actState(a){var td=today();
+  if(a.status==="done")return (!a.verBy.trim()||norm(a.verBy)===norm(a.owner)||!a.verOn)?"unver":"closed";
+  return (a.due&&a.due<td)?"over":"open";}
+function renderActions(){
+  var L=$("alist");L.innerHTML="";var f=$("aFilter").value,list=D.actions.filter(function(a){
+    var s=actState(a);
+    if(f==="open")return a.status!=="done";if(f==="over")return s==="over";if(f==="esc")return !!a.esc&&a.status!=="done";if(f==="unver")return s==="unver";return true;});
+  list.sort(function(a,b){return (a.due||"9999").localeCompare(b.due||"9999");});
+  if(!list.length){L.appendChild(h("p",{class:"sm",text:D.actions.length?"No actions match this filter.":"No actions yet. Raise one from a red measure on the Board, or press Add an action."}));return;}
+  list.forEach(function(a){var s=actState(a),m=mById(a.mid);
+    L.appendChild(h("button",{class:"inc "+(s==="closed"?"clean closed":"gap"),type:"button","data-k":"a"+a.id,onclick:function(){openAction(a.id);}},
+      h("div",{class:"t",text:short(a.text,140)}),
+      h("div",{class:"m"},m?h("span",{class:"chip c",text:m.cat+" "+m.name}):h("span",{class:"chip",text:"No measure"}),
+        h("span",{class:"chip "+(s==="over"?"r":s==="unver"?"y":s==="closed"?"ok":""),text:{over:"Overdue",unver:"Done, not independently checked",closed:"Done and checked",open:"Open"}[s]}),
+        a.esc?h("span",{class:"chip v",text:tierName(a.esc)+(a.escOn?"":" (not dated)")}):null,
+        a.ex?h("span",{class:"chip",text:"Example"}):null,
+        h("span",{class:"sm",text:(a.owner||"No owner")+" · due "+(a.due?fmt(a.due):"not set")})))); });
+}
+$("aFilter").addEventListener("change",renderActions);
+function showDlg(){var d=$("dlg");if(typeof d.showModal==="function"){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function closeDlg(){var d=$("dlg"),k=draft?"a"+draft.id:"";if(d.close)d.close();else d.removeAttribute("open");draft=null;draftNew=false;var b=k&&document.querySelector('[data-k="'+k+'"]');if(b)b.focus();else{var a=$("btnAddA");if(a)a.focus();}}
+$("dlgCancel").onclick=closeDlg;$("dlgX").onclick=closeDlg;
+$("dlg").addEventListener("cancel",function(){draft=null;draftNew=false;});
+function openAction(id){var cur=null;D.actions.forEach(function(a){if(a.id===id)cur=a;});if(!cur)return;draft=JSON.parse(JSON.stringify(cur));draftNew=false;buildDlg();showDlg();}
+function newAction(mid){
+  if(D.actions.length>=MAXA)return;
+  if(D.example){if(!confirm("The example is still loaded. Clear it first so your records are not mixed with made-up ones?"))return;D=blank();touch();renderAll();return;}
+  draft=clean({measures:D.measures,actions:[{id:nextAid(),date:today(),mid:mid||0}]}).actions[0];if(!draft)return;draft.mid=mid||0;draft.date=today();draftNew=true;buildDlg();showDlg();}
+$("btnAddA").onclick=function(){newAction(0);};
+function val(id){var e=$(id);return e?e.value:"";}
+function pull(){if(!draft)return;
+  draft.date=dOk(val("aDate"));draft.mid=parseInt(val("aM"),10)||0;draft.text=val("aT").slice(0,300);draft.owner=val("aO").slice(0,60);draft.due=dOk(val("aDue"));
+  draft.status=val("aS")==="done"?"done":"open";draft.verBy=val("aVb").slice(0,60);draft.verOn=dOk(val("aVo"));draft.esc=inList(val("aE"),TIERS);draft.escOn=dOk(val("aEo"));draft.escNote=val("aEn").slice(0,200);}
+function buildDlg(){
+  var b=$("dlgB");b.innerHTML="";$("dlgT").textContent=(draftNew?"New action":"Action")+(draft.ex?" (Example)":"");
+  var ms=D.measures.map(function(m){return [String(m.id),m.cat+" "+m.name];});
+  var f=h("div",{class:"f"},
+    lab("Raised on",h("input",{type:"date",id:"aDate",value:draft.date})),
+    lab("Measure it is about",sel(ms,draft.mid?String(draft.mid):"","aM","No measure")),
+    lab("What will be done, and what should be different afterwards?",h("textarea",{id:"aT",maxlength:"300",rows:"3"}),true),
+    lab("Owner (name or role)",h("input",{type:"text",id:"aO",value:draft.owner,maxlength:"60"})),
+    lab("Due",h("input",{type:"date",id:"aDue",value:draft.due})),
+    lab("Status",sel([["open","Open"],["done","Done"]],draft.status,"aS",null)),
+    lab("Checked by (someone other than the owner)",h("input",{type:"text",id:"aVb",value:draft.verBy,maxlength:"60"})),
+    lab("Check date",h("input",{type:"date",id:"aVo",value:draft.verOn})),
+    lab("Escalate to the next tier?",sel(TIERS,draft.esc,"aE","Not escalated")),
+    lab("Date raised at that tier",h("input",{type:"date",id:"aEo",value:draft.escOn})),
+    lab("What are you asking them to do?",h("input",{type:"text",id:"aEn",value:draft.escNote,maxlength:"200"}),true));
+  b.appendChild(f);$("aT").value=draft.text;
+  b.appendChild(h("p",{class:"sm",text:"Done means the change was made and someone else has looked and confirmed it is working. The check is the evidence, not the tick."}));
+  $("dlgDel").hidden=draftNew;
+}
+$("dlgOk").onclick=function(){if(!draft)return;pull();
+  if(draftNew)D.actions.push(draft);else D.actions=D.actions.map(function(a){return a.id===draft.id?draft:a;});
+  touch();var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");draft=null;draftNew=false;renderAll();};
+$("dlgDel").onclick=function(){var b=$("dlgDel");
+  if(armed==="del"){D.actions=D.actions.filter(function(a){return a.id!==draft.id;});armed=null;touch();var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");draft=null;renderAll();return;}
+  armed="del";b.textContent="Confirm: delete";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Delete action";b.classList.remove("armed");},4000);};
+
+/* ---------- measures ---------- */
+function renderMeasures(){
+  var t=$("mtable");t.innerHTML="";
+  var hr=h("tr",{},["Heading","Name","Unit","Better when","Target","Red limit",""].map(function(x){return h("th",{text:x});}));t.appendChild(h("thead",{},hr));var tb=h("tbody");
+  D.measures.forEach(function(m){
+    function inp(type,v,w,fn,lbl){var i=h("input",{type:type,value:v,"aria-label":lbl+" for "+(m.name||"measure"),style:"width:"+w});if(type==="number")i.setAttribute("step","any");i.addEventListener("change",function(){fn(i.value);m.ex=false;touch();renderAll();});return i;}
+    var cs=sel(CATS.map(function(c){return [c[0],c[1]];}),m.cat,"",null);cs.setAttribute("aria-label","Heading for "+(m.name||"measure"));cs.removeAttribute("id");cs.addEventListener("change",function(){m.cat=inList(cs.value,CATS)||"S";touch();renderAll();});
+    var ds=sel([["lower","Lower"],["higher","Higher"]],m.dir,"",null);ds.setAttribute("aria-label","Better when for "+(m.name||"measure"));ds.removeAttribute("id");ds.addEventListener("change",function(){m.dir=ds.value==="higher"?"higher":"lower";touch();renderAll();});
+    var del=h("button",{class:"btn danger small",type:"button",text:"Remove"});
+    del.onclick=function(){if(armed==="m"+m.id){D.measures=D.measures.filter(function(x){return x.id!==m.id;});Object.keys(D.entries).forEach(function(k){delete D.entries[k][m.id];if(!Object.keys(D.entries[k]).length)delete D.entries[k];});D.actions.forEach(function(a){if(a.mid===m.id)a.mid=0;});armed=null;touch();renderAll();return;}
+      armed="m"+m.id;del.textContent="Confirm: remove with its readings";del.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;del.textContent="Remove";del.classList.remove("armed");},5000);};
+    tb.appendChild(h("tr",{},h("td",{},cs),h("td",{},inp("text",m.name,"220px",function(v){m.name=v.slice(0,80);},"Name")),h("td",{},inp("text",m.unit,"70px",function(v){m.unit=v.slice(0,12);},"Unit")),h("td",{},ds),
+      h("td",{},inp("number",m.target===null?"":String(m.target),"90px",function(v){m.target=num(v);},"Target")),h("td",{},inp("number",m.red===null?"":String(m.red),"90px",function(v){m.red=num(v);},"Red limit")),h("td",{},del)));
+  });
+  t.appendChild(tb);
+  var w=$("wdays");w.innerHTML="";
+  [1,2,3,4,5,6,0].forEach(function(di){var c=h("input",{type:"checkbox",checked:D.days[di]});c.addEventListener("change",function(){D.days[di]=c.checked;touch();renderAll();});w.appendChild(h("label",{class:"chk",style:"flex-direction:row"},c,DAYN[di]));});
+}
+$("btnAddM").onclick=function(){if(D.measures.length>=MAXM)return;
+  if(D.example){if(!confirm("The example is still loaded. Clear it first so your measures are not mixed with made-up ones?"))return;D=blank();touch();}
+  D.measures.push({id:nextMid(),cat:"S",name:"",unit:"",dir:"lower",target:null,red:null,ex:false});touch();renderAll();};
+
+/* ---------- checks view ---------- */
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.measures.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});
+      if(x.a)li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){showTab("actions");$("aFilter").value="all";renderActions();openAction(x.a);}}));
+      else if(x.m)li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open measures",onclick:function(){showTab("measures");}}));
+      ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the board."}));
+}
+
+/* ---------- exports ---------- */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var head=["Date","Heading","Measure","Unit","Target","Red limit","Better when","Reading","Status","Note","Example"],rows=[];
+  Object.keys(D.entries).sort().forEach(function(k){D.measures.forEach(function(m){var e=reading(m.id,k);if(!e)return;
+    rows.push([k,catName(m.cat),m.name,m.unit,m.target===null?"":m.target,m.red===null?"":m.red,m.dir,e.v===null?"":e.v,RAGW[ragOf(m,e.v)],e.n,m.ex?"Example":""]);});});
+  download("daily-management-readings.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+$("btnTrack").onclick=function(){
+  var note=$("sendNote"),list=D.actions.filter(function(a){return a.text.trim();});
+  if(!list.length){note.textContent="There are no actions with wording to send.";return;}
+  var cur={actions:[]};try{var d=JSON.parse(localStorage.getItem(TK));if(d&&Array.isArray(d.actions))cur=d;}catch(e){}
+  var ids={};list.forEach(function(a){ids[TBASE+a.id]=1;});
+  var kept=cur.actions.filter(function(z){return !(z&&ids[z.id]);});
+  list.forEach(function(a){var m=mById(a.mid);
+    kept.push({id:TBASE+a.id,example:a.ex===true,title:a.text.trim().slice(0,140),detail:("From the daily board"+(m?" ("+m.cat+" "+m.name+")":"")+(a.esc?". Marked "+tierName(a.esc).toLowerCase()+(a.escNote?": "+a.escNote:""):"")).slice(0,400),source:"Daily board",hoc:"",riskId:null,riskText:"",
+      owner:a.owner,raised:a.date||today(),due:a.due,status:a.status==="done"?"done":"open",doneDate:a.status==="done"?a.verOn:"",doneNote:"",verifier:"",verDate:"",verNote:"",result:"",cancel:"",log:[]});});
+  try{localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+    note.textContent="Sent "+plural(list.length,"action")+" to the tracker. Sending again updates them, and replaces anything changed on them there. Checks are not carried across, so each one needs its own check in the tracker.";
+  }catch(e){note.textContent="This browser would not let the page write to the tracker. Nothing was sent.";}
+};
+function buildReport(){
+  var r=$("report"),A=analyse(),td=today();r.innerHTML="";add(r,h("h1",{text:"Daily management board"}));
+  if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  add(r,h("p",{text:"Board date "+fmt(curDate)+". Printed "+fmt(td)+"."}));
+  add(r,h("p",{class:"gapx",text:!D.measures.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on this board until they are dealt with.":"No gaps found by the checks. A competent person must still judge the board."}));
+  var t=h("table",{}),hr=h("tr",{});["Heading","Measure","Target","Reading","Status","Note"].forEach(function(x){hr.appendChild(h("th",{text:x}));});t.appendChild(hr);
+  D.measures.forEach(function(m){var e=reading(m.id,curDate),rr=ragOf(m,e?e.v:null);t.appendChild(h("tr",{},[m.cat,m.name,targetText(m),e&&e.v!==null?fnum(e.v)+(m.unit?" "+m.unit:""):"No reading",RAGT[rr]+" "+RAGW[rr],e?e.n:""].map(function(x){return h("td",{text:x});})));});
+  add(r,t);add(r,h("h2",{text:"Open actions"}));
+  var oa=D.actions.filter(function(a){return a.status!=="done";});
+  if(!oa.length)add(r,h("p",{text:"None."}));else{var t2=h("table",{}),h2=h("tr",{});["Action","Measure","Owner","Due","Escalation"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);
+    oa.forEach(function(a){var m=mById(a.mid);t2.appendChild(h("tr",{},[short(a.text,160),m?m.name:"",a.owner,a.due?fmt(a.due)+(a.due<td?" (overdue)":""):"Not set",a.esc?tierName(a.esc)+(a.escOn?", raised "+fmt(a.escOn):", not dated"):""].map(function(x){return h("td",{text:x});})));});add(r,t2);}
+  add(r,h("h2",{text:"Gaps and notes"}));
+  var l=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Decision support only. Readings are as typed and have not been checked against a source."}));
+}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["board","month","actions","measures","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="board")renderBoard();if(t==="month")renderMonth();if(t==="actions")renderActions();if(t==="checks")renderChecks();if(t==="measures")renderMeasures();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear everything";b.classList.remove("armed");return;}
+  if(!D.measures.length&&!D.actions.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear everything";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();touch();setDate(defDate());curMonth=curDate.slice(0,7);$("mSel").value=curMonth;renderAll();showTab("board");};
+$("btnSave").onclick=function(){download("daily-management-board.json",JSON.stringify({app:"tier-board",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>3000000){alert("That file is too large to be a board data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="tier-board"||!d.data)throw 0;D=clean(d.data);touch();renderAll();}catch(e){alert("That file could not be read. It is not a daily management board data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank(),seed=20261030;o.example=true;
+  function rnd(){seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296;}
+  var M=[[1,"S","Lost-time injuries","count","lower",0,0],[2,"S","Near misses reported","count","higher",2,1],[3,"Q","First pass yield","%","higher",98,95],[4,"Q","Customer complaints","count","lower",0,0],
+    [5,"D","Plan attainment","%","higher",95,90],[6,"D","On-time dispatch","%","higher",98,95],[7,"C","Scrap","%","lower",1.5,2.5],[8,"C","Unplanned downtime","min","lower",30,60],[9,"P","Absence","%","lower",4,6],[10,"P","Overtime","hours","lower",20,40]];
+  M.forEach(function(x){o.measures.push({id:x[0],cat:x[1],name:"Example: "+x[2],unit:x[3],dir:x[4],target:x[5],red:x[6],ex:true});});
+  var wk=[],i=1;while(wk.length<10&&i<30){var d=off(-i);if(o.days[dow(d)])wk.push(d);i++;}wk.reverse();
+  wk.forEach(function(d,k){var last=k>=wk.length-3,e={};
+    function R(id,v,n){e[id]={v:Math.round(v*100)/100,n:n||""};}
+    R(1,0);R(2,rnd()<.6?2+Math.floor(rnd()*2):1);R(3,97.2+rnd()*2.3);R(4,rnd()<.9?0:1,"");
+    R(5,92+rnd()*6);if(k!==wk.length-2)R(6,96.5+rnd()*3);
+    R(7,last?2.7+rnd()*.5:1.0+rnd()*.9,last?"Example: more rejects at the end of the run":"");
+    R(8,last?66+Math.floor(rnd()*20):12+Math.floor(rnd()*40),last?"Example: infeed sensor faults":"");
+    R(9,last?(6.2+rnd()*.8):(2.5+rnd()*2.3));R(10,10+Math.floor(rnd()*22));
+    if(k===wk.length-1){e[9].n="Example: three off with no cover";}
+    o.entries[d]=e;});
+  o.actions=[
+    {id:1,date:off(-4),mid:8,text:"Example: replace the worn infeed sensor on Line 2 and add it to the weekly check.",owner:"Example Engineer",due:off(-1),status:"open",verBy:"",verOn:"",esc:"t2",escOn:off(-3),escNote:"Needs a spare sensor ordered under maintenance budget",ex:true},
+    {id:2,date:off(-9),mid:7,text:"Example: re-set the cutter and check the first ten parts each shift.",owner:"Example Supervisor",due:off(-6),status:"done",verBy:"Example Quality Lead",verOn:off(-5),esc:"",escOn:"",escNote:"",ex:true},
+    {id:3,date:off(-8),mid:3,text:"Example: add a gauge check to the start-up routine.",owner:"Example Supervisor",due:off(-5),status:"done",verBy:"",verOn:"",esc:"",escOn:"",escNote:"",ex:true},
+    {id:4,date:off(-2),mid:5,text:"Example: agree a revised plan with planning after the lost shift.",owner:"Example Team Leader",due:off(3),status:"open",verBy:"",verOn:"",esc:"t3",escOn:"",escNote:"Plan needs resetting at site level",ex:true}];
+  return clean(o);
+}
+
+function defDate(){var td=today();if(D.example&&!D.entries[td]){var k=Object.keys(D.entries).filter(function(x){return x<=td;}).sort();if(k.length)return k[k.length-1];}return td;}
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+curDate=defDate();$("bDate").value=curDate;curMonth=curDate.slice(0,7);$("mSel").value=curMonth;
+renderAll();renderSave();
+var ui=uiGet();showTab(["board","month","actions","measures","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"board");
+window.__tb={analyse:analyse,ragOf:ragOf,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();},monthStats:monthStats,setDate:setDate};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before
+</body>
+</html>
