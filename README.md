@@ -49,7 +49,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## About the figures
 
-The results quoted on the homepage and in the case studies are my own. They come from my CV, an export of the SafetyQube incident log (April 2025 to March 2026) and my line performance tracker (August 2023 to July 2025). Where a figure rests on my own records and has not been independently checked, the page says so. Example data in the tools is always labelled Example.
+The results quoted on the homepage and in the case studies are my own. They come from my CV, an export of the SafetyCube incident log (April 2025 to March 2026) and my line performance tracker (August 2023 to July 2025). Where a figure rests on my own records and has not been independently checked, the page says so. Example data in the tools is always labelled Example.
 
 ## How the safety tools behave
 
