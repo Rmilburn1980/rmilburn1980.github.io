@@ -3,6 +3,12 @@
    Status colours (--low --med --high --crit --warn --bad --good) are deliberately NOT touched,
    so red/amber/green keep their meaning on the safety tools. */
 
+/* Special Gothic (Alistair McCready, SIL Open Font License 1.1), served from this site. Latin subset. */
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/special-gothic-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/special-gothic-latin-500-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/special-gothic-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/special-gothic-latin-700-normal.woff2') format('woff2')}
+
 :root{
   --bg:#070a1a;
   --panel:#12143a;
@@ -20,7 +26,9 @@
   --teal:#22d3ee;
   --dim:#a3a2c8;
   --rm-violet:#8b5cf6;
-  --rm-display:"Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",system-ui,sans-serif;
+  --rm-display:"Special Gothic","Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",system-ui,sans-serif;
+  /* pages that name their own heading font (Barlow Condensed etc.) now share the hub display font */
+  --font-head:var(--rm-display);
 }
 
 html{background:var(--bg)}

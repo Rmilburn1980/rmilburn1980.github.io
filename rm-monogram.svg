@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Richard Milburn monogram">
+  <title>RM</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b1e56"/><stop offset="1" stop-color="#070a1a"/></linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="url(#bg)"/>
+  <rect x="3" y="3" width="506" height="506" rx="101" fill="none" stroke="#343a7a" stroke-width="6"/>
+  <path d="M106.00 312.12V157.88H172.91Q189.64 157.88 202.02 163.31Q214.40 168.74 221.35 179.61Q228.30 190.47 228.30 206.76Q228.30 218.71 224.28 228.05Q220.27 237.39 212.88 243.47Q207.45 248.03 200.28 250.86L231.78 312.12H188.98L161.39 256.72H145.10V312.12ZM145.10 227.61H166.39Q175.51 227.61 180.40 224.79Q185.29 221.97 187.25 217.51Q189.20 213.06 189.20 208.50V206.11Q189.20 198.50 184.42 192.53Q179.64 186.56 166.39 186.56H145.10ZM239.38 312.12V157.88H292.17L322.58 256.51H322.80L353.21 157.88H406.00V312.12H366.90V210.89H366.46L334.53 312.12H308.24L276.31 210.89H275.88V312.12Z" fill="url(#ink)"/>
+  <rect x="106.00" y="346.12" width="300" height="8" rx="4" fill="url(#ink)"/>
+</svg>
