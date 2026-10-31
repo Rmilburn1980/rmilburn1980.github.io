@@ -279,11 +279,11 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
   <div class="wrap">
     <a class="back" href="index.html">Back to portfolio hub</a>
     <h1>Skills matrix and cross-training</h1>
-    <p class="lede">How a direct team of 11 grew process coverage on a caravan production line, and how cross-training took three job roles to full competency. Names are anonymised.</p>
+    <p class="lede">How a direct team of 11 grew process coverage on a caravan production line, and how cross-training put three or more trained operators on almost every critical SOP. Names are anonymised.</p>
     <ul class="facts">
       <li><span class="fact-val">36% to 86.6%</span><span class="fact-lbl">skills coverage over two years</span></li>
       <li><span class="fact-val">348 of 401</span><span class="fact-lbl">processes at Operating status</span></li>
-      <li><span class="fact-val">70% to 100%</span><span class="fact-lbl">competency in three roles in five months</span></li>
+      <li><span class="fact-val">70% to 97.7%</span><span class="fact-lbl">critical SOPs with three or more trained, September to December 2025</span></li>
       <li><span class="fact-val">260</span><span class="fact-lbl">processes mapped from scratch, 86 of them critical</span></li>
     </ul>
   </div>
@@ -337,8 +337,8 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
         <div class="chart-host" id="chart-coverage"></div>
       </figure>
       <figure class="panel" style="margin:0">
-        <h3>3x3 cross-training programme</h3>
-        <p class="note">Competency in three job roles over five months, with months along the bottom. Start and end points are my own figures. The months between are illustrative. The vertical axis starts at 60%.</p>
+        <h3>3x3 cross-training programme: critical SOPs</h3>
+        <p class="note">Share of the 86 critical-to-quality SOPs with three or more trained operators, by month, September 2025 to March 2026, from the improvement plan chart in the competency matrix. The latest status in the file is 85 of 86 (98.8%), and Bays 5 to 8 stand at 36 of 36. The vertical axis starts at 60%.</p>
         <div class="chart-host" id="chart-cross"></div>
         <ul class="key" id="cross-key"></ul>
       </figure>
@@ -363,7 +363,7 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
       <h2 id="evidence-h">Evidence behind the numbers</h2>
       <ul class="evidence">
         <li><span class="ev-head">Built from scratch</span><span class="ev-body">Built the skills matrix covering 260 processes, 86 of them critical, and led a team of 29.</span></li>
-        <li><span class="ev-head">Cross-training that landed</span><span class="ev-body">The 3x3 programme took three job roles from about 70% to 100% competency in five months.</span></li>
+        <li><span class="ev-head">Cross-training that landed</span><span class="ev-body">The 3x3 programme took critical-to-quality SOPs with three or more trained operators from 70% (60 of 86) in September 2025 to 97.7% (84 of 86) by December, and 98.8% (85 of 86) in the latest status. All 36 in Bays 5 to 8 are covered.</span></li>
         <li><span class="ev-head">Coverage you can verify</span><span class="ev-body">Skills coverage rose from 36% to 86.6% over two years, with 348 of 401 processes at Operating status across my direct team of 11.</span></li>
         <li><span class="ev-head">Engagement in safety</span><span class="ev-body">108 reports raised through SafetyQube, an EHS management system (102 near misses and hazards, 6 accident reports), which is 33% of the 324 site reports logged from April 2025 to March 2026. All 108 show as closed in the export, 21 of them in one batch on 8 January 2026, so a closed status does not show the risk was removed. One needed investment that was not going to happen because production was transferring from the site, so the risk was left unresolved.</span></li>
       </ul>
@@ -832,48 +832,11 @@ const DATA = {
     ]
   },
   "cross": {
-    "labels": [
-      "Start",
-      "1",
-      "2",
-      "3",
-      "4",
-      "5"
-    ],
+    "labels": ["Sep 25", "Oct", "Nov", "Dec", "Jan 26", "Feb", "Mar"],
     "roles": [
-      {
-        "name": "Job role 1",
-        "values": [
-          70,
-          76,
-          83,
-          90,
-          96,
-          100
-        ]
-      },
-      {
-        "name": "Job role 2",
-        "values": [
-          68,
-          74,
-          80,
-          88,
-          95,
-          100
-        ]
-      },
-      {
-        "name": "Job role 3",
-        "values": [
-          72,
-          78,
-          85,
-          91,
-          97,
-          100
-        ]
-      }
+      { "name": "Actual", "values": [69.8, 90.7, 90.7, 97.7, 97.7, 97.7, 97.7] },
+      { "name": "Plan", "values": [69.8, 89.5, 91.9, 94.2, 96.5, 96.5, 96.5] },
+      { "name": "Target 90%", "values": [90, 90, 90, 90, 90, 90, 90] }
     ]
   }
 };
@@ -1112,12 +1075,12 @@ function drawCharts() {
   const series = cr.roles.map((r, i) => Object.assign({ name: r.name, values: r.values }, styles[i]));
   const low = series.reduce((a, s, i) => (s.values[0] < series[a].values[0] ? i : a), 0);
   lineChart($('#chart-cross'), {
-    label: 'Competency in three job roles rose from about 70% to 100% over five months',
+    label: 'Critical SOPs with three or more trained operators rose from 70% to 97.7% between September and December 2025',
     xLabels: cr.labels, yMin: 60, yMax: 100, yTicks: [60, 70, 80, 90, 100], height: 300,
     series,
     labels: [
-      { s: low, i: 0, text: 'about 70%', pos: 'below', anchor: 'start' },
-      { s: 0, i: cr.labels.length - 1, text: '100%', pos: 'above', anchor: 'end' }
+      { s: low, i: 0, text: '70%', pos: 'below', anchor: 'start' },
+      { s: 0, i: cr.labels.length - 1, text: '97.7%', pos: 'above', anchor: 'end' }
     ]
   });
   $('#cross-key').innerHTML = series.map(s => `<li>${swatch(s.color, s.dash)}${s.name}</li>`).join('');
