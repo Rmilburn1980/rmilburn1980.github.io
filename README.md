@@ -6,7 +6,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## What is in it
 
-25 tools. Every link opens the working page.
+27 tools. Every link opens the working page.
 
 ### Operations
 | Tool | What it does |
@@ -28,6 +28,8 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [A3 Problem Solving Sheet](https://rmilburn1980.github.io/a3-problem-solving.html) | One page from background to follow-up. Flags an unconfirmed cause, blame wording, countermeasures with no independent check, and a close-out with no measured result. Prints on A3. Opens with example data. |
 | [SIPOC and Value Stream Map](https://rmilburn1980.github.io/sipoc-vsm-tool.html) | Scope a process with a SIPOC, then map the current state: cycle times, queues, takt, lead time, process cycle efficiency and rolled throughput yield. |
 | [SPC Control Chart Tool](https://rmilburn1980.github.io/spc-control-chart.html) | Limits from a chosen baseline, signal rules, and capability shown only when the baseline is valid. |
+| [Line Balancing (yamazumi)](https://rmilburn1980.github.io/line-balancing.html) | Timed work elements at stations charted against takt. Balance efficiency, slowest station, fewest stations at takt, and gaps in the record. Does not check the order of the work. Opens with example data. |
+| [Standard Work Combination Sheet](https://rmilburn1980.github.io/standard-work-sheet.html) | Walking, manual and machine time on one timeline against takt. Cycle, waiting, and flags for missing key points, independent check, approval and review date. Opens with example data. |
 | [Cycle Time and Waste Analysis](https://rmilburn1980.github.io/cycle-time-waste-tool.html) | Time observation study with value-added split, takt comparison and a TIMWOODS waste breakdown. |
 | [Standard Minute Value Tool](https://rmilburn1980.github.io/SMV-TOOL/) | Time study, SMV, line efficiency and production targets, with MOST sequence models. |
 | [Gemba Walk Tracker](https://rmilburn1980.github.io/gemba-walk-tracker.html) | Log what you see on a walk and trace each observation to its owner, the evidence that closed it and the re-walk that checked the fix. Opens with example data. |

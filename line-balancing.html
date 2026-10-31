@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Line Balancing</title>
+<meta name="description" content="Build a yamazumi chart from timed work elements. Shows each station's load against takt, balance efficiency, the slowest station, and the gaps in the record, such as untimed, unclassified or unassigned elements.">
+<style>
+:root{
+  --bg:#0f1b2d; --panel:#16263d; --panel2:#1c3050; --line:#2c4466;
+  --text:#e8eef7; --muted:#a9b8cf; --accent:#2dd4bf; --accent-ink:#06211d;
+  --low:#22c55e; --med:#facc15; --high:#fb923c; --crit:#ef4444; --ink:#0b1220;
+  --b1:#3aa7c7; --b2:#c4b5fd;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+header h1{font-size:1.25rem;margin:0}
+header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
+.hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
+.hub:hover{background:var(--accent);color:var(--accent-ink)}
+nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
+nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
+main{padding:20px;max-width:1180px;margin:0 auto}
+input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;font-size:.9rem;max-width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visible,summary:focus-visible,.linkbtn:focus-visible,.inc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:.88rem;text-decoration:none;display:inline-block;min-height:38px}
+.btn.sec{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.sec:hover{border-color:var(--accent)}
+.btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
+.btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
+.banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
+.savebar{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 12px;font-size:.85rem;color:var(--muted);margin:0 0 12px}
+.savebar.dirty{border-color:var(--med);color:var(--text)}
+.status{border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:14px 16px;margin-bottom:16px;background:var(--panel)}
+.st-over{border-color:var(--crit)}.st-ok{border-color:var(--low)}.st-empty{border-color:var(--muted)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:1rem;margin:0 0 12px}.card h3{font-size:.92rem;margin:14px 0 8px}
+.sm{color:var(--muted);font-size:.8rem}
+.disc{margin:8px 0 14px;color:var(--muted);font-size:.82rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .n{font-size:1.7rem;font-weight:700;line-height:1.1}.kpi .l{color:var(--muted);font-size:.8rem;margin-top:4px}
+.kpi.warn .n{color:var(--med)}.kpi.crit .n{color:#ff8f8f}.kpi.ok .n{color:var(--low)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.f label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
+.f label input,.f label select,.f label textarea{width:100%}
+.f .full{grid-column:1/-1}
+@media (max-width:700px){.f{grid-template-columns:1fr}}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:700;color:var(--ink);background:#a9b8cf;white-space:nowrap}
+.chip.g{background:var(--high)}.chip.ok{background:var(--low)}.chip.r{background:#ff8f8f}.chip.y{background:var(--med)}.chip.c{background:var(--b1)}.chip.v{background:var(--b2)}
+.list{display:grid;gap:10px}
+.inc{display:block;width:100%;text-align:left;background:var(--panel);color:var(--text);border:1px solid var(--line);border-left-width:6px;border-radius:12px;padding:12px 14px;cursor:pointer;font:inherit}
+.inc:hover{border-color:var(--accent)}
+.inc.gap{border-left-color:var(--high)}.inc.clean{border-left-color:var(--low)}.inc.closed{opacity:.9}
+.inc .t{font-weight:700}.inc .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.fl{margin:8px 0 0;padding-left:18px;font-size:.84rem}.fl li{margin:4px 0}.fl li.g{color:#fcd9a8}.fl li.o{color:var(--muted)}
+.tablewrap{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);white-space:nowrap}
+tr:last-child td{border-bottom:none}td.num,th.num{text-align:right}
+.bar{display:inline-block;height:10px;border-radius:5px;vertical-align:middle;margin-right:6px;min-width:2px}
+.b1{background:var(--b1)}.b2{background:var(--b2)}
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:0;max-width:760px;width:calc(100% - 24px);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+dialog .dh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;position:sticky;top:0;background:var(--panel);z-index:2}
+dialog .dh h2{margin:0;font-size:1.05rem}
+dialog .db{padding:14px 18px;overflow:auto;max-height:calc(92vh - 130px)}
+dialog .df{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;position:sticky;bottom:0;background:var(--panel)}
+dialog fieldset{border:1px solid var(--line);border-radius:10px;margin:0 0 14px;padding:10px 14px 14px}
+dialog legend{font-weight:700;font-size:.9rem;padding:0 6px}
+.rd{border:1px solid var(--line);border-left-width:6px;border-radius:10px;padding:10px 12px;margin:10px 0;background:var(--panel2)}
+.rd.rep{border-color:#ff8f8f}.rd.und{border-color:var(--med)}.rd.rec{border-color:var(--b1)}.rd.non{border-color:var(--line)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:.86rem;margin:4px 0;color:var(--text)}
+.chk input{margin-top:3px}
+.ac{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:0 0 10px}
+.guide p,.guide li{font-size:.9rem}
+footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
+@media (max-width:560px){main{padding:14px}dialog .db{padding:12px}}
+#report{display:none}
+@media print{
+  :root{--bg:#fff;--panel:#fff;--panel2:#f2f2f2;--line:#888;--text:#000;--muted:#333;--accent:#000}
+  html,body{background:#fff;color:#000}
+  header .hub,nav,.savebar,.banner,main,footer,#hub-link-host,dialog{display:none!important}
+  #report{display:block;padding:8px;color:#000}
+  #report h1{font-size:1.3rem}#report h2{font-size:1.05rem;margin:14px 0 6px}
+  #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
+  #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
+}
+.chartbox{overflow-x:auto}
+.lb{width:100%;height:auto;display:block}
+.lb text{fill:var(--text);font-size:11px;font-family:inherit}.lb .mut{fill:var(--muted);font-size:10px}
+.lb .grid{stroke:var(--line);stroke-width:1}.lb .va{fill:var(--accent)}.lb .rq{fill:var(--b1)}.lb .ws{fill:var(--high)}.lb .uc{fill:var(--muted)}
+.lb .tk{stroke:var(--crit);stroke-width:2.5;stroke-dasharray:7 4}.lb .tkt{fill:var(--crit);font-weight:700}
+.keyl{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.keyl i{display:inline-block;width:14px;height:12px;vertical-align:middle;margin-right:6px;border-radius:2px}
+.keyl i.va{background:var(--accent)}.keyl i.rq{background:var(--b1)}.keyl i.ws{background:var(--high)}.keyl i.uc{background:var(--muted)}.keyl i.tk{background:none;border-top:3px dashed var(--crit);height:0}
+td.num,th.num{text-align:right}
+td select{max-width:170px}
+@media print{header{display:none!important}}
+</style>
+<link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Line Balancing</h1>
+    <p>Enter the timed work elements for a line, put each one at a station, and see every station's load against takt on a yamazumi chart. It shows balance efficiency, the slowest station, and what is missing from the record. It does not check the order the work has to be done in.</p>
+  </div>
+  <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
+</header>
+<nav role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" data-tab="log">Elements</button>
+  <button role="tab" aria-selected="false" data-tab="dash">Yamazumi</button>
+  <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
+  <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
+</nav>
+<main>
+<p class="savebar" id="saveNote" role="status"></p>
+<div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records work-element times, which can be used to judge individual people. It stays in this browser and in files you save. Nothing is sent to this website. Name stations and tasks, not people. Do not use it to rank or compare operators, and do not record who was timed. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
+<div class="banner" id="banner" hidden>Example data is loaded. Every station and element tagged Example is made up so you can see how the checks work. It is not a real record. Press Clear everything to start your own.</div>
+<div class="status st-empty" id="status" role="status" aria-live="polite"></div>
+<div class="toolbar">
+  <button class="btn" id="btnAdd">Add an element</button>
+  <button class="btn sec" id="btnAddSt">Add a station</button>
+  <button class="btn sec" id="btnExample">Load example</button>
+  <button class="btn sec" id="btnSave">Save data file</button>
+  <button class="btn sec" id="btnLoad">Load data file</button>
+  <button class="btn sec" id="btnCsv">Download CSV</button>
+  <button class="btn sec" id="btnPrint">Print report</button>
+  <button class="btn danger" id="btnClear">Clear everything</button>
+  <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
+</div>
+
+<section id="tab-log">
+  <div class="card"><h2>The line and its takt</h2>
+    <div class="f">
+      <label>Product or line<input type="text" id="gP" maxlength="40"></label>
+      <label>Date timed<input type="date" id="gD"></label>
+      <label>Available time per shift, in minutes (after breaks and planned stops)<input type="number" id="gA" min="0" max="1440" step="any"></label>
+      <label>Demand per shift, in units<input type="number" id="gQ" min="0" step="any"></label>
+      <label>Timed by (a role, not a name)<input type="text" id="gT" maxlength="40"></label>
+      <label>Checked by (a different role or person)<input type="text" id="gC" maxlength="40"></label>
+    </div>
+    <p class="sm" id="taktOut" style="margin-top:10px"></p>
+  </div>
+  <div class="card"><h2>Stations</h2><div class="tablewrap"><table id="stTable"></table></div></div>
+  <div class="card"><h2>Work elements</h2><div class="tablewrap"><table id="rows"></table></div><p class="sm" id="rowNote"></p></div>
+</section>
+
+<section id="tab-dash" hidden>
+  <p class="disc" id="dashNote"></p>
+  <div class="kpis" id="kpis"></div>
+  <div class="card"><h2>Station load against takt</h2><div class="chartbox" id="chY"></div>
+    <div class="keyl"><span><i class="va"></i>Value-adding</span><span><i class="rq"></i>Necessary, not value-adding</span><span><i class="ws"></i>Waste</span><span><i class="uc"></i>Not classified</span><span><i class="tk"></i>Takt</span></div>
+    <div class="tablewrap" style="margin-top:10px"><table id="yTable"></table></div></div>
+</section>
+
+<section id="tab-checks" hidden><div class="card"><h2>What the checks found</h2><div id="flagList"></div></div>
+  <p class="disc">The checks look for gaps in the record: elements with no time, no class or no station, too few timings, stations with nothing in them, and no independent check. They cannot tell whether the times are true, whether the method is the best one, or whether moving an element is possible. The tool does not check the order the work must be done in.</p></section>
+
+<section id="tab-guide" class="guide" hidden>
+  <div class="card"><h2>What it measures</h2>
+    <ul>
+      <li><strong>Takt</strong> is available time divided by demand, in seconds. It is how often a unit must be finished to meet demand.</li>
+      <li><strong>Station time</strong> is the total of the element times at that station. A station over takt cannot keep up on its own.</li>
+      <li><strong>Balance efficiency</strong> is total element time divided by the number of stations times the slowest station's time. 100% would mean every station takes the same time. It says nothing about whether the line meets takt.</li>
+      <li><strong>Balance delay</strong> is 100% minus balance efficiency: the share of station time spent waiting on the slowest station.</li>
+      <li><strong>Fewest stations at this takt</strong> is total element time divided by takt, rounded up. It is a floor from the arithmetic, not a design. The real answer is often higher because of the order of the work.</li>
+      <li><strong>Output at the slowest station</strong> is available time divided by the slowest station's time, rounded down. Compare it with demand.</li>
+    </ul></div>
+  <div class="card"><h2>The rules the tool applies</h2>
+    <ul>
+      <li>Time what the work actually takes, several times, and record how many timings you took. Fewer than three is noted. Use the time you observed, not a standard allowance.</li>
+      <li>Every element needs a class: value-adding, necessary but not value-adding, or waste. An element with no class is shown in grey and flagged.</li>
+      <li>An element with no station is left out of the station times and is counted as unassigned. An element with no usable time is left out entirely. Both are flagged, never counted as zero.</li>
+      <li>A station with no elements is flagged and still counts as a station, so it lowers balance efficiency.</li>
+      <li>A station under 70% of takt is noted. It may have room for more work.</li>
+      <li>The times should be timed by one person and checked by another. If they are the same, or blank, it is flagged.</li>
+    </ul></div>
+  <div class="card"><h2>Moving work between stations</h2>
+    <p>Change the station of an element from the table and the chart updates. The tool does not know the order work must be done in, what equipment each station has, or who is trained, so a move that looks good on the chart may not be possible. Check it against the method, the safety of the new task and the people who will do it before you change anything on the line.</p></div>
+  <div class="card"><h2>Related tools</h2>
+    <p>Time the work with the <a href="cycle-time-waste-tool.html">Cycle Time and Waste Tool</a> or the <a href="smv-tool/">SMV tool</a>. Look at the whole flow with the <a href="sipoc-vsm-tool.html">SIPOC and VSM Tool</a>. Check output against plan with <a href="schedule-adherence.html">Schedule Adherence</a>.</p></div>
+  <div class="card"><h2>Limits</h2><p>No gaps found does not mean the times are true or the balance is the best one. This is decision support only.</p></div>
+</section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+  <div class="dh"><h2 id="dlgT">Record</h2><button class="btn sec small" id="dlgX" type="button">Close without saving</button></div>
+  <div class="db" id="dlgB"></div>
+  <div class="df"><button class="btn" id="dlgOk" type="button">Save</button><button class="btn sec" id="dlgAgain" type="button">Save and add another</button><button class="btn sec" id="dlgCancel" type="button">Cancel</button><span style="flex:1"></span><button class="btn danger small" id="dlgDel" type="button">Delete</button></div>
+</dialog>
+
+<div id="report" aria-hidden="true"></div>
+<footer>Decision support only, not a substitute for a competent person's judgement or for your company's procedures. Line Balancing. These tools run in your browser and send nothing to this website. The site is hosted on GitHub Pages, which logs visitor IP addresses for security. Your employer is responsible for how data recorded here is used, stored and deleted. Provided free and as is, without warranty. Part of the portfolio hub.</footer>
+
+<script>
+(function(){
+"use strict";
+var KEY="rmilburn-linebalance-v1",UIK="rmilburn-linebalance-ui";
+var CLS=[["va","Value-adding"],["req","Necessary, not value-adding"],["waste","Waste (walking, waiting, rework)"]];
+var MAXE=400,MAXS=60,LOW=70;
+var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,dk="el",draftNew=false;
+function blank(){return {example:false,product:"",date:"",avail:null,demand:null,timedBy:"",checkedBy:"",stations:[],elements:[]};}
+function $(id){return document.getElementById(id);}
+function str(v,n){return typeof v==="string"?v.slice(0,n):"";}
+function dstr(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return dstr(new Date());}
+function off(n){var d=new Date();d.setDate(d.getDate()+n);return dstr(d);}
+function isDate(v){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v||"")))return false;var p=String(v).split("-").map(Number),d=new Date(p[0],p[1]-1,p[2]);return d.getFullYear()===p[0]&&d.getMonth()===p[1]-1&&d.getDate()===p[2];}
+function dOk(v){return isDate(v)?String(v):"";}
+function fmt(d){var p=String(d||"").split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:(d||"");}
+function norm(s){return String(s||"").trim().toLowerCase().replace(/\s+/g," ");}
+function plural(n,w){return n+" "+w+(n===1?"":"s");}
+function num(v){if(v===null||v===undefined||v==="")return null;var n=typeof v==="number"?v:parseFloat(String(v).replace(/,/g,"."));return (isFinite(n)&&n>=0&&n<=1e9)?n:null;}
+function s1(v){return v===null||v===undefined?"":String(Math.round(v*10)/10);}
+function pc(v){return v===null||v===undefined?"n/a":(Math.round(v*10)/10)+"%";}
+function h(tag,a){var e=document.createElement(tag),k,i;a=a||{};
+  for(k in a){var v=a[k];if(v===null||v===undefined||v===false)continue;
+    if(k==="class")e.className=v;else if(k==="text")e.textContent=v;else if(k.slice(0,2)==="on")e.addEventListener(k.slice(2),v);
+    else if(k==="value"||k==="checked"||k==="selected")e[k]=v;else e.setAttribute(k,v===true?"":v);}
+  for(i=2;i<arguments.length;i++)add1(e,arguments[i]);return e;}
+function add(e){for(var i=1;i<arguments.length;i++)add1(e,arguments[i]);}
+function add1(e,c){if(c===null||c===undefined||c===false)return;if(Array.isArray(c)){c.forEach(function(x){add1(e,x);});return;}e.appendChild(typeof c==="object"?c:document.createTextNode(String(c)));}
+function inList(v,list){for(var i=0;i<list.length;i++)if(list[i][0]===v)return v;return "";}
+function cname(v){for(var i=0;i<CLS.length;i++)if(CLS[i][0]===v)return CLS[i][1];return "Not classified";}
+
+function cleanEl(x){
+  if(!x||typeof x!=="object")return null;
+  var n=parseInt(x.n,10);
+  return {id:parseInt(x.id,10)||0,name:str(x.name,60),station:parseInt(x.station,10)||0,time:num(x.time),n:(isFinite(n)&&n>=0&&n<=999)?n:null,cls:inList(x.cls,CLS),note:str(x.note,200),ex:x.ex===true};
+}
+function cleanSt(x){
+  if(!x||typeof x!=="object")return null;
+  return {id:parseInt(x.id,10)||0,name:str(x.name,40),note:str(x.note,200),ex:x.ex===true};
+}
+function clean(d){
+  var o=blank();if(!d||typeof d!=="object")return o;o.example=d.example===true;
+  o.product=str(d.product,40);o.date=dOk(d.date);var a=num(d.avail);o.avail=(a!==null&&a<=1440)?a:null;o.demand=num(d.demand);o.timedBy=str(d.timedBy,40);o.checkedBy=str(d.checkedBy,40);
+  var ids={},mx=0;
+  (Array.isArray(d.stations)?d.stations.slice(0,MAXS):[]).forEach(function(x){var c=cleanSt(x);if(!c)return;if(c.id>mx)mx=c.id;o.stations.push(c);});
+  o.stations.forEach(function(c){if(!c.id||ids[c.id])c.id=++mx;ids[c.id]=1;});
+  var eids={},em=0;
+  (Array.isArray(d.elements)?d.elements.slice(0,MAXE):[]).forEach(function(x){var c=cleanEl(x);if(!c)return;if(c.id>em)em=c.id;o.elements.push(c);});
+  o.elements.forEach(function(c){if(!c.id||eids[c.id])c.id=++em;eids[c.id]=1;if(!ids[c.station])c.station=0;});
+  return o;
+}
+
+/* ---------- the arithmetic ---------- */
+function takt(){return (D.avail!==null&&D.avail>0&&D.demand!==null&&D.demand>0)?D.avail*60/D.demand:null;}
+function usable(e){return e.time!==null&&e.time>0;}
+function calc(){
+  var tk=takt(),map={},list=[],total=0,unassigned=0,unTime=0,noTime=0,waste=0,cl={va:0,req:0,waste:0,none:0};
+  D.stations.forEach(function(s){var o={id:s.id,name:s.name,time:0,count:0,va:0,req:0,waste:0,none:0};map[s.id]=o;list.push(o);});
+  D.elements.forEach(function(e){
+    if(!usable(e)){noTime++;return;}
+    if(!map[e.station]){unassigned++;unTime+=e.time;return;}
+    var o=map[e.station];o.time+=e.time;o.count++;o[e.cls||"none"]+=e.time;total+=e.time;cl[e.cls||"none"]+=e.time;
+  });
+  var n=list.length,mx=0,slow="";list.forEach(function(o){if(o.time>mx){mx=o.time;slow=o.name;}o.pct=tk?o.time/tk*100:null;o.over=tk!==null&&o.time>tk+1e-9;o.low=tk!==null&&o.count>0&&o.time<tk*LOW/100-1e-9;});
+  var eff=(n>0&&mx>0)?total/(n*mx)*100:null;
+  return {takt:tk,stations:list,n:n,total:total,max:mx,slow:slow,eff:eff,delay:eff===null?null:100-eff,minSt:(tk&&total>0)?Math.ceil(total/tk-1e-9):null,
+    out:(mx>0&&D.avail!==null&&D.avail>0)?Math.floor(D.avail*60/mx+1e-9):null,overN:list.filter(function(o){return o.over;}).length,
+    unassigned:unassigned,unTime:unTime,noTime:noTime,wasteShare:total>0?cl.waste/total*100:null,cl:cl};
+}
+
+/* ---------- checks ---------- */
+function stName(id){for(var i=0;i<D.stations.length;i++)if(D.stations[i].id===id)return D.stations[i].name||"(unnamed station)";return "";}
+function elLab(e){return (e.name.trim()||"(unnamed element)");}
+function analyse(){
+  var gaps=[],notes=[],C=calc(),td=today(),seen={};
+  function g(k,id,m){gaps.push({k:k,id:id||0,msg:m});}
+  function n(k,id,m){notes.push({k:k,id:id||0,msg:m});}
+  if(!D.product.trim())g("",0,"No product or line is named.");
+  if(!D.date)g("",0,"The date the work was timed is not set.");else if(D.date>td)g("",0,"The date timed is in the future.");
+  if(C.takt===null)g("",0,"Available time or demand is not set, so there is no takt. Station loads cannot be judged against takt.");
+  if(!D.timedBy.trim())g("",0,"Who timed the work is not recorded.");
+  if(!D.checkedBy.trim())g("",0,"Nobody is recorded as having checked the times. They have not been independently checked.");
+  else if(D.timedBy.trim()&&norm(D.timedBy)===norm(D.checkedBy))g("",0,"The times were checked by the same person or role that timed them. That is not an independent check.");
+  if(!D.stations.length&&D.elements.length)g("",0,"There are elements but no stations. Add a station and give each element one.");
+  D.stations.forEach(function(s){
+    var nm=norm(s.name);
+    if(!nm)g("s",s.id,"A station has no name.");
+    else if(seen[nm])g("s",s.id,"Station "+s.name+": another station has the same name.");seen[nm]=1;
+  });
+  var perSt={};D.elements.forEach(function(e){if(e.station)perSt[e.station]=(perSt[e.station]||0)+1;});
+  D.stations.forEach(function(s){if(!perSt[s.id])g("s",s.id,"Station "+(s.name||"(unnamed station)")+": no elements. It still counts as a station and lowers balance efficiency.");});
+  D.elements.forEach(function(e){
+    var L=elLab(e)+": ";
+    if(!e.name.trim())g("e",e.id,L+"the element has no name.");
+    if(!usable(e))g("e",e.id,L+"no usable time, so it is left out of every station and every result.");
+    else{
+      if(!e.station)g("e",e.id,L+"not at any station. "+s1(e.time)+" s is left out of the station times and counted as unassigned.");
+      if(e.n===null)g("e",e.id,L+"the number of timings is not recorded.");
+      else if(e.n<3)n("e",e.id,L+"timed "+plural(e.n,"time")+". Fewer than three is a weak basis for a time.");
+    }
+    if(!e.cls)g("e",e.id,L+"not classified as value-adding, necessary or waste. It is shown in grey.");
+  });
+  C.stations.forEach(function(o){
+    if(o.over)n("s",o.id,"Station "+o.name+": "+s1(o.time)+" s is over takt ("+s1(C.takt)+" s) by "+s1(o.time-C.takt)+" s. It cannot keep up with demand on its own.");
+    else if(o.low)n("s",o.id,"Station "+o.name+": "+s1(o.time)+" s is "+Math.round(o.pct)+"% of takt. There may be room for more work, but check the method before moving any.");
+  });
+  if(C.minSt!==null&&C.n>C.minSt&&C.n>0)n("",0,"Total element time needs at least "+C.minSt+" station"+(C.minSt===1?"":"s")+" at this takt and there are "+C.n+". That floor is arithmetic only; the order of the work may need more.");
+  if(C.wasteShare!==null&&C.wasteShare>=20)n("",0,"Waste elements are "+Math.round(C.wasteShare)+"% of the assigned time. Removing waste is usually better than rebalancing around it.");
+  return {gaps:gaps,notes:notes,C:C};
+}
+
+/* ---------- persistence ---------- */
+function uiGet(){try{var o=JSON.parse(localStorage.getItem(UIK));return o&&typeof o==="object"?o:{};}catch(e){return {};}}
+function uiSet(k,v){try{var o=uiGet();o[k]=v;localStorage.setItem(UIK,JSON.stringify(o));}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem(KEY));if(d&&typeof d==="object")return clean(d);}catch(e){}return null;}
+function saveNow(){try{localStorage.setItem(KEY,JSON.stringify(D));storeOk=true;}catch(e){storeOk=false;}dirty=false;renderSave();}
+function touch(){dirty=true;renderSave();clearTimeout(saveT);saveT=setTimeout(saveNow,400);}
+window.addEventListener("pagehide",function(){if(dirty)saveNow();});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden"&&dirty)saveNow();});
+function renderSave(){var el=$("saveNote");
+  if(!storeOk){el.className="savebar dirty";el.textContent="This browser is not keeping your work. Use Save data file before you close the page.";}
+  else if(dirty){el.className="savebar dirty";el.textContent="Saving in this browser…";}
+  else{el.className="savebar";el.textContent="Saved in this browser only. Use Save data file to keep a copy you can move or restore.";}}
+function download(name,text,type){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:type}));a.download=name;document.body.appendChild(a);a.click();a.remove();}
+function nextId(list){var m=0;list.forEach(function(i){if(i.id>m)m=i.id;});return m+1;}
+function kpi(n,l,c){return h("div",{class:"kpi "+(c||"")},h("div",{class:"n",text:String(n)}),h("div",{class:"l",text:l}));}
+function renderAll(){
+  var set=[["gP",D.product],["gD",D.date],["gA",D.avail===null?"":String(D.avail)],["gQ",D.demand===null?"":String(D.demand)],["gT",D.timedBy],["gC",D.checkedBy]];
+  set.forEach(function(x){if($(x[0]).value!==x[1])$(x[0]).value=x[1];});
+  var tk=takt();$("taktOut").textContent=tk===null?"Takt: not set. Enter available time and demand.":"Takt: "+s1(tk)+" seconds per unit ("+D.avail+" min × 60 ÷ "+D.demand+" units).";
+  renderStatus();renderStations();renderRows();renderDash();renderChecks();$("banner").hidden=!D.example;}
+function renderStatus(){
+  var A=analyse(),el=$("status");el.innerHTML="";
+  if(!D.elements.length&&!D.stations.length){el.className="status st-empty";add(el,h("strong",{text:"Nothing recorded yet."}),h("div",{class:"sm",text:"Add a station and its work elements, or load the example."}));return;}
+  var ov=A.C.overN?" "+plural(A.C.overN,"station")+" over takt.":"";
+  if(A.gaps.length){el.className="status st-over";add(el,h("strong",{text:"Gaps found. Do not rely on these results until they are dealt with."}),h("div",{class:"sm",text:plural(A.gaps.length,"gap")+" and "+plural(A.notes.length,"note")+"."+ov+" Open Checks for the full list."}));}
+  else{el.className="status st-ok";add(el,h("strong",{text:"No gaps found by these checks."}),h("div",{class:"sm",text:"This does not mean the times are true or the balance is the best one."+ov}));}
+}
+
+/* ---------- stations and elements ---------- */
+function stList(){return D.stations.map(function(s){return [String(s.id),s.name||"(unnamed station)"];});}
+function renderStations(){
+  var t=$("stTable");t.innerHTML="";var C=calc();
+  t.appendChild(h("thead",{},h("tr",{},["Order","Station","Elements","Time (s)","Of takt","Result",""].map(function(x,i){return h("th",{class:(i>=2&&i<=4)?"num":"",text:x});}))));
+  var tb=h("tbody");
+  if(!C.stations.length)tb.appendChild(h("tr",{},h("td",{colspan:"7",text:"No stations yet."})));
+  C.stations.forEach(function(o,i){var st=D.stations[i],res=C.takt===null?["y","No takt"]:o.over?["r","Over takt"]:o.low?["y","Under "+LOW+"% of takt"]:o.count?["ok","Within takt"]:["y","Empty"];
+    tb.appendChild(h("tr",{},h("td",{text:String(i+1)}),h("td",{text:o.name||"(unnamed station)"},st.ex?h("span",{class:"chip",text:"Example"}):null),h("td",{class:"num",text:String(o.count)}),h("td",{class:"num",text:s1(o.time)}),h("td",{class:"num",text:o.pct===null?"n/a":Math.round(o.pct)+"%"}),
+      h("td",{},h("span",{class:"chip "+res[0],text:res[1]})),
+      h("td",{},h("button",{class:"btn sec small",type:"button","aria-label":"Move "+(o.name||"station")+" earlier",text:"Up",disabled:i===0?"":null,onclick:function(){moveSt(i,-1);}})," ",h("button",{class:"btn sec small",type:"button","aria-label":"Move "+(o.name||"station")+" later",text:"Down",disabled:i===C.stations.length-1?"":null,onclick:function(){moveSt(i,1);}})," ",h("button",{class:"btn sec small",type:"button","data-k":"s"+o.id,text:"Edit",onclick:function(){openSt(o.id);}}))));});
+  t.appendChild(tb);
+}
+function moveSt(i,d){var j=i+d;if(j<0||j>=D.stations.length)return;var a=D.stations[i];D.stations[i]=D.stations[j];D.stations[j]=a;touch();renderAll();}
+function renderRows(){
+  var t=$("rows");t.innerHTML="";
+  var list=D.elements.slice();
+  t.appendChild(h("thead",{},h("tr",{},["Element","Station","Time (s)","Timings","Class",""].map(function(x,i){return h("th",{class:(i===2||i===3)?"num":"",text:x});}))));
+  var tb=h("tbody");
+  if(!list.length)tb.appendChild(h("tr",{},h("td",{colspan:"6",text:"Nothing here yet."})));
+  list.forEach(function(e){
+    var s=h("select",{"aria-label":"Station for "+elLab(e),"data-k":"es"+e.id,onchange:function(){var id=e.id;e.station=parseInt(this.value,10)||0;touch();renderAll();var b=document.querySelector('[data-k="es'+id+'"]');if(b)b.focus();}});
+    s.appendChild(h("option",{value:"0",text:"Not assigned"}));stList().forEach(function(o){s.appendChild(h("option",{value:o[0],text:o[1],selected:parseInt(o[0],10)===e.station}));});
+    tb.appendChild(h("tr",{},h("td",{text:e.name||"(unnamed element)"},e.ex?h("span",{class:"chip",text:"Example"}):null),h("td",{},s),h("td",{class:"num",text:e.time===null?"":s1(e.time)}),h("td",{class:"num",text:e.n===null?"":String(e.n)}),
+      h("td",{},e.cls?cname(e.cls):h("span",{class:"chip y",text:"Not classified"})),
+      h("td",{},h("button",{class:"btn sec small",type:"button","data-k":"e"+e.id,text:"Edit",onclick:function(){openEl(e.id);}}))));});
+  t.appendChild(tb);
+  $("rowNote").textContent="";
+}
+[["gP","product",40],["gT","timedBy",40],["gC","checkedBy",40]].forEach(function(x){$(x[0]).addEventListener("change",function(){D[x[1]]=this.value.slice(0,x[2]);touch();renderAll();});});
+$("gD").addEventListener("change",function(){D.date=dOk(this.value);touch();renderAll();});
+$("gA").addEventListener("change",function(){var v=num(this.value);D.avail=(v!==null&&v<=1440)?v:null;touch();renderAll();});
+$("gQ").addEventListener("change",function(){D.demand=num(this.value);touch();renderAll();});
+
+/* ---------- yamazumi ---------- */
+function niceMax(v){if(v<=0)return 1;var p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p,n=f<=1?1:f<=2?2:f<=5?5:10;return n*p;}
+function svgEl(t,a){var e=document.createElementNS("http://www.w3.org/2000/svg",t);for(var k in a)e.setAttribute(k,String(a[k]));return e;}
+function txt(s,x,y,a,cls){var e=svgEl("text",{x:x,y:y,"text-anchor":a||"start",class:cls||""});e.textContent=s;return e;}
+function yChart(C){
+  var n=C.stations.length,W=Math.max(560,n*78+70),H=320,L=50,B=56,T=16,R=14,pw=W-L-R,ph=H-T-B;
+  var s=svgEl("svg",{viewBox:"0 0 "+W+" "+H,class:"lb",role:"img","aria-label":"Station load for "+n+" stations"+(C.takt!==null?" against a takt of "+s1(C.takt)+" seconds":"")+". The table below gives every figure.",style:"min-width:"+W+"px"});
+  var mx=niceMax(Math.max(C.max,C.takt||0)*1.08);
+  for(var i=0;i<=4;i++){var y=T+ph-ph*i/4;s.appendChild(svgEl("line",{x1:L,x2:W-R,y1:y,y2:y,class:"grid"}));s.appendChild(txt(String(Math.round(mx*i/4*10)/10),L-6,y+4,"end","mut"));}
+  var gw=pw/Math.max(n,1),bw=Math.min(46,gw*0.62);
+  C.stations.forEach(function(o,i){var cx=L+gw*i+gw/2,base=T+ph;
+    [["va","va"],["req","rq"],["waste","ws"],["none","uc"]].forEach(function(p){var v=o[p[0]];if(v<=0)return;var hh=v/mx*ph;base-=hh;s.appendChild(svgEl("rect",{x:(cx-bw/2).toFixed(1),y:base.toFixed(1),width:bw.toFixed(1),height:hh.toFixed(1),class:p[1]}));});
+    var ly=T+ph-o.time/mx*ph-5;if(C.takt!==null){var tyy=T+ph-C.takt/mx*ph;if(Math.abs(ly-tyy)<14)ly=tyy-9;}s.appendChild(txt(s1(o.time),cx,ly.toFixed(1),"middle"));
+    var nm=o.name||"(unnamed)";s.appendChild(txt(nm.length>12?nm.slice(0,11)+"…":nm,cx,H-B+16,"middle","mut"));
+    s.appendChild(txt((i+1)+(o.over?" over takt":""),cx,H-B+30,"middle","mut"));});
+  if(C.takt!==null){var ty=T+ph-C.takt/mx*ph;s.appendChild(svgEl("line",{x1:L,x2:W-R,y1:ty.toFixed(1),y2:ty.toFixed(1),class:"tk"}));s.appendChild(txt("Takt "+s1(C.takt)+" s",L+4,(ty-5).toFixed(1),"start","tkt"));}
+  return s;
+}
+function renderDash(){
+  var A=analyse(),C=A.C,k=$("kpis");k.innerHTML="";$("chY").innerHTML="";$("yTable").innerHTML="";
+  if(!C.stations.length){$("dashNote").textContent=D.elements.length?"There are no stations yet, so nothing can be charted.":"";return;}
+  $("dashNote").textContent=(A.gaps.length?"Gaps were found ("+A.gaps.length+"). The figures below leave out elements with no time or no station. Do not rely on them until the gaps are dealt with.":"")+(C.unassigned?" "+plural(C.unassigned,"element")+" ("+s1(C.unTime)+" s) not at any station.":"");
+  add(k,kpi(C.takt===null?"n/a":s1(C.takt)+" s","Takt"),kpi(s1(C.max)+" s","Slowest station"+(C.slow?": "+C.slow:"")),
+    kpi(pc(C.eff),"Balance efficiency, total ÷ (stations × slowest)",C.eff!==null&&C.eff<80?"warn":""),kpi(pc(C.delay),"Balance delay"),
+    kpi(C.n+(C.minSt!==null?" (floor "+C.minSt+")":""),"Stations used (fewest at this takt)"),
+    kpi(C.overN,"Stations over takt",C.overN?"crit":(C.takt===null?"":"ok")),
+    kpi(C.out===null?"n/a":C.out+(D.demand!==null?" of "+D.demand:""),"Output per shift at the slowest station, against demand",(C.out!==null&&D.demand!==null&&C.out<D.demand)?"crit":""),
+    kpi(pc(C.wasteShare),"Waste share of assigned time"),kpi(s1(C.unTime)+" s","Time not at any station",C.unTime?"warn":"ok"));
+  $("chY").appendChild(yChart(C));
+  var t=$("yTable");t.appendChild(h("thead",{},h("tr",{},["#","Station","Value-adding (s)","Necessary (s)","Waste (s)","Not classified (s)","Total (s)","Of takt"].map(function(x,i){return h("th",{class:i>1?"num":"",text:x});}))));
+  var tb=h("tbody");C.stations.forEach(function(o,i){tb.appendChild(h("tr",{},h("td",{text:String(i+1)}),h("td",{text:o.name||"(unnamed station)"}),[s1(o.va),s1(o.req),s1(o.waste),s1(o.none),s1(o.time),o.pct===null?"n/a":Math.round(o.pct)+"%"].map(function(v){return h("td",{class:"num",text:v});})));});
+  tb.appendChild(h("tr",{},h("th",{text:""}),h("th",{text:"All stations"}),[s1(C.cl.va),s1(C.cl.req),s1(C.cl.waste),s1(C.cl.none),s1(C.total),""].map(function(v){return h("th",{class:"num",text:v});})));
+  t.appendChild(tb);
+}
+
+/* ---------- dialog ---------- */
+function lb(t,c,full){return h("label",{class:full?"full":""},t,c);}
+function sel(list,val,id,blankLabel){var s=h("select",{id:id});s.appendChild(h("option",{value:"",text:blankLabel||"Choose"}));list.forEach(function(o){var op=h("option",{value:o[0],text:o[1]});if(o[0]===val)op.selected=true;s.appendChild(op);});return s;}
+function showDlg(){var d=$("dlg");if(typeof d.showModal==="function"){if(!d.open)d.showModal();}else d.setAttribute("open","");}
+function hideDlg(){var d=$("dlg");if(d.close)d.close();else d.removeAttribute("open");}
+function closeDlg(){var k=draft?(dk==="el"?"e":"s")+draft.id:"";hideDlg();draft=null;draftNew=false;var b=k&&document.querySelector('[data-k="'+k+'"]');if(b)b.focus();else{var a=$("btnAdd");if(a)a.focus();}}
+$("dlgCancel").onclick=closeDlg;$("dlgX").onclick=closeDlg;
+$("dlg").addEventListener("cancel",function(){draft=null;draftNew=false;});
+function find(list,id){for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return null;}
+function openEl(id){var c=find(D.elements,id);if(!c)return;dk="el";draft=JSON.parse(JSON.stringify(c));draftNew=false;buildDlg();showDlg();}
+function openSt(id){var c=find(D.stations,id);if(!c)return;dk="st";draft=JSON.parse(JSON.stringify(c));draftNew=false;buildDlg();showDlg();}
+function guardExample(){if(D.example){if(!confirm("The example is still loaded. Clear it first so your records are not mixed with made-up ones?"))return false;D=blank();touch();renderAll();}return true;}
+function newEl(station){if(D.elements.length>=MAXE)return;if(!guardExample())return;dk="el";draft=cleanEl({id:nextId(D.elements),station:station||0,name:"",cls:""});draftNew=true;buildDlg();showDlg();}
+function newSt(){if(D.stations.length>=MAXS)return;if(!guardExample())return;dk="st";draft=cleanSt({id:nextId(D.stations),name:"Station "+(D.stations.length+1)});draftNew=true;buildDlg();showDlg();}
+$("btnAdd").onclick=function(){var last=D.elements.length?D.elements[D.elements.length-1]:null;newEl(last?last.station:0);};
+$("btnAddSt").onclick=newSt;
+function val(id){var e=$(id);return e?e.value:"";}
+function pull(){if(!draft)return;
+  if(dk==="el"){draft.name=val("sN").slice(0,60);draft.time=num(val("sT"));var n=parseInt(val("sK"),10);draft.n=(isFinite(n)&&n>=0&&n<=999)?n:null;draft.cls=inList(val("sC"),CLS);draft.station=parseInt(val("sS"),10)||0;draft.note=val("sX").slice(0,200);}
+  else{draft.name=val("tN").slice(0,40);draft.note=val("tX").slice(0,200);}}
+function buildDlg(){
+  var b=$("dlgB"),d=draft;b.innerHTML="";
+  if(dk==="el"){$("dlgT").textContent=(draftNew?"New element":"Element")+(d.ex?" (Example)":"");
+    b.appendChild(h("div",{class:"f"},
+      lb("Element, a task not a person",h("input",{type:"text",id:"sN",value:d.name,maxlength:"60"}),true),
+      lb("Station",sel(stList(),String(d.station),"sS","Not assigned")),lb("Class",sel(CLS,d.cls,"sC","Not classified")),
+      lb("Time in seconds, as timed",h("input",{type:"number",id:"sT",min:"0",step:"any",value:d.time===null?"":String(d.time)})),lb("Number of timings taken",h("input",{type:"number",id:"sK",min:"0",max:"999",step:"1",value:d.n===null?"":String(d.n)})),
+      lb("Note",h("input",{type:"text",id:"sX",value:d.note,maxlength:"200"}),true)));
+    b.appendChild(h("p",{class:"sm",text:"Use the time you observed, not an allowance. Walking, waiting and rework are waste. Say in the note if the time is for a part of the cycle that does not happen every unit."}));
+    $("dlgDel").textContent="Delete element";$("dlgOk").textContent="Save element";
+  }else{$("dlgT").textContent=(draftNew?"New station":"Station")+(d.ex?" (Example)":"");
+    b.appendChild(h("div",{class:"f"},lb("Station name",h("input",{type:"text",id:"tN",value:d.name,maxlength:"40"}),true),lb("Note",h("input",{type:"text",id:"tX",value:d.note,maxlength:"200"}),true)));
+    b.appendChild(h("p",{class:"sm",text:"Deleting a station leaves its elements with no station. They are then flagged, not lost."}));
+    $("dlgDel").textContent="Delete station";$("dlgOk").textContent="Save station";}
+  $("dlgDel").hidden=draftNew;$("dlgAgain").hidden=!draftNew;$("dlgDel").classList.remove("armed");
+}
+function saveDraft(){if(!draft)return null;pull();var d=draft,L=dk==="el"?D.elements:D.stations;
+  if(draftNew)L.push(d);else{for(var i=0;i<L.length;i++)if(L[i].id===d.id)L[i]=d;}
+  if(dk==="el"&&!find(D.stations,d.station))d.station=0;touch();return d;}
+$("dlgOk").onclick=function(){saveDraft();hideDlg();draft=null;draftNew=false;renderAll();};
+$("dlgAgain").onclick=function(){var d=saveDraft();if(!d)return;renderAll();
+  if(dk==="el")draft=cleanEl({id:nextId(D.elements),station:d.station,name:"",cls:""});else draft=cleanSt({id:nextId(D.stations),name:"Station "+(D.stations.length+1)});
+  draftNew=true;buildDlg();};
+$("dlgDel").onclick=function(){var b=$("dlgDel"),lab=dk==="el"?"Delete element":"Delete station";
+  if(armed==="del"){var id=draft.id;
+    if(dk==="el")D.elements=D.elements.filter(function(i){return i.id!==id;});
+    else{D.stations=D.stations.filter(function(i){return i.id!==id;});D.elements.forEach(function(e){if(e.station===id)e.station=0;});}
+    armed=null;touch();hideDlg();draft=null;renderAll();return;}
+  armed="del";b.textContent="Confirm: delete";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent=lab;b.classList.remove("armed");},4000);};
+
+function renderChecks(){
+  var A=analyse(),fl=$("flagList");fl.innerHTML="";
+  if(!D.elements.length&&!D.stations.length){fl.appendChild(h("p",{class:"sm",text:"Nothing to check yet."}));return;}
+  function grp(title,list,cls){if(!list.length)return;add(fl,h("h3",{text:title+" ("+list.length+")"}));var ul=h("ul",{class:"fl"});
+    list.forEach(function(x){var li=h("li",{class:cls,text:x.msg+" "});
+      if(x.id&&x.k)li.appendChild(h("button",{class:"linkbtn",type:"button",text:"Open it",onclick:function(){showTab("log");if(x.k==="e")openEl(x.id);else openSt(x.id);}}));ul.appendChild(li);});fl.appendChild(ul);}
+  grp("Gaps",A.gaps,"g");grp("Notes",A.notes,"o");
+  if(!A.gaps.length&&!A.notes.length)fl.appendChild(h("p",{class:"sm",text:"No gaps or notes. A competent person must still judge the results."}));
+  add(fl,h("h3",{text:"Not checked by this tool"}),h("ul",{class:"fl"},h("li",{text:"The order the work must be done in, so a move between stations may break the sequence."}),h("li",{text:"Whether the times are true. Timings are as entered."}),h("li",{text:"Whether the people, equipment and training at a station allow the work you move there, or whether it is safe to do so."})));
+}
+
+/* ---------- exports ---------- */
+function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
+$("btnCsv").onclick=function(){
+  var C=calc(),map={};C.stations.forEach(function(o){map[o.id]=o;});
+  var head=["Product","Date timed","Takt (s)","Station","Station total (s)","Station of takt %","Element","Class","Time (s)","Timings","Note","Example"];
+  var rows=D.elements.map(function(e){var o=map[e.station];return [D.product,D.date,C.takt===null?"":Math.round(C.takt*100)/100,o?o.name:"Not assigned",o?Math.round(o.time*100)/100:"",(o&&o.pct!==null)?Math.round(o.pct*10)/10:"",e.name,e.cls?cname(e.cls):"Not classified",e.time===null?"":e.time,e.n===null?"":e.n,e.note,e.ex?"Example":""];});
+  download("line-balancing.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
+function buildReport(){
+  var r=$("report"),A=analyse(),C=A.C;r.innerHTML="";add(r,h("h1",{text:"Line balancing report"}));
+  if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
+  add(r,h("p",{text:"Printed "+fmt(today())+". "+(D.product||"No product named")+". Timed "+(D.date?fmt(D.date):"date not recorded")+". Timed by "+(D.timedBy||"not recorded")+", checked by "+(D.checkedBy||"not recorded")+"."}));
+  add(r,h("p",{class:"gapx",text:(!D.elements.length&&!D.stations.length)?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on these results until they are dealt with.":"No gaps found by the checks. A competent person must still judge the results."}));
+  var t=h("table",{});[["Takt",C.takt===null?"not set":s1(C.takt)+" s"],["Slowest station",C.max?s1(C.max)+" s ("+C.slow+")":"n/a"],["Balance efficiency",pc(C.eff)],["Balance delay",pc(C.delay)],["Stations used (fewest at this takt)",C.n+(C.minSt!==null?" ("+C.minSt+")":"")],["Stations over takt",String(C.overN)],["Output per shift at slowest station (demand)",C.out===null?"n/a":C.out+(D.demand!==null?" ("+D.demand+")":"")],["Waste share of assigned time",pc(C.wasteShare)],["Time not at any station",s1(C.unTime)+" s"]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
+  add(r,h("h2",{text:"Stations"}));
+  var t2=h("table",{}),h2=h("tr",{});["#","Station","Value-adding","Necessary","Waste","Not classified","Total (s)","Of takt"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);
+  C.stations.forEach(function(o,i){t2.appendChild(h("tr",{},[i+1,o.name,s1(o.va),s1(o.req),s1(o.waste),s1(o.none),s1(o.time),o.pct===null?"n/a":Math.round(o.pct)+"%"].map(function(v){return h("td",{text:String(v)});})));});add(r,t2);
+  add(r,h("h2",{text:"Elements"}));
+  var t3=h("table",{}),h3=h("tr",{});["Element","Station","Class","Time (s)","Timings"].forEach(function(x){h3.appendChild(h("th",{text:x}));});t3.appendChild(h3);
+  D.elements.forEach(function(e){t3.appendChild(h("tr",{},[e.name,stName(e.station)||"Not assigned",e.cls?cname(e.cls):"Not classified",s1(e.time),e.n===null?"":e.n].map(function(v){return h("td",{text:String(v)});})));});add(r,t3);
+  add(r,h("h2",{text:"Gaps and notes"}));
+  var l=A.gaps.map(function(x){return "GAP: "+x.msg;}).concat(A.notes.map(function(x){return "Note: "+x.msg;}));
+  if(!l.length)add(r,h("p",{text:"None."}));else{var u=h("ul",{});l.slice(0,80).forEach(function(x){u.appendChild(h("li",{text:x}));});add(r,u);}
+  add(r,h("p",{text:"Not checked: the order the work must be done in, whether the times are true, and whether the people and equipment at a station allow the work to move there. Decision support only."}));
+}
+$("btnPrint").onclick=function(){buildReport();window.print();};
+window.addEventListener("beforeprint",buildReport);
+
+function showTab(t){uiSet("tab",t);["log","dash","checks","guide"].forEach(function(x){$("tab-"+x).hidden=(x!==t);});
+  document.querySelectorAll("nav button").forEach(function(b){b.setAttribute("aria-selected",b.getAttribute("data-tab")===t?"true":"false");});
+  if(t==="dash")renderDash();if(t==="checks")renderChecks();}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){showTab(b.getAttribute("data-tab"));});});
+$("btnClear").onclick=function(){var b=$("btnClear");
+  if(armed==="clear"){D=blank();armed=null;touch();renderAll();b.textContent="Clear everything";b.classList.remove("armed");return;}
+  if(!D.elements.length&&!D.stations.length)return;armed="clear";b.textContent="Confirm: remove everything";b.classList.add("armed");clearTimeout(armT);armT=setTimeout(function(){armed=null;b.textContent="Clear everything";b.classList.remove("armed");},5000);};
+$("btnExample").onclick=function(){D=example();touch();renderAll();showTab("log");};
+$("btnSave").onclick=function(){download("line-balancing.json",JSON.stringify({app:"line-balancing",version:1,saved:new Date().toISOString(),data:D},null,2),"application/json");};
+$("btnLoad").onclick=function(){$("file").click();};
+$("file").addEventListener("change",function(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;
+  if(f.size>5000000){alert("That file is too large to be a line balancing data file.");ev.target.value="";return;}
+  var rd=new FileReader();rd.onload=function(){try{var d=JSON.parse(rd.result);if(!d||d.app!=="line-balancing"||!d.data)throw 0;D=clean(d.data);touch();renderAll();}catch(e){alert("That file could not be read. It is not a line balancing data file.");}ev.target.value="";};rd.readAsText(f);});
+
+function example(){
+  var o=blank();o.example=true;o.product="Example Product A";o.date=off(-3);o.avail=420;o.demand=420;o.timedBy="Example engineer";o.checkedBy="Example engineer";
+  var S=["Example 1","Example 2","Example 3","Example 4","Example 5"];
+  S.forEach(function(n,i){o.stations.push({id:i+1,name:n,note:"",ex:true});});
+  var id=0;function E(st,name,time,n,cls){id++;o.elements.push({id:id,name:name,station:st,time:time,n:n,cls:cls,note:"",ex:true});}
+  E(1,"Pick housing",12,5,"va");E(1,"Load fixture",16,5,"va");E(1,"Walk to rack",8,4,"waste");E(1,"Clamp",10,5,"req");
+  E(2,"Fit seal",22,5,"va");E(2,"Press bearing",30,2,"va");E(2,"Wait for press cycle",10,4,"waste");E(2,"Check fit",6,5,"");
+  E(3,"Torque bolts",35,5,"va");E(3,"Mark torque",8,5,"req");E(3,"Reposition part",14,4,"waste");
+  E(4,"Fit cover",24,5,"va");E(4,"Inspect",12,5,"req");
+  E(5,"Label",15,5,"va");E(5,"Final check",25,5,"req");E(5,"Pack",15,5,"va");
+  return clean(o);
+}
+
+var sv=load();if(sv)D=sv;else{D=example();saveNow();}
+renderAll();renderSave();
+var ui=uiGet();showTab(["log","dash","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"log");
+window.__lb={analyse:analyse,calc:calc,takt:takt,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
+})();
+</script>
+<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<script>
+(function(){
+  if (document.getElementById('hub-link-host')) return;
+  var host = document.createElement('rm-hub-link');
+  host.id = 'hub-link-host';
+  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
+  var root = host.attachShadow({mode:'open'});
+  root.innerHTML =
+    '<style>' +
+    ':host{all:initial}' +
+    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
+    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
+    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
+    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
+    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
+    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
+    '@media print{a{display:none}}' +
+    '</style>' +
+    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
+  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
+  document.documentElement.appendChild(host);
+})();
+</script>
+<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
+</body>
+</html>
