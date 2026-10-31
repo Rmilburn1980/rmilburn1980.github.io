@@ -106,7 +106,9 @@ h1 .hi{background:linear-gradient(90deg,#a78bfa,#22d3ee);-webkit-background-clip
 .pulse{flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:pulse 2s infinite}
 @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
 .open strong{color:var(--green)}
-.actions{display:flex;flex-wrap:wrap;gap:10px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.open{width:fit-content;max-width:100%;margin-left:auto;margin-right:auto;justify-content:center;text-align:center}
+.sub-actions{text-align:center}
 .btn{display:inline-flex;align-items:center;min-height:46px;padding:0 20px;border-radius:10px;font-weight:700;font-size:.95rem;border:1px solid var(--line);background:var(--panel)}
 .btn.primary{background:linear-gradient(90deg,#8b5cf6,#22d3ee);color:#06061a;border-color:transparent;box-shadow:0 0 24px rgba(139,92,246,.45)}
 .btn:hover,.btn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
