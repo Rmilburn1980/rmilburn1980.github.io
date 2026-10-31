@@ -29,9 +29,22 @@
   --rm-display:"Special Gothic","Arial Narrow","Helvetica Neue Condensed","Roboto Condensed",system-ui,sans-serif;
   /* pages that name their own heading font (Barlow Condensed etc.) now share the hub display font */
   --font-head:var(--rm-display);
+  /* the pages that keep fonts in variables (skills matrix, DMAIC, QEC, Gemba) pick the body and display fonts up here.
+     Their monospace variables (--font-mono, --f-mono) are left alone on purpose. */
+  --rm-body:"Special Gothic",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-body:var(--rm-body);
+  --f-body:var(--rm-body);
+  --font-display:var(--rm-display);
+  --f-display:var(--rm-display);
 }
 
 html{background:var(--bg)}
+
+/* body text: Special Gothic everywhere, forms included (inputs do not inherit by default).
+   Monospace spots keep their own font so figures still line up. */
+body,button,input,select,textarea{
+  font-family:"Special Gothic",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
 body{
   background-color:var(--bg);
   background-image:
@@ -75,6 +88,11 @@ a{color:var(--accent)}
 .hub,.hub-link,.backlink,.back{
   background-color:rgba(34,211,238,.08);
 }
+
+/* two small leftovers: the 5 Whys disclaimer sets its own font later in the page, and the Swiss cheese layer numbers are SVG text.
+   Other SVG diagram labels (SIPOC map) are measured in script, so they are left alone. */
+p.rm-disc{font-family:var(--rm-body)}
+svg text[font-family^="system-ui"]{font-family:var(--rm-body)}
 
 @media print{
   body{background-image:none}
