@@ -346,7 +346,7 @@ function renderStatus(){
 function stList(){return D.stations.map(function(s){return [String(s.id),s.name||"(unnamed station)"];});}
 function renderStations(){
   var t=$("stTable");t.innerHTML="";var C=calc();
-  t.appendChild(h("thead",{},h("tr",{},["Order","Station","Elements","Time (s)","Of takt","Result",""].map(function(x,i){return h("th",{class:(i>=2&&i<=4)?"num":"",text:x});}))));
+  t.appendChild(h("thead",{},h("tr",{},["Order","Station","Elements","Time (s)","Of takt","Result","Actions"].map(function(x,i){return h("th",{class:(i>=2&&i<=4)?"num":"",text:x});}))));
   var tb=h("tbody");
   if(!C.stations.length)tb.appendChild(h("tr",{},h("td",{colspan:"7",text:"No stations yet."})));
   C.stations.forEach(function(o,i){var st=D.stations[i],res=C.takt===null?["y","No takt"]:o.over?["r","Over takt"]:o.low?["y","Under "+LOW+"% of takt"]:o.count?["ok","Within takt"]:["y","Empty"];
@@ -359,7 +359,7 @@ function moveSt(i,d){var j=i+d;if(j<0||j>=D.stations.length)return;var a=D.stati
 function renderRows(){
   var t=$("rows");t.innerHTML="";
   var list=D.elements.slice();
-  t.appendChild(h("thead",{},h("tr",{},["Element","Station","Time (s)","Timings","Class",""].map(function(x,i){return h("th",{class:(i===2||i===3)?"num":"",text:x});}))));
+  t.appendChild(h("thead",{},h("tr",{},["Element","Station","Time (s)","Timings","Class","Actions"].map(function(x,i){return h("th",{class:(i===2||i===3)?"num":"",text:x});}))));
   var tb=h("tbody");
   if(!list.length)tb.appendChild(h("tr",{},h("td",{colspan:"6",text:"Nothing here yet."})));
   list.forEach(function(e){

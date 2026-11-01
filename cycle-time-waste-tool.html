@@ -15,7 +15,7 @@
     --red:#FF3B5C;
     --text:#F1F5F9;
     --muted:#8B9CB5;
-    --dim:#5A6B85;
+    --dim:#94a5c2;
   }
   *{box-sizing:border-box;}
   body{
@@ -447,9 +447,9 @@
 <link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
 </head>
 <body>
-<div class="wrap">
+<div class="wrap" role="main">
 
-  <header>
+  <header role="none">
     <div>
       <h1>Cycle Time &amp; Waste Analysis Tool</h1>
       <p class="subtitle">Time observation, VA/NVA split and TIMWOODS waste breakdown</p>
@@ -561,7 +561,7 @@
             <th>VA/NVA</th>
             <th>Waste Type</th>
             <th>Notes / Action</th>
-            <th></th>
+            <th><span style="position:absolute;left:-9999px">Actions</span></th>
           </tr>
         </thead>
         <tbody id="stepsBody"></tbody>
@@ -589,7 +589,7 @@
     </div>
   </div>
 
-  <footer>
+  <footer role="none">
     Cycle Time &amp; Waste Analysis Tool &middot; Continuous Improvement toolkit<br>
     Data saves automatically in this browser only &mdash; it will not appear on another device or browser. Use Export Backup / Import Backup to move a study between them.
   <br>Decision support only. It does not replace a competent person's judgement, a formal assessment or your own legal duties, and nothing here is a certification, audit result or proof of compliance. Provided free and as is, without warranty. If you enter names, your employer is responsible for that data. Use initials or roles, and follow your company's data rules.</footer>
@@ -1147,6 +1147,24 @@
 
   load();
 })();
+
+  // Give every control in the steps table an accessible name from its column and row.
+  (function(){
+    var tb=document.getElementById('stepsBody');
+    function label(){
+      tb.querySelectorAll('tr').forEach(function(tr,i){
+        tr.querySelectorAll('input,select,button').forEach(function(c){
+          if(c.getAttribute('aria-label'))return;
+          var td=c.closest('td');var l=td&&td.dataset.label;
+          if(!l&&c.tagName==='BUTTON')l='Delete step';
+          if(!l&&c.type==='text')l='Notes or action';
+          if(l)c.setAttribute('aria-label',l+', step '+(i+1));
+        });
+      });
+    }
+    new MutationObserver(label).observe(tb,{childList:true,subtree:true});
+    label();
+  })();
 </script>
 <!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
 <script>

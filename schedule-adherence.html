@@ -321,7 +321,7 @@ function renderRows(){
   var list=D.rows.filter(function(r){return !range||!r.date||r.date>td||daysBetween(r.date,td)<range;});
   list.sort(function(a,b){return (b.date||"").localeCompare(a.date||"")||a.line.localeCompare(b.line)||a.block.localeCompare(b.block);});
   var shown=list.slice(0,300);
-  t.appendChild(h("thead",{},h("tr",{},["Date","Line","Block","Planned","Actual","Of plan","Result","Reason",""].map(function(x,i){return h("th",{class:(i>=3&&i<=5)?"num":"",text:x});}))));
+  t.appendChild(h("thead",{},h("tr",{},["Date","Line","Block","Planned","Actual","Of plan","Result","Reason","Actions"].map(function(x,i){return h("th",{class:(i>=3&&i<=5)?"num":"",text:x});}))));
   var tb=h("tbody");
   if(!shown.length)tb.appendChild(h("tr",{},h("td",{colspan:"9",text:D.rows.length?"No records in this range.":"Nothing here yet."})));
   shown.forEach(function(r){var j=judge(r),res={met:["ok","On plan"],miss:["r","Missed"],noact:["y","No actual"],noplan:["y","No plan"]}[j];

@@ -327,7 +327,7 @@ function renderStatus(){
 /* ---------- steps ---------- */
 function renderRows(){
   var t=$("rows");t.innerHTML="";var C=calc(),by={};C.rows.forEach(function(r){by[r.id]=r;});
-  t.appendChild(h("thead",{},h("tr",{},["#","Step","Walk","Manual","Auto","Operator waits","Starts at","Key point",""].map(function(x,i){return h("th",{class:(i===2||i===3||i===4||i===6)?"num":"",text:x});}))));
+  t.appendChild(h("thead",{},h("tr",{},["#","Step","Walk","Manual","Auto","Operator waits","Starts at","Key point","Actions"].map(function(x,i){return h("th",{class:(i===2||i===3||i===4||i===6)?"num":"",text:x});}))));
   var tb=h("tbody");
   if(!D.steps.length)tb.appendChild(h("tr",{},h("td",{colspan:"9",text:"Nothing here yet."})));
   D.steps.forEach(function(e,i){var r=by[e.id];

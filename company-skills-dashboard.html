@@ -113,13 +113,13 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 
 <section id="tab-over">
   <div class="kpis" id="kpis"></div>
-  <div class="card"><h2>Teams</h2><div class="tablewrap"><table id="teamTable"></table></div></div>
+  <div class="card"><h2>Teams</h2><div class="tablewrap" tabindex="0" role="region" aria-label="Teams table"><table id="teamTable"></table></div></div>
   <div class="card"><h2>What needs attention first</h2><div id="priority"></div></div>
 </section>
 
 <section id="tab-skills" hidden>
   <p class="disc">Skills with the same name in different teams are grouped. The coverage is the number of people signed off in date, against the number each team said it needs.</p>
-  <div class="card"><div class="tablewrap"><table id="skillTable"></table></div></div>
+  <div class="card"><div class="tablewrap" tabindex="0" role="region" aria-label="Skills table"><table id="skillTable"></table></div></div>
 </section>
 
 <section id="tab-teams" hidden><div id="teamDetail"></div></section>
