@@ -238,6 +238,13 @@ footer a{color:var(--cyan)}
 @media (min-width:700px){.startgrid{grid-template-columns:repeat(3,1fr)}}
 @media (min-width:1000px){.startgrid{grid-template-columns:repeat(5,1fr)}}
 .how{padding:34px var(--gutter) 10px}.how h2{font-size:1.1rem;margin:0 0 8px}.how ul{margin:0;padding-left:20px;color:var(--muted)}.how li{margin:5px 0}.how li b{color:var(--text)}
+
+/* about */
+.about{display:flex;gap:20px;align-items:center;margin:22px 0 0;padding:16px;border-radius:var(--radius)}
+.about img{flex:0 0 auto;width:132px;height:132px;border-radius:14px;object-fit:cover;border:1px solid var(--line)}
+.about blockquote{margin:0 0 8px;font-size:1.15rem;font-weight:700;line-height:1.35;color:var(--text)}
+.about p{margin:0;color:var(--muted);font-size:.95rem}
+@media (max-width:600px){.about{flex-direction:column;align-items:flex-start}.about img{width:100%;height:auto;aspect-ratio:1/1;max-width:260px}}
 </style>
 </head>
 <body>
@@ -268,6 +275,14 @@ footer a{color:var(--cyan)}
       <a class="btn" href="#proof">See the results</a>
     </div>
     <p class="sub-actions">Prefer to read it first? <a href="Richard-Milburn-CV.pdf" target="_blank" rel="noopener">Open the CV in a new tab</a>.</p>
+
+    <figure class="about glass" id="about" style="margin-left:0;margin-right:0">
+      <img src="richard-milburn.jpg" width="440" height="440" alt="Richard Milburn" loading="lazy" decoding="async">
+      <figcaption>
+        <blockquote>&ldquo;My biggest asset isn&rsquo;t the machinery or the best tools. It&rsquo;s the people on the floor.&rdquo;</blockquote>
+        <p>Richard Milburn. I started as a caravan production operative in 2004 and spent 21 years at Erwin Hymer Group UK, moving up through Production Key Operative to Team Leader and Cell Leader of 29 people across 260 processes. I learned the job from the floor up.</p>
+      </figcaption>
+    </figure>
 
     <div class="board-wrap">
       <div class="board-title"><h2>SQCDP, the framework behind every dashboard</h2><span>Tap a letter to open the evidence</span></div>
