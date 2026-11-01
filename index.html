@@ -225,6 +225,19 @@ footer a{color:var(--cyan)}
   .pulse,.ring .val{animation:none}
 }
 .kick{font-size:clamp(1.1rem,2.6vw,1.5rem);font-weight:700;color:var(--text,#f1f2ff);margin:-.2rem 0 1rem}
+
+/* start here */
+.start{margin:22px 0 0}
+.start h3{font-size:.95rem;margin:0 0 4px}
+.start p.hint{color:var(--muted);font-size:.85rem;margin:0 0 10px}
+.startgrid{display:grid;grid-template-columns:1fr;gap:10px}
+.startgrid a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:inset 4px 0 0 var(--c);color:var(--text);text-decoration:none}
+.startgrid a:hover,.startgrid a:focus-visible{background:var(--panel2);outline:none;border-color:var(--c)}
+.startgrid b{display:block}.startgrid span{display:block;color:var(--muted);font-size:.85rem;margin-top:2px}
+.startgrid em{font-style:normal;color:var(--c);font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+@media (min-width:700px){.startgrid{grid-template-columns:repeat(3,1fr)}}
+@media (min-width:1000px){.startgrid{grid-template-columns:repeat(5,1fr)}}
+.how{padding:34px var(--gutter) 10px}.how h2{font-size:1.1rem;margin:0 0 8px}.how ul{margin:0;padding-left:20px;color:var(--muted)}.how li{margin:5px 0}.how li b{color:var(--text)}
 </style>
 </head>
 <body>
@@ -277,9 +290,9 @@ footer a{color:var(--cyan)}
           <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="tr" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><b class="sm">86.6%</b></div>
           <div><h3>Cross-training coverage</h3><div class="big">86.6% <small>in two years</small></div><p>Up from 36%. As stated on my CV.</p></div>
         </div>
-        <div class="kpi" style="--c:var(--pink);--p:.977">
-          <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="tr" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><b class="sm">97.7%</b></div>
-          <div><h3>SOP and QVA audit</h3><div class="big">97.7% <small>critical process coverage</small></div><p>Audited SOPs and QVAs to 97.7% critical process coverage. As stated on my CV.</p></div>
+        <div class="kpi" style="--c:var(--pink);--p:.988">
+          <div class="ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="tr" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42"/></svg><b class="sm">98.8%</b></div>
+          <div><h3>3x3 critical SOP cover</h3><div class="big">98.8% <small>85 of 86 SOPs</small></div><p>Critical-to-quality SOPs with three or more trained operators, up from 70% in September 2025. All 36 in Bays 5 to 8. From my competency matrix.</p></div>
         </div>
         <div class="kpi plain" style="--c:var(--amber)">
           <div><h3>Qualifications</h3><div class="big">Green Belt</div><p>Lean Six Sigma, CSSC accredited, July 2026.</p>
@@ -319,6 +332,17 @@ footer a{color:var(--cyan)}
         <a class="role" style="--c:var(--pink)" href="#ci"><b>Continuous Improvement</b><span>For improvement roles. Root cause with data, measuring the work, and gains that stick.</span><em>11 tools</em></a>
         <a class="role" style="--c:var(--rose)" href="#ehs"><b>EHS and Production Supervisor</b><span>For safety and supervisor roles. Incident, risk and corrective action tools, and safety ownership on the line.</span><em>8 tools</em></a>
       </div>
+      <div class="start">
+        <h3>Short on time? Open these five first.</h3>
+        <p class="hint">One for each way I could help. The other tools are below.</p>
+        <div class="startgrid">
+          <a style="--c:var(--green)" href="sqcdp-dashboard/"><em>Operations Manager</em><b>SQCDP dashboard</b><span>How I run a line to five measures.</span></a>
+          <a style="--c:var(--pink)" href="dmaic-fpy-dashboard.html"><em>Continuous Improvement</em><b>DMAIC and FPY board</b><span>First pass yield from 58% to 92%.</span></a>
+          <a style="--c:var(--cyan)" href="skills-matrix-dashboard.html"><em>People development</em><b>Skills matrix</b><span>Cross-training and the 3x3 programme.</span></a>
+          <a style="--c:var(--rose)" href="ehs-dashboard/"><em>EHS and Supervisor</em><b>EHS readiness dashboard</b><span>Safety reporting and ISO 14001:2026 gaps.</span></a>
+          <a style="--c:var(--amber)" href="line-balancing.html"><em>Production</em><b>Line balancing tool</b><span>Station times, takt and balance efficiency.</span></a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -337,7 +361,7 @@ footer a{color:var(--cyan)}
           <span class="kind">Dashboard</span>
           <h3>Skills matrix and cross-training impact</h3>
           <p>Skills by operator as radars or a matrix, the 3x3 cross-training programme, and how I developed people.</p>
-          <div class="result">Coverage from 36% to 86.6% in two years. Three roles from about 70% to 100% in five months.</div>
+          <div class="result">Coverage from 36% to 86.6% in two years. 85 of 86 critical SOPs now have three or more trained operators (98.8%), up from 70% in September 2025.</div>
           <span class="note">Team totals are as stated on my CV. Person-level detail is illustrative and names are anonymised.</span>
           <span class="open-link">Open dashboard</span>
         </a>
@@ -545,6 +569,15 @@ footer a{color:var(--cyan)}
         <div><h3>The evidence</h3><ul><li><a href="ehs-dashboard/">EHS readiness dashboard</a></li><li><a href="incident-log.html">Incident and near-miss log</a></li><li><a href="risk-assessment-dashboard.html">Risk assessment dashboard</a></li></ul></div>
       </div>
     </details>
+  </section>
+  <section class="wrap how" id="how" aria-labelledby="how-h">
+    <h2 id="how-h">How I build these</h2>
+    <ul>
+      <li><b>Gaps are shown, not hidden.</b> A tool says "Gaps found. Do not rely on this" when its checks fail, and "No gaps found by these checks" only when they pass. It never says something is safe or compliant.</li>
+      <li><b>Example data is labelled.</b> Anything that is not a real figure says so on the page.</li>
+      <li><b>Figures say where they come from.</b> Each result names its source, such as my tracker, my CV or my scrap document, and notes what has not been checked against company records.</li>
+      <li><b>Your data stays with you.</b> Every tool runs in your browser with no sign-in. Nothing is sent to me.</li>
+    </ul>
   </section>
 </main>
 
