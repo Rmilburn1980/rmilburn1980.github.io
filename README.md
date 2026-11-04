@@ -10,7 +10,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## What is in it
 
-27 tools. Every link opens the working page.
+28 tools. Every link opens the working page.
 
 ### Operations
 | Tool | What it does |
@@ -42,7 +42,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 ### EHS
 | Tool | What it does |
 |---|---|
-| [EHS Readiness Dashboard](https://rmilburn1980.github.io/ehs-dashboard/) | Safety evidence, an ISO 14001:2026 self-assessment, the H&S management system on the POPMAR model, and a qualifications roadmap. The self-assessment is not an audit. |
+| [EHS Readiness Dashboard](https://rmilburn1980.github.io/ehs-dashboard/) | Safety evidence, an ISO 14001:2026 self-assessment, the H&S management system on the POPMAR model, a qualifications roadmap, and a regulatory intelligence maturity model. The self-assessment is not an audit. |
 | [Risk Assessment Dashboard](https://rmilburn1980.github.io/risk-assessment-dashboard.html) | A 5 x 5 risk register where residual scores only count once a control is verified working. |
 | [Swiss Cheese Layers of Defence](https://rmilburn1980.github.io/swiss-cheese-dashboard.html) | Layers of defence tested with real check counts, cautious figures and how weak the evidence is. |
 | [Corrective Action Tracker](https://rmilburn1980.github.io/corrective-action-tracker.html) | Actions from audits, incidents and risk reviews tracked to closure. An action only closes once someone other than its owner has checked it. |
@@ -50,6 +50,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Quick Exposure Check](https://rmilburn1980.github.io/qec-ergonomics-dashboard.html) | Ergonomics exposure scored from observer and worker answers. Prints a one-record assessment. |
 | [Causal Tree Builder](https://rmilburn1980.github.io/causal-tree-builder.html) | An incident traced through immediate, underlying and root causes as a tree of facts. Flags assumed evidence. |
 | [Incident and Near-Miss Log](https://rmilburn1980.github.io/incident-log.html) | Logs incidents and near misses, checks each against the RIDDOR 2013 reporting rules, and shows overdue reports and actions closed without an independent check. |
+| [Regulatory Intelligence Maturity](https://rmilburn1980.github.io/ehs-dashboard/#regint) | Five levels of how a workplace tracks and acts on changing EHS law, a 10 question scorer and a printable one-page interview summary. A conversation tool, not an audit. |
 
 ## About the figures
 
