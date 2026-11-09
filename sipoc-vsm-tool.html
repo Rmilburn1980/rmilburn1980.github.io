@@ -285,6 +285,7 @@ input.bad{border-color:var(--red)}
   </div>
 
   <div class="vsm-actions">
+    <button type="button" id="btnFromSipoc">Use steps from SIPOC</button>
     <button type="button" id="btnAddStep" class="primary">Add process step</button>
     <button type="button" id="btnFillWait">Fill waits from queue size</button>
     <label class="chk"><input type="checkbox" id="detailChk"> Show detailed fields</label>
@@ -900,6 +901,20 @@ $('#detailChk').addEventListener('change',function(){state.detail=this.checked;r
 $('#btnAddStep').addEventListener('click',function(){
   state.vsm.steps.push(newStep());renderVsmForm();refresh();persist();
   var inp=document.querySelector('#steps input[data-f="name"][data-i="'+(state.vsm.steps.length-1)+'"]');if(inp)inp.focus();
+});
+$('#btnFromSipoc').addEventListener('click',function(){
+  var names=state.sipoc.P.map(function(x){return x.trim()}).filter(Boolean);
+  if(!names.length){setStatus('Add at least one process step in the SIPOC first.',false);return}
+  snapshot();
+  var old=state.vsm.steps.slice();
+  state.vsm.steps=names.map(function(n){
+    var j=-1;
+    for(var q=0;q<old.length;q++){if(old[q]&&(old[q].name||'').trim().toLowerCase()===n.toLowerCase()){j=q;break}}
+    if(j>-1){var keep=old[j];old[j]=null;keep.name=n;return keep}
+    var st=newStep();st.name=n;return st;
+  });
+  renderVsmForm();refresh();persist();
+  setStatus('Loaded '+names.length+' step'+(names.length===1?'':'s')+' from the SIPOC. Times for steps with the same name were kept.',true);
 });
 $('#btnFillWait').addEventListener('click',function(){
   var k=calc();
