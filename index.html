@@ -251,6 +251,25 @@ footer a{color:var(--cyan)}
 .refs blockquote{margin:0;color:var(--text);font-size:1rem;line-height:1.6}
 .refs blockquote p{margin:0 0 10px}
 .refs figcaption{margin-top:6px;color:var(--muted);font-size:.9rem;font-weight:700}
+
+/* graphics */
+.tile{position:relative}
+.tile .kind{min-height:40px;display:flex;align-items:center;padding-right:76px}
+.tile .tg{position:absolute;top:16px;right:16px;width:64px;height:44px;color:var(--c);opacity:.95;pointer-events:none}
+.figrow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.rg{flex:0 0 auto;width:88px;height:44px;color:var(--c)}
+.case .chart{margin:0;min-width:0;grid-column:1/-1}
+.case .chart svg{display:block;width:100%;max-width:440px;height:auto;margin:6px 0 4px}
+.case .chart figcaption{font-size:.82rem;color:var(--muted)}
+.chart .gl{stroke:rgba(185,184,218,.28);stroke-width:1}
+.chart .ax{fill:var(--muted);font-size:11px;font-family:inherit}
+.chart .hd{fill:var(--text);font-size:11.5px;font-weight:700;font-family:inherit}
+.chart .lb{fill:var(--text);font-size:12px;font-weight:700;font-family:inherit}
+.chart .ln{fill:none;stroke:var(--c);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.chart .dot{fill:var(--c);stroke:var(--bg);stroke-width:2}
+.chart .band{fill:var(--c);opacity:.12}
+.chart .b0{fill:var(--c);opacity:.38}
+.chart .b1{fill:var(--c)}
 </style>
 </head>
 <body>
@@ -358,11 +377,13 @@ footer a{color:var(--cyan)}
 </header>
 
 <main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="tg0" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="18" width="9" height="22" rx="2" fill="currentColor"/><rect x="15" y="10" width="9" height="30" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="27" y="22" width="9" height="18" rx="2" fill="currentColor"/><rect x="39" y="6" width="9" height="34" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="51" y="14" width="9" height="26" rx="2" fill="currentColor"/></symbol><symbol id="tg1" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="32,3 52,16 45,39 19,39 12,16" /><polygon points="32,11 44,19 40,33 22,35 19,19" fill="currentColor" fill-opacity=".28"/><path d="M32 3v36M12 16l33 23M52 16L19 39" stroke-opacity=".35"/></symbol><symbol id="tg2" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="10" height="9" rx="2" fill="currentColor"/><rect x="20" y="4" width="10" height="9" rx="2" fill="currentColor"/><rect x="34" y="4" width="10" height="9" rx="2" fill="currentColor"/><rect x="48" y="4" width="10" height="9" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="6" y="17" width="10" height="9" rx="2" fill="currentColor"/><rect x="20" y="17" width="10" height="9" rx="2" fill="currentColor"/><rect x="34" y="17" width="10" height="9" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="48" y="17" width="10" height="9" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="6" y="30" width="10" height="9" rx="2" fill="currentColor"/><rect x="20" y="30" width="10" height="9" rx="2" fill="currentColor"/><rect x="34" y="30" width="10" height="9" rx="2" fill="currentColor"/><rect x="48" y="30" width="10" height="9" rx="2" fill="currentColor"/></symbol><symbol id="tg3" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="25" y="3" width="14" height="9" rx="2" fill="currentColor"/><path d="M32 12v8M12 26v-6h40v6M32 20v6"/><rect x="5" y="26" width="14" height="14" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="25" y="26" width="14" height="14" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="45" y="26" width="14" height="14" rx="2" fill="currentColor" fill-opacity=".28"/></symbol><symbol id="tg4" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 38a24 24 0 0 1 48 0" stroke-opacity=".35"/><path d="M8 38a24 24 0 0 1 36-20.8"/><path d="M32 38l13-17"/><circle cx="32" cy="38" r="3" fill="currentColor"/></symbol><symbol id="tg5" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="58" height="36" rx="3"/><path d="M14.6 4v36M26.2 4v36M37.8 4v36M49.4 4v36" stroke-opacity=".4"/><circle cx="8.8" cy="14" r="3" fill="currentColor"/><circle cx="20.4" cy="26" r="3" fill="currentColor"/><circle cx="32.0" cy="18" r="3" fill="currentColor"/><circle cx="43.599999999999994" cy="30" r="3" fill="currentColor"/><circle cx="55.2" cy="22" r="3" fill="currentColor"/></symbol><symbol id="tg6" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 4a12 12 0 0 0-7 21.7V30h14v-4.3A12 12 0 0 0 32 4z" fill="currentColor" fill-opacity=".28"/><path d="M26 35h12M28 40h8M32 14v9M28 18l4-4 4 4"/></symbol><symbol id="tg7" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="20" width="8" height="20" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="17" y="14" width="8" height="26" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="29" y="26" width="8" height="14" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="41" y="10" width="8" height="30" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="53" y="16" width="8" height="24" rx="1.5" fill="currentColor" fill-opacity=".28"/><path d="M3 16h58" stroke-dasharray="4 3"/><path d="M9 22l12-6 12 12 12-16 12 6"/></symbol><symbol id="tg8" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h56" stroke-dasharray="4 3" stroke-opacity=".6"/><path d="M4 30l8-6 8 4 8-10 8 8 8-4 8-6 8-14"/><circle cx="60" cy="8" r="3" fill="currentColor"/><path d="M4 40h56" stroke-opacity=".35"/></symbol><symbol id="tg9" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5" fill="currentColor" fill-opacity=".28"/><circle cx="20" cy="15" r="5" fill="currentColor" fill-opacity=".28"/><circle cx="32" cy="22" r="5" fill="currentColor" fill-opacity=".28"/><circle cx="44" cy="29" r="5" fill="currentColor" fill-opacity=".28"/><circle cx="56" cy="36" r="5" fill="currentColor"/><path d="M12 11l4 2M24 18l4 2M36 25l4 2M48 32l4 2"/></symbol><symbol id="tg10" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="18" width="8" height="22" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="17" y="8" width="8" height="32" rx="1.5" fill="currentColor"/><rect x="29" y="22" width="8" height="18" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="41" y="14" width="8" height="26" rx="1.5" fill="currentColor" fill-opacity=".28"/><rect x="53" y="16" width="8" height="24" rx="1.5" fill="currentColor" fill-opacity=".28"/><path d="M2 14h60" stroke-dasharray="4 3"/></symbol><symbol id="tg11" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v36h56" stroke-opacity=".4"/><rect x="8" y="7" width="16" height="5" rx="2" fill="currentColor"/><path d="M24 12c4 0 2 6 6 6"/><rect x="30" y="16" width="12" height="5" rx="2" fill="currentColor"/><path d="M42 18h12" stroke-dasharray="3 3"/><path d="M42 21c4 0 0 6 4 6"/><rect x="46" y="25" width="10" height="5" rx="2" fill="currentColor"/><path d="M50 4v36" stroke-dasharray="4 3" stroke-opacity=".6"/></symbol><symbol id="tg12" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="25" r="15"/><path d="M28 4h8M32 4v6M44 12l3-3"/><path d="M32 25V15" /><path d="M32 25A0 0 0 0 1 32 25L32 10A15 15 0 0 1 45 32.5z" fill="currentColor" fill-opacity=".28" stroke="none"/></symbol><symbol id="tg13" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="24" r="13"/><path d="M18 24v-8M18 24l6 4M14 6h8"/><rect x="38" y="10" width="22" height="5" rx="2" fill="currentColor"/><rect x="38" y="20" width="16" height="5" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="38" y="30" width="20" height="5" rx="2" fill="currentColor" fill-opacity=".28"/></symbol><symbol id="tg14" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="32.0" cy="5.0" r="4" fill="currentColor"/><circle cx="45.3" cy="11.4" r="4" fill="currentColor"/><circle cx="48.6" cy="25.8" r="4" fill="currentColor"/><circle cx="39.4" cy="37.3" r="4" fill="currentColor"/><circle cx="24.6" cy="37.3" r="4" fill="currentColor"/><circle cx="15.4" cy="25.8" r="4" fill="currentColor" fill-opacity=".28"/><circle cx="18.7" cy="11.4" r="4" fill="currentColor" fill-opacity=".28"/><path d="M26 22l4 4 8-9"/></symbol><symbol id="tg15" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.0" y="6" width="9" height="12" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="14.6" y="6" width="9" height="12" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="27.2" y="6" width="9" height="12" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="39.8" y="6" width="9" height="12" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="52.4" y="6" width="9" height="12" rx="2" fill="currentColor" fill-opacity=".28"/><path d="M6 30h10l4 6h8l4-6h10l4 6h12" /><path d="M11 21v5M36.5 21v5M58 21v5" stroke-opacity=".5"/></symbol><symbol id="tg16" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h58M3 37h58" stroke-dasharray="4 3" stroke-opacity=".6"/><path d="M3 22h58" stroke-opacity=".35"/><path d="M4 24l7-6 7 9 7-12 7 8 7-4 7 10 7-25 7 14"/><circle cx="53" cy="4" r="3" fill="currentColor"/></symbol><symbol id="tg17" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 36c8 0 6-12 16-12s8 10 16 10 6-22 16-22" stroke-dasharray="4 3"/><circle cx="8" cy="36" r="4" fill="currentColor"/><circle cx="24" cy="24" r="4" fill="currentColor" fill-opacity=".28"/><circle cx="40" cy="34" r="4" fill="currentColor" fill-opacity=".28"/><path d="M56 3a6 6 0 0 0-6 6c0 4 6 9 6 9s6-5 6-9a6 6 0 0 0-6-6z" fill="currentColor"/></symbol><symbol id="tg18" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="56" height="36" rx="3"/><path d="M32 4v36M4 16h28M4 28h28M32 22h28"/><rect x="8" y="8" width="12" height="4" rx="1" fill="currentColor" stroke="none"/><rect x="36" y="8" width="18" height="4" rx="1" fill="currentColor" fill-opacity=".28" stroke="none"/><path d="M37 34l5-5 4 3 8-6"/></symbol><symbol id="tg19" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 3l20 7v12c0 10-8 17-20 20C20 39 12 32 12 22V10z" fill="currentColor" fill-opacity=".28"/><path d="M23 22l6 6 12-13"/></symbol><symbol id="tg20" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6.0" y="3" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.60" stroke="none"/><rect x="16.6" y="3" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.71" stroke="none"/><rect x="27.2" y="3" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.82" stroke="none"/><rect x="37.8" y="3" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.93" stroke="none"/><rect x="48.4" y="3" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="1.00" stroke="none"/><rect x="6.0" y="11" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.49" stroke="none"/><rect x="16.6" y="11" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.60" stroke="none"/><rect x="27.2" y="11" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.71" stroke="none"/><rect x="37.8" y="11" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.82" stroke="none"/><rect x="48.4" y="11" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.93" stroke="none"/><rect x="6.0" y="19" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.38" stroke="none"/><rect x="16.6" y="19" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.49" stroke="none"/><rect x="27.2" y="19" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.60" stroke="none"/><rect x="37.8" y="19" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.71" stroke="none"/><rect x="48.4" y="19" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.82" stroke="none"/><rect x="6.0" y="27" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.27" stroke="none"/><rect x="16.6" y="27" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.38" stroke="none"/><rect x="27.2" y="27" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.49" stroke="none"/><rect x="37.8" y="27" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.60" stroke="none"/><rect x="48.4" y="27" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.71" stroke="none"/><rect x="6.0" y="35" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.16" stroke="none"/><rect x="16.6" y="35" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.27" stroke="none"/><rect x="27.2" y="35" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.38" stroke="none"/><rect x="37.8" y="35" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.49" stroke="none"/><rect x="48.4" y="35" width="8.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.60" stroke="none"/></symbol><symbol id="tg21" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="10" height="36" rx="3" fill="currentColor" fill-opacity=".28"/><rect x="25" y="4" width="10" height="36" rx="3" fill="currentColor" fill-opacity=".28"/><rect x="42" y="4" width="10" height="36" rx="3" fill="currentColor" fill-opacity=".28"/><circle cx="13" cy="14" r="3" fill="currentColor"/><circle cx="13" cy="30" r="2.5" fill="currentColor"/><circle cx="30" cy="22" r="3" fill="currentColor"/><circle cx="47" cy="12" r="2.5" fill="currentColor"/><circle cx="47" cy="32" r="3" fill="currentColor"/><path d="M1 22h40M37 18l4 4-4 4"/></symbol><symbol id="tg22" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="8" height="8" rx="2" fill="currentColor"/><rect x="4" y="18" width="8" height="8" rx="2" fill="currentColor"/><rect x="4" y="31" width="8" height="8" rx="2"/><path d="M18 9h24M18 22h30M18 35h20"/><circle cx="52" cy="33" r="8" fill="currentColor" fill-opacity=".28"/><path d="M48 33l3 3 5-6"/></symbol><symbol id="tg23" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M26 22L4 6v32zM38 22L60 6v32z" fill="currentColor" fill-opacity=".28"/><circle cx="32" cy="22" r="6" fill="currentColor"/><path d="M14 13v18M50 13v18" stroke-opacity=".6"/></symbol><symbol id="tg24" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="7" r="4" fill="currentColor"/><path d="M24 12l4 12-8 6-2 10M28 24l8 4 2 12M26 15l10 4 8-4"/><path d="M46 4a14 14 0 0 1 6 12" stroke-dasharray="3 3"/><path d="M4 40h56" stroke-opacity=".35"/></symbol><symbol id="tg25" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="24" y="3" width="16" height="8" rx="2" fill="currentColor"/><path d="M32 11v6M14 23v-6h36v6M32 17v6M8 35v-4M20 35v-4"/><rect x="6" y="23" width="16" height="8" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="24" y="23" width="16" height="8" rx="2" fill="currentColor" fill-opacity=".28"/><rect x="42" y="23" width="16" height="8" rx="2" fill="currentColor" fill-opacity=".28"/><circle cx="8" cy="38" r="3" fill="currentColor" fill-opacity=".28"/><circle cx="20" cy="38" r="3" fill="currentColor" fill-opacity=".28"/></symbol><symbol id="tg26" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5l15 27H3z" fill="currentColor" fill-opacity=".28"/><path d="M18 14v9M18 27v.5"/><path d="M40 10h20M40 20h20M40 30h14"/><circle cx="36" cy="10" r="1.5" fill="currentColor"/><circle cx="36" cy="20" r="1.5" fill="currentColor"/><circle cx="36" cy="30" r="1.5" fill="currentColor"/></symbol><symbol id="tg27" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.0" y="34" width="9.6" height="6" rx="1.5" fill="currentColor" fill-opacity="0.25" stroke="none"/><rect x="15.6" y="27" width="9.6" height="13" rx="1.5" fill="currentColor" fill-opacity="0.43" stroke="none"/><rect x="27.2" y="20" width="9.6" height="20" rx="1.5" fill="currentColor" fill-opacity="0.61" stroke="none"/><rect x="38.8" y="13" width="9.6" height="27" rx="1.5" fill="currentColor" fill-opacity="0.79" stroke="none"/><rect x="50.4" y="6" width="9.6" height="34" rx="1.5" fill="currentColor" fill-opacity="0.97" stroke="none"/><path d="M6 28l46-27M46 1h6v6"/></symbol><symbol id="tg28" viewBox="0 0 64 44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h24l8 8v30H8z" fill="currentColor" fill-opacity=".28"/><path d="M32 3v8h8M14 18h18M14 25h18M14 32h10"/><path d="M50 16l9 3v6c0 5-4 8-9 10-5-2-9-5-9-10v-6z" fill="var(--bg)" /><path d="M46 25l3 3 6-6"/></symbol></defs></svg>
+
   <div class="wrap">
     <div class="results" aria-label="Three headline results">
-      <div class="result" style="--c:var(--green)"><span class="tag">Quality</span><div class="fig">92% <small>July 2025</small></div><p>Line first pass yield averaged 58% from September 2024 to March 2025, with individual weeks at 100%. Teams were given direct ownership of quality, and scrap was investigated daily.</p><a href="#case-quality">Read the case study</a></div>
-      <div class="result" style="--c:var(--cyan)"><span class="tag">People</span><div class="fig">36% to 86.6% <small>skills cover</small></div><p>In two years, across 260 processes. The 3x3 programme put three or more trained operators on 85 of 86 critical-to-quality SOPs (98.8%), up from 70% in September 2025, and on all 36 in Bays 5 to 8.</p><a href="#case-people">Read the case study</a></div>
-      <div class="result" style="--c:var(--pink)"><span class="tag">Safety</span><div class="fig">33% <small>of site reports</small></div><p>In its first year, SafetyCube, an EHS management system, logged 324 reports. I co-implemented it and raised 108 of them, twice as many as the next highest reporter.</p><a href="#case-safety">Read the case study</a></div>
+      <div class="result" style="--c:var(--green)"><span class="tag">Quality</span><div class="figrow"><div class="fig">92% <small>July 2025</small></div><svg class="rg" viewBox="0 0 88 44" aria-hidden="true" focusable="false"><polyline points="4.0,38.0 11.6,19.5 19.2,32.8 26.8,32.0 34.4,30.5 42.0,27.6 49.6,22.8 57.2,16.2 64.8,28.4 72.4,22.6 80.0,7.6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="80.0" cy="7.6" r="3.6" fill="currentColor"/></svg></div><p>Line first pass yield averaged 58% from September 2024 to March 2025, with individual weeks at 100%. Teams were given direct ownership of quality, and scrap was investigated daily.</p><a href="#case-quality">Read the case study</a></div>
+      <div class="result" style="--c:var(--cyan)"><span class="tag">People</span><div class="figrow"><div class="fig">36% to 86.6% <small>skills cover</small></div><svg class="rg" viewBox="0 0 88 44" aria-hidden="true" focusable="false"><rect x="18" y="27.6" width="20" height="14.4" rx="3" fill="currentColor" fill-opacity=".35"/><rect x="50" y="7.4" width="20" height="34.6" rx="3" fill="currentColor"/></svg></div><p>In two years, across 260 processes. The 3x3 programme put three or more trained operators on 85 of 86 critical-to-quality SOPs (98.8%), up from 70% in September 2025, and on all 36 in Bays 5 to 8.</p><a href="#case-people">Read the case study</a></div>
+      <div class="result" style="--c:var(--pink)"><span class="tag">Safety</span><div class="figrow"><div class="fig">33% <small>of site reports</small></div><svg class="rg" viewBox="0 0 88 44" aria-hidden="true" focusable="false"><circle cx="44" cy="22" r="17" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="7"/><circle cx="44" cy="22" r="17" fill="none" stroke="currentColor" stroke-width="7" stroke-dasharray="35.6 106.8" transform="rotate(-90 44 22)"/></svg></div><p>In its first year, SafetyCube, an EHS management system, logged 324 reports. I co-implemented it and raised 108 of them, twice as many as the next highest reporter.</p><a href="#case-safety">Read the case study</a></div>
     </div>
   </div>
   <div class="wrap">
@@ -393,12 +414,14 @@ footer a{color:var(--cyan)}
       <p class="sub">Running a line to a set of measures, and developing the people who run it.</p>
       <div class="grid">
         <a class="tile" href="sqcdp-dashboard/">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg0"/></svg>
           <span class="kind">Dashboard</span>
           <h3>SQCDP interview evidence</h3>
           <p>Interview evidence organised on the SQCDP framework: Safety, Quality, Cost, Delivery and People.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="skills-matrix-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg1"/></svg>
           <span class="kind">Dashboard</span>
           <h3>Skills matrix and cross-training impact</h3>
           <p>Skills by operator as radars or a matrix, the 3x3 cross-training programme, and how I developed people.</p>
@@ -407,36 +430,42 @@ footer a{color:var(--cyan)}
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="skills-matrix-builder.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg2"/></svg>
           <span class="kind">Tool</span>
           <h3>Skills Matrix Builder</h3>
           <p>Build a matrix for any team. A level only counts once someone other than the operator has signed it off, sign-offs expire, and single points of failure and the next people to cross-training are highlighted.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="company-skills-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg3"/></svg>
           <span class="kind">Dashboard</span>
           <h3>Company Skills Dashboard</h3>
           <p>Every team's skills matrix rolled up into one management view. Shows cover against target, critical skills with too few signed-off people, sign-offs about to expire, and where the manager can act.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="oee-downtime-log.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg4"/></svg>
           <span class="kind">Tool</span>
           <h3>OEE and downtime tracker</h3>
           <p>Record shifts and stops, work out availability, performance, quality and OEE from the counts, and rank the reasons time was lost in a Pareto. Leaves out runs with impossible or uncheckable data.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="daily-management-board.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg5"/></svg>
           <span class="kind">Tool</span>
           <h3>Daily management board</h3>
           <p>A tier meeting board for Safety, Quality, Delivery, Cost and People. Readings against target, the reason for each miss, actions with owners, what is escalated, and a check that every action has been independently verified. Opens with made-up example data.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="kaizen-idea-log.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg6"/></svg>
           <span class="kind">Tool</span>
           <h3>Kaizen and improvement idea log</h3>
           <p>Ideas from the floor with an owner, expected benefit, decision and result. Flags ideas waiting too long, people not told the outcome, and benefits claimed without an independent check. Opens with made-up example data.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="schedule-adherence.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg7"/></svg>
           <span class="kind">Tool</span>
           <h3>Schedule adherence</h3>
           <p>Planned against actual output by hour or day, with the reason for every miss. Shows blocks on plan, units short and over, and a Pareto of reasons using the OEE reason list. Opens with made-up example data.</p>
@@ -452,6 +481,7 @@ footer a{color:var(--cyan)}
       <p class="sub">Finding the root cause with data, measuring the work, and making the gain stick.</p>
       <div class="grid three">
         <a class="tile feature" href="dmaic-fpy-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg8"/></svg>
           <span class="kind">Flagship project</span>
           <h3>DMAIC improvement board</h3>
           <p>Lean Six Sigma Green Belt project on First Pass Yield at Stage 8 of the caravan line, from Define to Control.</p>
@@ -460,60 +490,70 @@ footer a{color:var(--cyan)}
           <span class="open-link">Open project board</span>
         </a>
         <a class="tile" href="5-whys-tool.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg9"/></svg>
           <span class="kind">Tool</span>
           <h3>5 Whys root cause analysis</h3>
           <p>Ask why with evidence at each step, test the logic in reverse, then set actions and verify the fix held. Loads a worked example from a real stoppage on Line 8 and prints as a one page report.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="line-balancing.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg10"/></svg>
           <span class="kind">Tool</span>
           <h3>Line balancing (yamazumi)</h3>
           <p>Timed work elements placed at stations and charted against takt. Shows balance efficiency, the slowest station and the fewest stations the arithmetic allows, and flags untimed, unclassified or unassigned elements and times nobody checked. Does not check the order of the work. Opens with made-up example data.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="standard-work-sheet.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg11"/></svg>
           <span class="kind">Tool</span>
           <h3>Standard work combination sheet</h3>
           <p>Walking, manual and machine time for one operator on a single timeline against takt. Shows the cycle, the waiting and where the machine sets the pace, and flags a sheet that has no key points, no independent check, no approval or a lapsed review date. Opens with made-up example data.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="cycle-time-waste-tool.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg12"/></svg>
           <span class="kind">Tool</span>
           <h3>Cycle time and waste analysis</h3>
           <p>Time observation study with VA/NVA split, takt time comparison and a TIMWOODS waste breakdown, as a bar chart and a radar profile. Works for any process, timed live in the browser.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="https://rmilburn1980.github.io/SMV-TOOL/">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg13"/></svg>
           <span class="kind">Tool</span>
           <h3>Standard minute value tool</h3>
           <p>Run a time study, calculate SMV, line efficiency and production targets, with a formula reference, practice problems and MOST sequence models.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="https://rmilburn1980.github.io/7s-audit-dashboard/">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg14"/></svg>
           <span class="kind">Dashboard</span>
           <h3>7S audit review</h3>
           <p>Workplace organisation audit covering Sort, Set, Shine, Standardize, Sustain, Safety and Spirit. Data stays on the device by default, with optional shared collection through a Google Sheet.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="sipoc-vsm-tool.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg15"/></svg>
           <span class="kind">Tool</span>
           <h3>SIPOC and value stream mapping</h3>
           <p>Scope a process with a SIPOC, then map the current state: cycle times, queues, takt, lead time, process cycle efficiency and rolled throughput yield. Prints as a report.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="spc-control-chart.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg16"/></svg>
           <span class="kind">Tool</span>
           <h3>SPC control chart tool</h3>
           <p>Individuals and moving range, or X-bar and range, charts with limits set from a baseline you choose. Marks each signal with the rule that fired, and shows Cp and Cpk only when the baseline is valid.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="gemba-walk-tracker.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg17"/></svg>
           <span class="kind">Tool</span>
           <h3>Gemba walk tracker</h3>
           <p>Log what you see on a walk and trace each observation to its owner, the evidence that closed it and the re-walk that checked the fix. Links every finding to an SQCDP measure and a date.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="a3-problem-solving.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg18"/></svg>
           <span class="kind">Tool</span>
           <h3>A3 problem solving sheet</h3>
           <p>One page from background to follow-up. Flags an unconfirmed root cause, blame wording, countermeasures with no independent check, and a close-out where the result was not measured or the change was not standardised. Prints on A3. Opens with made-up example data.</p>
@@ -529,60 +569,70 @@ footer a{color:var(--cyan)}
       <p class="sub">Safety evidence and management system readiness, built from scratch. The EHS Readiness Dashboard shows my own results. The other tools are ones I built through self-study, not systems used at Erwin Hymer Group UK, and any sample records in them are made-up examples.</p>
       <div class="grid three">
         <a class="tile feature" href="ehs-dashboard/">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg19"/></svg>
           <span class="kind">Start here</span>
           <h3>EHS Readiness Dashboard</h3>
           <p>Five tabs: overview, safety evidence, an ISO 14001:2026 self-assessment, the H&amp;S management system on the POPMAR model, and a qualifications roadmap.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="risk-assessment-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg20"/></svg>
           <span class="kind">Dashboard</span>
           <h3>Risk assessment register</h3>
           <p>A 5 x 5 risk register where residual scores only count once a control is verified working. Flags missing evidence, stale checks and High risks that lack a second reviewer.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="swiss-cheese-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg21"/></svg>
           <span class="kind">Dashboard</span>
           <h3>Swiss Cheese layers of defence</h3>
           <p>Layers of defence tested with the check counts you enter. Shows cautious figures, how weak the evidence is, and how much the layers may fail together. Links to the risk register.</p>
           <span class="open-link">Open dashboard</span>
         </a>
         <a class="tile" href="corrective-action-tracker.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg22"/></svg>
           <span class="kind">Tracker</span>
           <h3>Corrective action tracker</h3>
           <p>Actions from audits, incidents and risk reviews, tracked to closure. An action only closes once someone other than its owner has checked that it works. Flags overdue actions and move-on dates.</p>
           <span class="open-link">Open tracker</span>
         </a>
         <a class="tile" href="bowtie-builder.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg23"/></svg>
           <span class="kind">Tool</span>
           <h3>Bow-tie Builder</h3>
           <p>A hazard drawn as a bow-tie: threats on the left, consequences on the right, barriers between. A barrier only counts once it is verified working, and every path with none is shown as a risk.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="qec-ergonomics-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg24"/></svg>
           <span class="kind">Tool</span>
           <h3>Quick Exposure Check</h3>
           <p>Ergonomics exposure for back, shoulder and arm, wrist and hand, and neck, scored from observer and worker answers. Prints a one-record assessment and keeps a saved history.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="causal-tree-builder.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg25"/></svg>
           <span class="kind">Tool</span>
           <h3>Causal tree builder</h3>
           <p>An incident traced back through immediate, underlying and root causes as a tree of facts. Flags assumed evidence, branches that stop before a system cause, and actions nobody independently checks.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="incident-log.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg26"/></svg>
           <span class="kind">Tool</span>
           <h3>Incident and near-miss tracker</h3>
           <p>Logs incidents and near misses, checks each against the RIDDOR 2013 reporting rules, and shows overdue reports, uninvestigated serious events and actions closed without an independent check.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="regulatory-intelligence-tool.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg27"/></svg>
           <span class="kind">Tool</span>
           <h3>Regulatory intelligence maturity</h3>
           <p>Five levels of how a workplace tracks and acts on changing EHS law, a 10 question scorer, and a one-page interview summary that prints. A conversation tool, not an audit.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="rams-dashboard.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg28"/></svg>
           <span class="kind">Tool</span>
           <h3>RAMS Dashboard</h3>
           <p>A register and builder for risk assessments and method statements. Build a RAMS, brief the team, record site checks and reviews, and export your data. Stored in your browser only.</p>
@@ -601,7 +651,7 @@ footer a{color:var(--cyan)}
         <div><h3>The problem</h3><p>Line first pass yield averaged 58% from September 2024 to March 2025, and fell to 43% in September 2024.</p></div>
         <div><h3>What I did</h3><ul><li>Gave shop-floor teams direct ownership of quality.</li><li>Ran daily reporting and root-cause investigation on production scrap, and turned the findings into corrective actions.</li><li>Audited SOPs and QVAs to 97.7% critical process coverage.</li></ul></div>
         <div><h3>What changed</h3><ul><li>Line first pass yield reached 92% in July 2025 (to the 15th), with individual weeks at 100%. The tracker ends on 15 July 2025, so it does not show whether this held.</li><li>Vehicle defects down 40%.</li><li>Damaged-in-Production scrap costs 17.7% under the annual budget.</li></ul></div>
-        <div><h3>The evidence</h3><ul><li><a href="dmaic-fpy-dashboard.html">DMAIC and first pass yield board</a></li><li><a href="5-whys-tool.html">5 Whys root cause tool</a></li><li><a href="spc-control-chart.html">SPC control chart tool</a></li></ul></div>
+        <figure class="chart"><h3>First pass yield by month</h3><svg viewBox="0 0 290 170" role="img" aria-label="Line chart of monthly first pass yield from August 2023 to July 2025. It falls to 43% in September 2024, averages 58% from September 2024 to March 2025 and reaches 92% in July 2025."><line class="gl" x1="32" x2="282" y1="120.9" y2="120.9"/><text class="ax" x="27" y="124.4" text-anchor="end">40%</text><line class="gl" x1="32" x2="282" y1="86.6" y2="86.6"/><text class="ax" x="27" y="90.1" text-anchor="end">60%</text><line class="gl" x1="32" x2="282" y1="52.3" y2="52.3"/><text class="ax" x="27" y="55.8" text-anchor="end">80%</text><line class="gl" x1="32" x2="282" y1="18.0" y2="18.0"/><text class="ax" x="27" y="21.5" text-anchor="end">100%</text><rect class="band" x="169.3" y="18" width="73.2" height="120"/><polyline class="ln" points="32.0,87.4 42.9,69.9 53.7,60.0 64.6,67.7 75.5,44.7 86.3,67.5 97.2,62.2 108.1,64.8 119.0,54.0 129.8,79.5 140.7,60.5 151.6,80.9 162.4,56.1 173.3,115.4 184.2,64.1 195.0,101.0 205.9,98.6 216.8,94.6 227.7,86.6 238.5,73.0 249.4,54.9 260.3,88.8 271.1,72.5 282.0,31.0"/><circle class="dot" cx="173.3" cy="115.4" r="4"/><circle class="dot" cx="282.0" cy="31.0" r="4"/><text class="lb" x="180.3" y="127.4">43%</text><text class="lb" x="275.0" y="35.0" text-anchor="end">92%</text><text class="ax" x="32.0" y="154">Aug 2023</text><text class="ax" x="173.3" y="154" text-anchor="middle">Sep 2024</text><text class="ax" x="282.0" y="154" text-anchor="end">Jul 2025</text></svg><figcaption>Monthly line first pass yield, August 2023 to July 2025, from my line performance tracker. The shaded months, September 2024 to March 2025, averaged 58%. July 2025 runs to the 15th.</figcaption></figure><div><h3>The evidence</h3><ul><li><a href="dmaic-fpy-dashboard.html">DMAIC and first pass yield board</a></li><li><a href="5-whys-tool.html">5 Whys root cause tool</a></li><li><a href="spc-control-chart.html">SPC control chart tool</a></li></ul></div>
       </div>
     </details>
     <details class="case" id="case-people" style="--c:var(--cyan)">
@@ -610,7 +660,7 @@ footer a{color:var(--cyan)}
         <div><h3>The problem</h3><p>Skills cover was 36%, with single points of failure across the 260 processes the team ran.</p></div>
         <div><h3>What I did</h3><ul><li>Built and kept a bay-level competency matrix covering all 260 processes.</li><li>Designed and led a cross-functional 3x3 training programme.</li></ul></div>
         <div><h3>What changed</h3><ul><li>Team skills cover from 36% to 86.6% in two years, with 44.6% cross-coverage (116 of all 260 processes with three or more trained operators) and single points of failure removed.</li><li>11 of the 29 team members fully skilled on the matrix.</li><li>3x3 cross-training: 85 of 86 critical-to-quality SOPs have three or more trained operators (98.8%), up from 70% in September 2025. This includes all 36 in Bays 5 to 8.</li></ul></div>
-        <div><h3>The evidence</h3><ul><li><a href="skills-matrix-dashboard.html">Skills matrix and cross-training dashboard</a></li><li><a href="skills-matrix-builder.html">Skills matrix builder</a>, with sign-offs that expire</li><li><a href="company-skills-dashboard.html">Company skills dashboard</a></li></ul></div>
+        <figure class="chart"><h3>Before and after</h3><svg viewBox="0 0 290 150" role="img" aria-label="Bar chart. Team skills cover rose from 36% to 86.6%. Critical SOPs with three or more trained operators rose from 70% in September 2025 to 98.8%."><text class="hd" x="8" y="14">Team skills cover</text><text class="ax" x="8" y="33">Start</text><rect class="b0" x="86" y="22" width="54.0" height="15" rx="3"/><text class="lb" x="146.0" y="34">36%</text><text class="ax" x="8" y="53">Two years on</text><rect class="b1" x="86" y="42" width="129.9" height="15" rx="3"/><text class="lb" x="221.9" y="54">86.6%</text><text class="hd" x="8" y="88">Critical SOPs with 3 or more trained</text><text class="ax" x="8" y="107">Sep 2025</text><rect class="b0" x="86" y="96" width="105.0" height="15" rx="3"/><text class="lb" x="197.0" y="108">70%</text><text class="ax" x="8" y="127">Latest</text><rect class="b1" x="86" y="116" width="148.2" height="15" rx="3"/><text class="lb" x="240.2" y="128">98.8%</text></svg><figcaption>Skills cover across all 260 processes, and three-deep cover on the 86 critical-to-quality SOPs. From my competency matrix.</figcaption></figure><div><h3>The evidence</h3><ul><li><a href="skills-matrix-dashboard.html">Skills matrix and cross-training dashboard</a></li><li><a href="skills-matrix-builder.html">Skills matrix builder</a>, with sign-offs that expire</li><li><a href="company-skills-dashboard.html">Company skills dashboard</a></li></ul></div>
       </div>
     </details>
     <details class="case" id="case-safety" style="--c:var(--pink)">
@@ -619,7 +669,7 @@ footer a{color:var(--cyan)}
         <div><h3>The problem</h3><p>The aim was to move the team from compliance to genuine safety ownership.</p></div>
         <div><h3>What I did</h3><ul><li>Worked with the Head of Health and Safety, and co-implemented SafetyCube, an EHS management system.</li><li>Raised 108 of the 324 site reports logged from April 2025 to March 2026 myself (102 near misses and hazards, 6 accident reports), 33% of the total.</li><li>Carried out ergonomic (QEC) risk assessments and daily PUWER machine checks.</li></ul></div>
         <div><h3>What changed</h3><ul><li>324 reports logged in the first year, from April 2025 to March 2026, raised by 22 people.</li><li>Top reporter on site: 108 reports, against 52 for the next highest.</li><li>My own reports rose from 19 in April to June 2025 to 45 in October to December 2025.</li></ul></div>
-        <div><h3>The evidence</h3><ul><li><a href="ehs-dashboard/">EHS readiness dashboard</a></li><li><a href="incident-log.html">Incident and near-miss log</a></li><li><a href="risk-assessment-dashboard.html">Risk assessment dashboard</a></li></ul></div>
+        <figure class="chart"><h3>Hazard and near miss reports a month</h3><svg viewBox="0 0 290 172" role="img" aria-label="Bar chart of hazard and near miss reports raised each month from April 2025 to February 2026: 23 in April 2025, rising to a peak of 48 in November 2025."><rect class="b1" x="10.0" y="85.7" width="17.3" height="54.3" rx="3"/><text class="lb" x="18.6" y="80.7" text-anchor="middle">23</text><text class="ax" x="18.6" y="154" text-anchor="middle">A</text><rect class="b0" x="35.3" y="99.9" width="17.3" height="40.1" rx="3"/><text class="ax" x="43.9" y="94.9" text-anchor="middle">17</text><text class="ax" x="43.9" y="154" text-anchor="middle">M</text><rect class="b0" x="60.5" y="73.9" width="17.3" height="66.1" rx="3"/><text class="ax" x="69.2" y="68.9" text-anchor="middle">28</text><text class="ax" x="69.2" y="154" text-anchor="middle">J</text><rect class="b0" x="85.8" y="52.7" width="17.3" height="87.3" rx="3"/><text class="ax" x="94.5" y="47.7" text-anchor="middle">37</text><text class="ax" x="94.5" y="154" text-anchor="middle">J</text><rect class="b0" x="111.1" y="107.0" width="17.3" height="33.0" rx="3"/><text class="ax" x="119.7" y="102.0" text-anchor="middle">14</text><text class="ax" x="119.7" y="154" text-anchor="middle">A</text><rect class="b0" x="136.4" y="45.6" width="17.3" height="94.4" rx="3"/><text class="ax" x="145.0" y="40.6" text-anchor="middle">40</text><text class="ax" x="145.0" y="154" text-anchor="middle">S</text><rect class="b0" x="161.6" y="102.2" width="17.3" height="37.8" rx="3"/><text class="ax" x="170.3" y="97.2" text-anchor="middle">16</text><text class="ax" x="170.3" y="154" text-anchor="middle">O</text><rect class="b1" x="186.9" y="26.7" width="17.3" height="113.3" rx="3"/><text class="lb" x="195.5" y="21.7" text-anchor="middle">48</text><text class="ax" x="195.5" y="154" text-anchor="middle">N</text><rect class="b0" x="212.2" y="78.6" width="17.3" height="61.4" rx="3"/><text class="ax" x="220.8" y="73.6" text-anchor="middle">26</text><text class="ax" x="220.8" y="154" text-anchor="middle">D</text><rect class="b0" x="237.5" y="88.1" width="17.3" height="51.9" rx="3"/><text class="ax" x="246.1" y="83.1" text-anchor="middle">22</text><text class="ax" x="246.1" y="154" text-anchor="middle">J</text><rect class="b0" x="262.7" y="104.6" width="17.3" height="35.4" rx="3"/><text class="ax" x="271.4" y="99.6" text-anchor="middle">15</text><text class="ax" x="271.4" y="154" text-anchor="middle">F</text><line class="gl" x1="6" x2="284" y1="140" y2="140"/><text class="ax" x="10" y="168">Apr 2025</text><text class="ax" x="280" y="168" text-anchor="end">Feb 2026</text></svg><figcaption>Site-wide reports raised in SafetyCube, April 2025 to February 2026. Before SafetyCube, reporting relied on a paper form that was rarely filled in.</figcaption></figure><figure class="chart"><h3>Site accidents a month, on average</h3><svg viewBox="0 0 290 62" role="img" aria-label="Bar chart. Site accidents averaged about 2.5 a month from August 2024 to March 2025 and about 1.5 a month from April 2025 to February 2026."><text class="ax" x="8" y="17">Aug 2024 to Mar 2025</text><rect class="b0" x="128" y="6" width="108.3" height="15" rx="3"/><text class="lb" x="242.3" y="18">2.5</text><text class="ax" x="8" y="43">Apr 2025 to Feb 2026</text><rect class="b1" x="128" y="32" width="65.0" height="15" rx="3"/><text class="lb" x="199.0" y="44">1.5</text></svg><figcaption>20 accidents from August 2024 to March 2025, then 17 from April 2025 to February 2026, by date of occurrence in the SafetyCube export.</figcaption></figure><div><h3>The evidence</h3><ul><li><a href="ehs-dashboard/">EHS readiness dashboard</a></li><li><a href="incident-log.html">Incident and near-miss log</a></li><li><a href="risk-assessment-dashboard.html">Risk assessment dashboard</a></li></ul></div>
       </div>
     </details>
   </section>

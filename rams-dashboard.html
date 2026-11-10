@@ -96,6 +96,12 @@ input[type=checkbox]{width:20px;height:20px;accent-color:#7a7aff;vertical-align:
 .haz{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;background:rgba(8,8,32,.45)}
 .haz .ctl{display:grid;grid-template-columns:minmax(0,1fr) 170px auto;gap:8px;align-items:center;margin-bottom:6px}
 .stat-bars{display:grid;gap:8px}
+.heatwrap{display:grid;gap:14px;align-items:center}
+@media(min-width:720px){.heatwrap{grid-template-columns:auto 1fr}}
+.heat{display:grid;grid-template-columns:28px repeat(5,44px);gap:4px;justify-content:start}
+.heat .hx{font-size:.75rem;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.heat .hc{height:36px;border-radius:8px;border:1px solid;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem}
+.heat .hc.z{opacity:.45}
 .sb{display:grid;grid-template-columns:110px minmax(0,1fr) 34px;gap:10px;align-items:center}
 .sb .track{height:14px;border-radius:7px;background:#0a0a2a;border:1px solid var(--line);overflow:hidden}
 .sb .fill{height:100%;background:linear-gradient(90deg,#6a6aff,#5eead4)}
@@ -591,6 +597,13 @@ function dashHTML(){
     ['Briefing coverage',exp?Math.round(cov/exp*100)+'%':'n/a',exp?cov+' of '+exp+' expected, issued RAMS':'Set expected crew on issued RAMS',exp&&cov<exp?'warn':''],
     ['Contractors with live RAMS',Object.keys(cons).length,'','']];
   var h='<div class="grid kpis">'+kp.map(function(k){return '<div class="card kpi '+k[3]+'"><div class="n">'+k[1]+'</div><div class="l">'+k[0]+'</div><div class="h">'+esc(k[2])+'</div></div>';}).join('')+'</div>';
+  /* residual risk heat map */
+  var hm={},hn=0;live.forEach(function(r){r.hazards.forEach(function(z){if(z.rL>=1&&z.rS>=1){hm[z.rL+'-'+z.rS]=(hm[z.rL+'-'+z.rS]||0)+1;hn++;}});});
+  var hg='<div class="heat" role="img" aria-label="Five by five grid of residual risk. Each cell shows how many hazards on live RAMS sit at that likelihood and severity."><span class="hx"></span>';
+  for(var sv=1;sv<=5;sv++)hg+='<span class="hx">S'+sv+'</span>';
+  for(var lk=5;lk>=1;lk--){hg+='<span class="hx">L'+lk+'</span>';for(var s2=1;s2<=5;s2++){var c=hm[lk+'-'+s2]||0;hg+='<span class="hc b-'+band(lk*s2)+(c?'':' z')+'">'+(c||'')+'</span>';}}
+  hg+='</div>';
+  h+='<div class="card" style="margin-top:14px"><div class="row sp"><h2>Residual risk on live RAMS</h2><span class="muted small">'+hn+' hazard'+(hn===1?'':'s')+' scored</span></div><div class="heatwrap">'+hg+'<p class="muted small">Each cell counts the hazards on approved or issued RAMS at that residual likelihood (L) and severity (S), as scored by the author. Colours follow the Low, Medium, High and Very high bands. It is a ranking aid, not a measure of safety.</p></div></div>';
   /* attention list */
   var items=[];R.forEach(function(r){flags(r).forEach(function(x){if(x.sev!=='Note')items.push({r:r,x:x});});});
   items.sort(function(a,b){return (a.x.sev==='Action'?0:1)-(b.x.sev==='Action'?0:1);});
