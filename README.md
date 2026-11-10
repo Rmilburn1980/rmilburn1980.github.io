@@ -44,7 +44,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 |---|---|
 | [EHS Readiness Dashboard](https://rmilburn1980.github.io/ehs-dashboard/) | Safety evidence, an ISO 14001:2026 self-assessment, the H&S management system on the POPMAR model, and a qualifications roadmap. The self-assessment is not an audit. |
 | [Risk Assessment Dashboard](https://rmilburn1980.github.io/risk-assessment-dashboard.html) | A 5 x 5 risk register where residual scores only count once a control is verified working. |
-| [Swiss Cheese Layers of Defence](https://rmilburn1980.github.io/swiss-cheese-dashboard.html) | Layers of defence tested with real check counts, cautious figures and how weak the evidence is. |
+| [Swiss Cheese Layers of Defence](https://rmilburn1980.github.io/swiss-cheese-dashboard.html) | Layers of defence tested with the check counts you enter, cautious figures and how weak the evidence is. |
 | [Corrective Action Tracker](https://rmilburn1980.github.io/corrective-action-tracker.html) | Actions from audits, incidents and risk reviews tracked to closure. An action only closes once someone other than its owner has checked it. |
 | [Bow-tie Builder](https://rmilburn1980.github.io/bowtie-builder.html) | A hazard drawn as a bow-tie. A barrier only counts once it is verified working. |
 | [Quick Exposure Check](https://rmilburn1980.github.io/qec-ergonomics-dashboard.html) | Ergonomics exposure scored from observer and worker answers. Prints a one-record assessment. |
@@ -95,4 +95,4 @@ Download the repository and open any `.html` file in a browser. Pages load a sha
 
 ## Contact
 
-Richard Milburn, Medomsley, County Durham. LinkedIn: https://www.linkedin.com/in/richard-milburn-manufacturing
+Richard Milburn, Consett, County Durham. LinkedIn: https://www.linkedin.com/in/richard-milburn-manufacturing
