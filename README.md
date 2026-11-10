@@ -10,7 +10,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## What is in it
 
-28 tools. Every link opens the working page.
+29 tools. Every link opens the working page.
 
 ### Operations
 | Tool | What it does |
@@ -51,6 +51,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Causal Tree Builder](https://rmilburn1980.github.io/causal-tree-builder.html) | An incident traced through immediate, underlying and root causes as a tree of facts. Flags assumed evidence. |
 | [Incident and Near-Miss Log](https://rmilburn1980.github.io/incident-log.html) | Logs incidents and near misses, checks each against the RIDDOR 2013 reporting rules, and shows overdue reports and actions closed without an independent check. |
 | [Regulatory Intelligence Maturity](https://rmilburn1980.github.io/regulatory-intelligence-tool.html) | Five levels of how a workplace tracks and acts on changing EHS law, a 10 question scorer and a printable one-page interview summary. A conversation tool, not an audit. |
+| [RAMS Dashboard](https://rmilburn1980.github.io/rams-dashboard.html) | A register and builder for risk assessments and method statements, with briefings, site checks and reviews. Data stays in your browser. |
 
 ## About the figures
 

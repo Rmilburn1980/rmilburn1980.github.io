@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RAMS Dashboard | Risk Assessment and Method Statement register and builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Gothic:wght@400..700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080820;--bg2:#0e0e30;--panel:#14143c;--panel2:#1b1b4c;--line:#3a3a82;
+  --text:#eef0ff;--muted:#b4baea;--accent:#9a9aff;--accent-solid:#5454e0;--teal:#5eead4;
+  --red:#ff8d99;--red-bg:#4a1626;--amber:#ffd27a;--amber-bg:#4a3510;--green:#7ef0b4;--green-bg:#0f3d2c;--blue:#8fd0ff;--blue-bg:#13365a;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:'Special Gothic',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:var(--text);line-height:1.5;font-size:16px;
+  background:radial-gradient(900px 500px at 15% -10%,rgba(110,110,255,.28),transparent 60%),radial-gradient(800px 500px at 100% 0%,rgba(94,234,212,.12),transparent 60%),var(--bg);
+  background-attachment:fixed;padding:0 0 90px}
+button,input,select,textarea{font-family:inherit;font-size:1rem;color:var(--text)}
+h1,h2,h3,h4{margin:0 0 .5rem;line-height:1.2}
+h1{font-size:1.9rem;font-weight:700}
+h2{font-size:1.3rem;font-weight:700}
+h3{font-size:1.08rem;font-weight:600}
+p{margin:.3rem 0 .8rem}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px}
+.top{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;justify-content:space-between;padding-top:6px}
+.top .sub{color:var(--muted);max-width:60ch;margin:0}
+.eyebrow{display:inline-block;color:var(--teal);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:.78rem;margin-bottom:6px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:rgba(20,20,60,.8);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin:14px 0}
+.bar .msg{flex:1 1 220px;font-size:.92rem;color:var(--muted)}
+.bar .msg.warn{color:var(--amber)}
+.bar .msg.ok{color:var(--green)}
+.btn{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;font-weight:600;min-height:42px}
+.btn:hover{border-color:var(--accent)}
+.btn:focus-visible,.tab:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.btn.primary{background:var(--accent-solid);border-color:#8484ff;color:#fff;box-shadow:0 0 18px rgba(110,110,255,.4)}
+.btn.danger{border-color:#c4556a;color:var(--red)}
+.btn.small{padding:4px 10px;min-height:34px;font-size:.9rem}
+.btn[disabled]{opacity:.65;cursor:not-allowed;border-style:dashed}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:16px}
+.tab{background:transparent;border:1px solid transparent;border-radius:10px;padding:9px 16px;cursor:pointer;font-weight:600;color:var(--muted);min-height:42px}
+.tab[aria-selected="true"]{background:var(--panel2);border-color:var(--accent);color:var(--text);box-shadow:0 0 16px rgba(110,110,255,.35)}
+.card{background:linear-gradient(180deg,rgba(27,27,76,.85),rgba(20,20,60,.9));border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:0 0 28px rgba(80,80,230,.12)}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.kpi .n{font-size:2.2rem;font-weight:700;line-height:1.1}
+.kpi .l{color:var(--muted);font-size:.92rem}
+.kpi .h{font-size:.82rem;color:var(--muted);margin-top:4px}
+.kpi.bad .n{color:var(--red)}.kpi.good .n{color:var(--green)}.kpi.warn .n{color:var(--amber)}
+.tag{display:inline-block;border-radius:999px;padding:1px 10px;font-size:.8rem;font-weight:700;border:1px solid transparent;white-space:nowrap}
+.t-action{background:var(--red-bg);color:var(--red);border-color:#a8445a}
+.t-check{background:var(--amber-bg);color:var(--amber);border-color:#a37a24}
+.t-note{background:var(--blue-bg);color:var(--blue);border-color:#3c78ad}
+.t-ok{background:var(--green-bg);color:var(--green);border-color:#2f8a63}
+.st{background:var(--panel2);color:var(--text);border-color:var(--line)}
+.st-Approved,.st-Issued{background:var(--green-bg);color:var(--green);border-color:#2f8a63}
+.st-Under{background:var(--blue-bg);color:var(--blue);border-color:#3c78ad}
+.st-Draft{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+.st-Withdrawn,.st-Closed{background:#2a2a40;color:#c9cce6;border-color:#55557a}
+.score{display:inline-block;border-radius:8px;padding:1px 9px;font-weight:700;font-size:.85rem;border:1px solid transparent;white-space:nowrap}
+.b-low{background:var(--green-bg);color:var(--green);border-color:#2f8a63}
+.b-med{background:var(--amber-bg);color:var(--amber);border-color:#a37a24}
+.b-high{background:#4d2410;color:#ffb079;border-color:#b0602b}
+.b-vhigh{background:var(--red-bg);color:var(--red);border-color:#a8445a}
+.b-none{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+.flags{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.flags li{display:flex;gap:10px;align-items:flex-start;background:rgba(8,8,32,.55);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.flags li .tag{flex:none;margin-top:2px}
+.flags li .body{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.flags li .who{display:block;color:var(--muted);font-size:.82rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid rgba(58,58,130,.6);vertical-align:top}
+th{font-size:.82rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:rgba(8,8,32,.5);font-weight:600}
+tr:last-child td{border-bottom:0}
+label{display:block;font-weight:600;font-size:.9rem;margin-bottom:4px;color:var(--muted)}
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;background:#0a0a2a;border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:42px}
+textarea{min-height:84px;resize:vertical}
+input::placeholder,textarea::placeholder{color:#a3a9de;opacity:1}
+input[disabled],select[disabled],textarea[disabled]{opacity:.8;border-style:dashed;cursor:not-allowed}
+input[type=checkbox]{width:20px;height:20px;accent-color:#7a7aff;vertical-align:middle}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.form .full{grid-column:1/-1}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.sp{justify-content:space-between}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+.steps button{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:600;min-height:38px;color:var(--muted)}
+.steps button[aria-current="step"]{background:var(--accent-solid);border-color:#8484ff;color:#fff}
+.haz{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px;background:rgba(8,8,32,.45)}
+.haz .ctl{display:grid;grid-template-columns:minmax(0,1fr) 170px auto;gap:8px;align-items:center;margin-bottom:6px}
+.stat-bars{display:grid;gap:8px}
+.sb{display:grid;grid-template-columns:110px minmax(0,1fr) 34px;gap:10px;align-items:center}
+.sb .track{height:14px;border-radius:7px;background:#0a0a2a;border:1px solid var(--line);overflow:hidden}
+.sb .fill{height:100%;background:linear-gradient(90deg,#6a6aff,#5eead4)}
+.empty{text-align:center;padding:26px 12px;color:var(--muted)}
+.hubback{position:fixed;left:14px;bottom:14px;z-index:20;background:var(--accent-solid);color:#fff;text-decoration:none;font-weight:700;border-radius:999px;padding:10px 16px;border:1px solid #8484ff;box-shadow:0 0 22px rgba(110,110,255,.55)}
+.disclaimer{border-left:4px solid var(--amber);padding:8px 12px;background:var(--amber-bg);border-radius:0 10px 10px 0;color:#ffe3a6}
+.modal{position:fixed;inset:0;background:rgba(4,4,16,.75);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .box{max-width:520px;width:100%}
+.modal[hidden]{display:none}
+/* printable document */
+.paper{background:#fff;color:#111;border-radius:10px;padding:22px;font-family:'Special Gothic',Arial,sans-serif;line-height:1.4;font-size:.92rem}
+.paper h1{font-size:1.4rem;color:#111}
+.paper h3{margin:16px 0 6px;font-size:1.02rem;color:#111;border-bottom:2px solid #222;padding-bottom:2px}
+.paper table{min-width:0;width:100%;table-layout:fixed}
+.paper th,.paper td{border:1px solid #777;padding:5px 6px;color:#111;font-size:.85rem;overflow-wrap:anywhere;background:#fff;text-transform:none;letter-spacing:0}
+.paper th{background:#e8e8f2;font-weight:700;font-size:.8rem}
+.paper .kv th{width:26%}
+.paper .sig td{height:40px}
+.paper .band{font-weight:700}
+.paper .note{font-size:.8rem;color:#333;margin-top:10px}
+.paper .watermark{background:#fff3c4;border:1px solid #b78900;padding:4px 8px;font-weight:700;color:#4a3500;margin-bottom:8px}
+#printRoot{display:none}
+@media (max-width:640px){
+  h1{font-size:1.5rem}
+  .haz .ctl{grid-template-columns:1fr}
+  .sb{grid-template-columns:90px minmax(0,1fr) 30px}
+  .paper{padding:12px}
+}
+@media print{
+  body{background:#fff !important;color:#000;padding:0}
+  body>*:not(#printRoot){display:none !important}
+  #printRoot{display:block !important}
+  .paper{border-radius:0;padding:0;font-size:10.5pt}
+  .paper h3{break-after:avoid}
+  .paper table,.paper tr{break-inside:avoid}
+  @page{margin:14mm}
+}
+</style>
+</head>
+<body>
+<a class="hubback" href="https://rmilburn1980.github.io/" aria-label="Back to portfolio hub">&larr; Portfolio hub</a>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <span class="eyebrow">Safety | Contractor control</span>
+      <h1>RAMS Dashboard</h1>
+      <p class="sub">Register, build and track Risk Assessments and Method Statements. It records and flags. It never decides that work is safe: a competent person does that.</p>
+    </div>
+  </header>
+
+  <div class="bar" id="saveBar" role="status" aria-live="polite">
+    <span class="msg" id="saveMsg"></span>
+    <button class="btn small" id="btnExport" type="button">Export data</button>
+    <button class="btn small" id="btnImport" type="button">Import data</button>
+    <button class="btn small" id="btnExample" type="button">Load example data</button>
+    <button class="btn small danger" id="btnClear" type="button">Clear all</button>
+    <input type="file" id="fileIn" accept="application/json,.json" hidden>
+  </div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections" id="tabs"></nav>
+  <main id="view" tabindex="-1"></main>
+  <footer class="muted small" style="margin-top:22px">Demonstration project. Not approved or endorsed by the HSE or any accreditation scheme. Output needs competent review and checking on site.</footer>
+</div>
+<div id="printRoot" aria-hidden="true"></div>
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="card box">
+    <h3 id="modalTitle"></h3>
+    <p id="modalBody"></p>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" id="modalNo" type="button">Cancel</button>
+      <button class="btn primary" id="modalYes" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+<noscript><div class="wrap"><p>This tool needs JavaScript. Your data stays in your browser.</p></div></noscript>
+<script>
+(function(){
+'use strict';
+/* ---------- constants ---------- */
+var KEY='rams_dashboard_v1';
+var LEVELS=['Eliminate','Substitute','Engineering','Administrative','PPE'];
+var LRANK={Eliminate:1,Substitute:2,Engineering:3,Administrative:4,PPE:5};
+var STATUSES=['Draft','Under review','Approved','Issued','Closed','Withdrawn'];
+var LIVE=['Approved','Issued'];
+var LOCKED=['Approved','Issued','Closed','Withdrawn'];
+var LIK=['Rare','Unlikely','Possible','Likely','Almost certain'];
+var SEV=['Minor','Moderate','Serious','Major injury or ill health','Fatal or life changing'];
+var PERMITS=['Hot work','Confined space','Work at height rescue plan','Permit to dig','Electrical isolation','Lifting plan'];
+var TABS=[['dash','Dashboard'],['reg','Register'],['build','Builder'],['brief','Briefings'],['mon','Site checks and reviews'],['rules','Rules and method']];
+var METHODS=['In person briefing','Toolbox talk','Interpreter used','Translated copy given','Written copy read and signed'];
+var RESULTS=['Method followed','Minor deviation','Work stopped'];
+var TRIGGERS=['Change of staff or crew','Change of process or method','Change of equipment or materials','Change in site conditions','Accident or incident','Near miss','Worker concern raised','New information or guidance','Scheduled review (date reached)'];
+var SPECIAL=[['demolition','Demolition, dismantling or structural alteration'],['excavation','Excavation'],['height','Work at height'],['lifting','Lifting operations'],['confined','Confined space'],['hazsub','Asbestos or other hazardous substances']];
+var STEPS=['Details','Method','Hazards and controls','Permits and competence','Review and sign-off','Print view'];
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function pad(n){return String(n).padStart(2,'0');}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function today(){return iso(new Date());}
+function addDays(s,n){var d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return iso(d);}
+function diff(a,b){return Math.round((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000);}
+function fd(s){return s?s.split('-').reverse().join('/'):'not set';}
+function trunc(s,n){s=String(s||'').trim();n=n||28;return s.length>n?s.slice(0,n-1)+'...':s;}
+function same(a,b){a=String(a||'').trim().toLowerCase();b=String(b||'').trim().toLowerCase();return !!a&&a===b;}
+function band(n){return n<=0?'none':n<=4?'low':n<=9?'med':n<=16?'high':'vhigh';}
+function bandName(n){return n<=0?'Not set':n<=4?'Low':n<=9?'Medium':n<=16?'High':'Very high';}
+function scoreTag(n){return '<span class="score b-'+band(n)+'">'+(n>0?disp(n):'Not set')+'</span>';}
+function statusTag(s){return '<span class="tag st st-'+s.split(' ')[0]+'">'+esc(s)+'</span>';}
+function sha256(str){
+  var bytes=new TextEncoder().encode(str),ascii='',i,j,result='';
+  for(i=0;i<bytes.length;i++)ascii+=String.fromCharCode(bytes[i]);
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var mp=Math.pow,mw=mp(2,32),words=[],bl=ascii.length*8;
+  var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,comp={};
+  for(var c=2;pc<64;c++){
+    if(!comp[c]){
+      for(i=0;i<313;i+=c)comp[i]=c;
+      hash[pc]=(mp(c,.5)*mw)|0;
+      k[pc++]=(mp(c,1/3)*mw)|0;
+    }
+  }
+  ascii+='\x80';
+  while(ascii.length%64-56)ascii+='\x00';
+  for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);words[i>>2]|=j<<((3-i)%4)*8;}
+  words[words.length]=((bl/mw)|0);
+  words[words.length]=(bl);
+  for(j=0;j<words.length;){
+    var w=words.slice(j,j+=16),old=hash;
+    hash=hash.slice(0,8);
+    for(i=0;i<64;i++){
+      var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+      var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+      var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(t1+t2)|0].concat(hash);
+      hash[4]=(hash[4]+t1)|0;
+    }
+    for(i=0;i<8;i++)hash[i]=(hash[i]+old[i])|0;
+  }
+  for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;result+=((b<16)?0:'')+b.toString(16);}}
+  return result;
+}
+
+function contentView(r){
+  return {t:r.title,c:r.contractor,s:r.site,l:r.location,sa:r.siteAddress,ac:r.access,sv:r.services,aj:r.adjacent,pi:r.publicInterface,as:r.asbestos,ar:r.atRisk,cpp:r.cppRef,
+    td:r.taskDesc,pl:r.plant,ec:Number(r.expectedCrew)||0,au:r.author,rv:r.reviewer,rb:r.reviewerBasis,ap:r.approver,vf:r.validFrom,vt:r.validTo,
+    sp:r.special,sn:r.specialNote,
+    st:r.steps.map(function(x){return x.text;}),
+    hz:r.hazards.map(function(h){return [h.hazard,h.who,h.iL,h.iS,h.controls.map(function(c){return [c.text,c.level];}),h.rL,h.rS,h.rejectReason,h.acceptNote,h.guidance];}),
+    ppe:r.ppe,pm:r.permits.map(function(p){return [p.name,!!p.required];}),em:r.emergency,
+    cp:r.competence.map(function(c){return [c.person,c.evidence,c.expiry];}),
+    cs:r.consultation.map(function(c){return [c.date,c.who,c.notes];})};
+}
+function fingerprint(r){return sha256(JSON.stringify(contentView(r)));}
+function short(h){return h?h.slice(0,12):'none';}
+function disp(n){return db.settings.showScores?(n>0?n+' ':'')+bandName(n):bandName(n);}
+function tolLabel(){return db.settings.showScores?String(db.settings.tolerable):bandName(db.settings.tolerable)+' band';}
+function revNext(r){if(r.length===1&&r<'Z')return String.fromCharCode(r.charCodeAt(0)+1);return r+'+';}
+
+/* ---------- state ---------- */
+var db=load();
+var ui={tab:'dash',step:1,id:null,bid:null,f:{q:'',status:'',contractor:''}};
+function blank(){return {settings:{tolerable:9,warnDays:14,checkDays:7,showScores:true},rams:[],seq:1,lastExport:null,dirty:false};}
+function load(){
+  try{var s=localStorage.getItem(KEY);if(s){return fix(JSON.parse(s));}}catch(e){}
+  return blank();
+}
+function fix(o){
+  var b=blank();var d=Object.assign(b,o||{});
+  d.settings=Object.assign(b.settings,(o&&o.settings)||{});
+  d.rams=(d.rams||[]).map(fixRec);
+  return d;
+}
+function newRec(){
+  return {id:'',title:'',contractor:'',site:'',location:'',taskDesc:'',expectedCrew:0,author:'',reviewer:'',approver:'',approvedDate:'',
+    revision:'A',status:'Draft',validFrom:'',validTo:'',reviewDue:'',plant:'',steps:[{text:''}],hazards:[],ppe:'',permits:PERMITS.map(function(n){return {name:n,required:false,ref:''};}),
+    emergency:'',competence:[],briefings:[],log:[],created:today(),updated:today(),example:false,
+    siteAddress:'',access:'',services:'',adjacent:'',publicInterface:'',asbestos:'',atRisk:'',cppRef:'',reviewerBasis:'',
+    special:{demolition:false,excavation:false,height:false,lifting:false,confined:false,hazsub:false},specialNote:'',
+    consultation:[],triggers:[],checks:[],copiedFrom:'',copyReviewed:false,approvedDigest:''};
+}
+function newHaz(){return {hazard:'',who:'',iL:3,iS:3,controls:[{text:'',level:'Engineering'}],rL:2,rS:3,rejectReason:'',acceptNote:'',verified:false,guidance:''};}
+function fixRec(r){
+  var b=newRec();var x=Object.assign(b,r||{});
+  x.steps=(x.steps&&x.steps.length?x.steps:[{text:''}]);
+  x.hazards=(x.hazards||[]).map(function(h){var y=Object.assign(newHaz(),h);y.controls=(y.controls&&y.controls.length?y.controls:[{text:'',level:'Engineering'}]);return y;});
+  x.competence=x.competence||[];x.briefings=x.briefings||[];x.log=x.log||[];x.consultation=x.consultation||[];x.triggers=x.triggers||[];x.checks=x.checks||[];x.special=Object.assign(b.special,(r&&r.special)||{});
+  var have={};(x.permits||[]).forEach(function(p){have[p.name]=p;});
+  x.permits=PERMITS.map(function(n){return have[n]||{name:n,required:false,ref:''};}).concat((x.permits||[]).filter(function(p){return PERMITS.indexOf(p.name)<0;}));
+  return x;
+}
+var saveTimer=null;
+function save(){
+  db.dirty=true;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){try{localStorage.setItem(KEY,JSON.stringify(db));ui.storeFail=false;}catch(e){ui.storeFail=true;}renderBar();},150);
+  renderBar();
+}
+function rec(id){for(var i=0;i<db.rams.length;i++){if(db.rams[i].id===id)return db.rams[i];}return null;}
+function cur(){return ui.id?rec(ui.id):null;}
+function isLocked(r){return LOCKED.indexOf(r.status)>=0;}
+function logIt(r,t){
+  var prev=r.log.length?(r.log[r.log.length-1].hash||''):'';var iso=new Date().toISOString();
+  r.log.push({ts:new Date().toLocaleString('en-GB'),iso:iso,text:t,prev:prev,hash:sha256(prev+'|'+iso+'|'+t)});
+}
+function verifyLog(r){
+  var prev='';
+  for(var i=0;i<r.log.length;i++){
+    var e=r.log[i];
+    if(!e.hash)return {ok:false,at:i+1,why:'entry has no hash'};
+    if((e.prev||'')!==prev)return {ok:false,at:i+1,why:'chain link does not match the entry before it (entry removed, reordered or inserted)'};
+    if(sha256(prev+'|'+e.iso+'|'+e.text)!==e.hash)return {ok:false,at:i+1,why:'entry text or time was changed after it was written'};
+    prev=e.hash;
+  }
+  return {ok:true,n:r.log.length};
+}
+
+/* ---------- derived values ---------- */
+function maxRes(r){return r.hazards.reduce(function(m,h){return Math.max(m,(h.rL*h.rS)||0);},0);}
+function hasHigher(h){return h.controls.some(function(c){return c.text.trim()&&LRANK[c.level]<=3;});}
+function names(list){var m={};list.forEach(function(b){m[b.name.trim().toLowerCase()]=1;});return m;}
+function briefStats(r){
+  var cur=r.briefings.filter(function(b){return b.rev===r.revision;});
+  var curN=names(cur);var oldOnly=r.briefings.filter(function(b){return b.rev!==r.revision&&!curN[b.name.trim().toLowerCase()];});
+  var oldN=names(oldOnly);
+  return {cur:Object.keys(curN).length,oldOnly:Object.keys(oldN).length,expected:Number(r.expectedCrew)||0};
+}
+
+function briefNoCompetence(r){
+  var have={};r.competence.forEach(function(c){have[String(c.person||'').trim().toLowerCase()]=1;});
+  var miss={};r.briefings.forEach(function(b){if(b.rev===r.revision){var k=b.name.trim().toLowerCase();if(!have[k])miss[k]=1;}});
+  return Object.keys(miss).length;
+}
+function siteGaps(r){
+  var g=[];
+  [['siteAddress','site address'],['access','access and egress'],['services','services'],['adjacent','adjacent work'],['publicInterface','public interface'],['asbestos','asbestos information']].forEach(function(x){if(!String(r[x[0]]||'').trim())g.push(x[1]);});
+  return g;
+}
+function specialOn(r){return SPECIAL.filter(function(x){return r.special[x[0]];});}
+/* ---------- flags engine (every rule here is listed on the Rules tab) ---------- */
+function flags(r){
+  if(r.status==='Closed'||r.status==='Withdrawn')return [];
+  var f=[],T=today(),S=db.settings;
+  function add(sev,msg){f.push({sev:sev,msg:msg});}
+  var nd=r.status!=='Draft',live=LIVE.indexOf(r.status)>=0,issued=r.status==='Issued';
+  if(live){
+    if(!r.validTo)add('Check','No validity end date set.');
+    else if(r.validTo<T)add('Action','Validity ended '+fd(r.validTo)+' ('+diff(r.validTo,T)+' days ago). Do not rely on it until re-approved.');
+    if(r.reviewDue){var d=diff(T,r.reviewDue);
+      if(d<0)add('Action','Review overdue by '+(-d)+' days (was due '+fd(r.reviewDue)+').');
+      else if(d<=S.warnDays)add('Check','Review due in '+d+' days ('+fd(r.reviewDue)+').');
+    }else add('Check','No review due date set.');
+    if(!r.approver.trim()||!r.approvedDate)add('Action','Live without a named approver and approval date.');
+    if(!r.approvedDigest)add('Action','No approval fingerprint recorded, so later changes cannot be detected. Re-approve to record one.');
+    else if(fingerprint(r)!==r.approvedDigest)add('Action','Content differs from what was approved (fingerprint mismatch). Treat as unapproved until reviewed.');
+    if(!r.cppRef.trim())add('Check','No construction phase plan reference recorded (CDM 2015).');
+    r.triggers.forEach(function(t){if(!t.resolved)add('Action','Review trigger open since '+fd(t.date)+': '+t.type+'. No review recorded yet.');});
+  }
+  if(nd){
+    if(!r.reviewer.trim())add('Action','No competent reviewer named.');
+    else if(!r.reviewerBasis.trim())add('Check','No basis recorded for the reviewer\'s competence.');
+    if(same(r.author,r.approver))add('Action','Author and approver are the same person. Independent approval is needed.');
+    if(same(r.author,r.reviewer))add('Check','Author and reviewer are the same person.');
+    if(!r.steps.some(function(s){return s.text.trim();}))add('Action','No method steps recorded.');
+    if(!r.hazards.length)add('Action','No hazards recorded.');
+    if(!r.emergency.trim())add('Check','No emergency arrangements recorded.');
+    var sg=siteGaps(r);if(sg.length)add('Check','Site specific details missing: '+sg.join(', ')+'.');
+    if(!r.atRisk.trim())add('Check','No groups especially at risk recorded.');
+    if(!r.consultation.length)add('Check','No consultation with the people doing the work recorded.');
+    if(specialOn(r).length&&!r.specialNote.trim())add('Check','Higher risk work selected ('+specialOn(r).map(function(x){return x[1].toLowerCase();}).join(', ')+') but no specific arrangement or inspection reference recorded.');
+    if(r.copiedFrom&&!r.copyReviewed)add('Action','Copied from '+r.copiedFrom+' and not yet confirmed as reviewed for this site. Generic copied RAMS are a common failing.');
+  }
+  r.hazards.forEach(function(h,i){
+    var n='Hazard '+(i+1)+(h.hazard.trim()?' ('+trunc(h.hazard)+')':'');
+    var ctl=h.controls.filter(function(c){return c.text.trim();});
+    var rs=h.rL*h.rS,is=h.iL*h.iS;
+    if(!ctl.length)add(nd?'Action':'Check',n+': no controls recorded.');
+    else{
+      if(h.iS>=3&&!hasHigher(h)&&!h.rejectReason.trim())add('Check',n+': severity '+h.iS+' with no elimination, substitution or engineering control. Record why a higher control is not reasonable.');
+      if(h.rS<h.iS&&!hasHigher(h))add('Check',n+': residual severity lowered ('+h.iS+' to '+h.rS+') with no elimination, substitution or engineering control. Administrative controls and PPE normally reduce likelihood, not severity.');
+    }
+    if(rs>is)add('Check',n+': residual risk ('+disp(rs)+') is higher than the initial risk ('+disp(is)+'). Check the inputs.');
+    if(h.iS>=4&&band(rs)==='low')add('Check',n+': a severity '+h.iS+' hazard shows as Low after controls. Confirm against recognised good practice. A score never replaces HSE topic guidance.');
+    if(h.iS>=4&&!h.guidance.trim())add('Check',n+': no HSE or industry guidance recorded as followed.');
+    if(rs>S.tolerable){
+      if(h.acceptNote.trim())add('Note',n+': residual risk ('+disp(rs)+') is above the tolerable level ('+tolLabel()+'). Competent person decision is recorded.');
+      else add('Action',n+': residual risk ('+disp(rs)+') is above the tolerable level ('+tolLabel()+') with no competent person decision recorded.');
+    }
+    if(issued&&ctl.length&&!h.verified)add('Check',n+': controls not confirmed in place on site.');
+  });
+  if(nd){
+    r.permits.forEach(function(p){if(p.required&&!p.ref.trim()&&(issued||live))add('Action','Permit required ('+p.name+') but no permit or plan reference recorded.');});
+    r.competence.forEach(function(c){
+      if(!c.expiry)return;
+      if(c.expiry<T)add('Action','Competence evidence expired: '+(c.person||'unnamed')+', '+(c.evidence||'unnamed')+' ('+fd(c.expiry)+').');
+      else if(diff(T,c.expiry)<=30)add('Check','Competence evidence expires in '+diff(T,c.expiry)+' days: '+(c.person||'unnamed')+', '+(c.evidence||'unnamed')+'.');
+    });
+    if(issued&&!r.competence.length)add('Check','No competence evidence recorded for the people doing the work.');
+  }
+  if(issued){
+    var b=briefStats(r);
+    if(b.cur===0)add('Check','Nobody has signed the briefing for revision '+r.revision+'.');
+    if(b.oldOnly>0)add('Action',b.oldOnly+' '+(b.oldOnly===1?'person is':'people are')+' briefed only on an older revision. Re-brief before they work to revision '+r.revision+'.');
+    if(b.expected>0&&b.cur<b.expected&&b.cur>0)add('Check','Briefed '+b.cur+' of '+b.expected+' expected operatives on revision '+r.revision+'.');
+    var nb=r.briefings.filter(function(x){return x.rev===r.revision&&!String(x.briefedBy||'').trim();}).length;
+    if(nb)add('Check',nb+' sign-on'+(nb===1?' has':'s have')+' no "briefed by" recorded.');
+    var nc=briefNoCompetence(r);if(nc)add('Check',nc+' briefed '+(nc===1?'person has':'people have')+' no competence evidence recorded under the same name.');
+    var last=r.checks.reduce(function(m,c){return c.date>m?c.date:m;},'');
+    if(!last)add('Check','No site check recorded. Confirm on site that the method is being followed.');
+    else if(diff(last,T)>S.checkDays)add('Check','Last site check was '+diff(last,T)+' days ago ('+fd(last)+'). Checks are due every '+S.checkDays+' days.');
+    r.checks.forEach(function(c){if(c.result!=='Method followed'&&!c.closed)add('Action','Site check on '+fd(c.date)+' found: '+c.result.toLowerCase()+'. Action not closed.');});
+  }
+  if(r.status==='Draft'){f.forEach(function(x){if(x.sev==='Action')x.sev='Check';});}
+  return f;
+}
+function countSev(r,s){return flags(r).filter(function(x){return x.sev===s;}).length;}
+
+/* ---------- gates ---------- */
+function gateSubmit(r){
+  var g=[];
+  if(!r.title.trim())g.push('Add a title.');
+  if(!r.contractor.trim())g.push('Name the contractor.');
+  if(!r.author.trim())g.push('Name the author.');
+  if(!r.steps.some(function(s){return s.text.trim();}))g.push('Add at least one method step.');
+  if(!r.hazards.length)g.push('Add at least one hazard.');
+  return g;
+}
+function gateApprove(r){
+  var g=gateSubmit(r);
+  if(!r.reviewer.trim())g.push('Name the competent reviewer.');
+  if(r.reviewer.trim()&&!r.reviewerBasis.trim())g.push('Record the basis of the reviewer\'s competence (qualification or experience for this type of work).');
+  if(!r.approver.trim())g.push('Name the approver.');
+  if(same(r.author,r.approver))g.push('The approver must be someone other than the author.');
+  if(same(r.author,r.reviewer))g.push('The reviewer must be someone other than the author.');
+  if(!r.validFrom||!r.validTo)g.push('Set valid from and valid to dates.');
+  else if(r.validTo<r.validFrom)g.push('Valid to date is before valid from date.');
+  if(!r.reviewDue)g.push('Set a review due date.');
+  if(!r.emergency.trim())g.push('Record emergency arrangements.');
+  var sg=siteGaps(r);if(sg.length)g.push('Complete the site specific details: '+sg.join(', ')+'. Type "None" or "Not applicable" with a reason if it truly does not apply.');
+  if(!r.atRisk.trim())g.push('Record the groups especially at risk (or "None identified").');
+  if(!r.consultation.length)g.push('Record consultation with the people doing the work. If the author is the only person doing it, record that.');
+  if(specialOn(r).length&&!r.specialNote.trim())g.push('Higher risk work is selected. Record the specific arrangement or inspection reference.');
+  if(r.copiedFrom&&!r.copyReviewed)g.push('Confirm that every part of this copied RAMS has been reviewed for this site.');
+  r.hazards.forEach(function(h,i){
+    var n='Hazard '+(i+1)+': ';
+    if(!h.hazard.trim())g.push(n+'describe the hazard.');
+    if(!h.controls.some(function(c){return c.text.trim();}))g.push(n+'record at least one control.');
+    else if(h.iS>=3&&!hasHigher(h)&&!h.rejectReason.trim())g.push(n+'no elimination, substitution or engineering control. Record why a higher control is not reasonable.');
+    if(h.iS>=4&&!h.guidance.trim())g.push(n+'record the HSE or industry guidance followed for this severity.');
+    if(h.rL*h.rS>db.settings.tolerable&&!h.acceptNote.trim())g.push(n+'residual risk is above the tolerable level. Record the competent person decision, or add controls.');
+  });
+  return g;
+}
+
+/* ---------- status actions ---------- */
+function act(r,what){
+  if(what==='submit'){r.status='Under review';logIt(r,'Submitted for review (revision '+r.revision+').');}
+  else if(what==='approve'){r.status='Approved';r.approvedDate=today();r.approvedDigest=fingerprint(r);logIt(r,'Approved by '+r.approver+', reviewed by '+r.reviewer+' (revision '+r.revision+'). Content fingerprint '+short(r.approvedDigest)+'.');}
+  else if(what==='return'){r.status='Draft';logIt(r,'Returned to draft.');}
+  else if(what==='issue'){r.status='Issued';logIt(r,'Issued to site.');}
+  else if(what==='close'){r.status='Closed';logIt(r,'Closed out.');}
+  else if(what==='withdraw'){r.status='Withdrawn';logIt(r,'Withdrawn. Do not use.');}
+  else if(what==='revise'){
+    var old=r.revision;r.revision=revNext(old);r.status='Draft';r.approvedDate='';r.approvedDigest='';
+    r.hazards.forEach(function(h){h.verified=false;});
+    logIt(r,'Revised from revision '+old+' to '+r.revision+'. Approval cleared. Controls must be re-confirmed. Earlier briefings relate to revision '+old+'.');
+  }
+  r.updated=today();save();
+}
+function addCheck(r,date,by,result,notes){
+  r.checks.push({date:date||today(),by:by,result:result,notes:notes,closed:result==='Method followed',closedNote:''});
+  logIt(r,'Site check by '+by+': '+result+(notes?'. '+notes:'')+'.');r.updated=today();save();
+}
+function closeCheck(r,i,note){
+  var c=r.checks[i];c.closed=true;c.closedNote=note;logIt(r,'Site check action closed ('+fd(c.date)+', '+c.result+'): '+note+'.');r.updated=today();save();
+}
+function addTrigger(r,date,type,by,note){
+  r.triggers.push({date:date||today(),type:type,by:by,note:note,resolved:false,outcome:'',resolvedBy:'',resolvedDate:'',resolveNote:''});
+  logIt(r,'Review trigger raised by '+by+': '+type+(note?'. '+note:'')+'.');r.updated=today();save();
+}
+function resolveTrigger(r,i,outcome,by,note,newDue){
+  var t=r.triggers[i];t.resolved=true;t.outcome=outcome;t.resolvedBy=by;t.resolvedDate=today();t.resolveNote=note;
+  if(newDue&&outcome!=='Revision started'){r.reviewDue=newDue;}
+  logIt(r,'Review trigger resolved by '+by+' ('+t.type+'): '+outcome+(note?'. '+note:'')+(newDue&&outcome!=='Revision started'?'. Next review due '+fd(newDue)+'.':'')+'.');
+  if(outcome==='Revision started'){act(r,'revise');}else{r.updated=today();save();}
+}
+function nextId(){var id='RAMS-'+String(db.seq).padStart(3,'0');db.seq++;return id;}
+function create(){var r=newRec();r.id=nextId();db.rams.push(r);logIt(r,'Created.');save();return r;}
+function duplicate(r){
+  var c=fixRec(JSON.parse(JSON.stringify(r)));
+  c.id=nextId();c.title='Copy of '+r.title;c.status='Draft';c.revision='A';c.approvedDate='';c.approvedDigest='';c.briefings=[];c.log=[];c.example=false;
+  c.site='';c.location='';c.siteAddress='';c.access='';c.services='';c.adjacent='';c.publicInterface='';c.asbestos='';c.cppRef='';c.approver='';c.reviewer='';c.reviewerBasis='';c.validFrom='';c.validTo='';c.reviewDue='';c.consultation=[];c.triggers=[];c.checks=[];c.competence=[];c.copiedFrom=r.id;c.copyReviewed=false;c.permits.forEach(function(p){p.ref='';});
+  c.hazards.forEach(function(h){h.verified=false;});
+  logIt(c,'Copied from '+r.id+'. Site details, approval, briefings, checks and history were not carried over.');
+  db.rams.push(c);save();return c;
+}
+
+/* ---------- example data (relative dates so the flags always show) ---------- */
+function example(){
+  var T=today();
+  function mk(o){var r=fixRec(o);r.id=nextId();r.example=true;r.created=T;r.updated=T;return r;}
+  var site={siteAddress:'Example Site A, Example Road, Exampletown',access:'Single gate off Example Road, marshalled deliveries',services:'No buried services in the work area. Overhead cable 8 m away, marked.',adjacent:'Warehouse picking continues on the ground floor',publicInterface:'None. Area fenced from the public',asbestos:'Not applicable. Refurbishment survey 2024 shows none in the area',atRisk:'Young workers and lone workers not used on this task'};
+  var a=mk(Object.assign({title:'EXAMPLE: Fit steel handrail to mezzanine edge',contractor:'Example Fabrication Ltd',site:'Example Site A',location:'Mezzanine, bay 3',expectedCrew:4,
+    taskDesc:'Illustrative entry only. Not for real use.',author:'A. Author',reviewer:'B. Reviewer',reviewerBasis:'Example: construction safety qualification and 10 years in the trade',approver:'C. Approver',approvedDate:addDays(T,-20),revision:'B',status:'Issued',cppRef:'CPP-EX-01',
+    validFrom:addDays(T,-20),validTo:addDays(T,40),reviewDue:addDays(T,9),plant:'Mobile access tower, welder, hand tools',
+    special:{height:true},specialNote:'Rescue plan WAH-014 and tower inspection register',
+    steps:[{text:'Brief the crew and check the permit is in place.'},{text:'Erect and inspect the access tower.'},{text:'Fit posts and rails, weld and make good.'},{text:'Clear the area and hand back.'}],
+    hazards:[
+      {hazard:'Fall from edge while fitting rail',who:'Operatives',iL:3,iS:5,controls:[{text:'Temporary edge protection fitted first',level:'Engineering'},{text:'Harness and fixed line as back-up',level:'PPE'}],rL:1,rS:5,rejectReason:'',acceptNote:'',verified:true,guidance:'HSE work at height guidance, INDG401'},
+      {hazard:'Fire from welding near stored materials',who:'Operatives, others nearby',iL:3,iS:4,controls:[{text:'Remove combustibles, fire blanket and extinguisher in place',level:'Engineering'}],rL:2,rS:4,rejectReason:'',acceptNote:'',verified:false,guidance:'HSE hot work guidance'},
+      {hazard:'Manual handling of rail sections',who:'Operatives',iL:4,iS:2,controls:[{text:'Two person lifts, trolley to the work area',level:'Administrative'}],rL:2,rS:2,rejectReason:'',acceptNote:'',verified:true,guidance:''}],
+    ppe:'Hard hat, safety boots, gloves, welding visor, harness.',
+    permits:[{name:'Hot work',required:true,ref:''},{name:'Work at height rescue plan',required:true,ref:'WAH-014'}],
+    emergency:'Nearest first aider at the site office. Muster at the car park. Rescue plan WAH-014 on site.',
+    consultation:[{date:addDays(T,-24),who:'Welders and the site supervisor',notes:'Agreed edge protection before any welding'}],
+    competence:[{person:'Welder 1',evidence:'Coded welder certificate',expiry:addDays(T,20)},{person:'Welder 2',evidence:'Coded welder certificate',expiry:addDays(T,-5)},{person:'Operative Three',evidence:'Working at height course',expiry:addDays(T,200)}],
+    briefings:[{name:'Operative One',company:'Example Fabrication Ltd',date:addDays(T,-19),rev:'A',briefedBy:'Supervisor 1',method:'Toolbox talk',notes:''},{name:'Operative Two',company:'Example Fabrication Ltd',date:addDays(T,-19),rev:'A',briefedBy:'Supervisor 1',method:'Toolbox talk',notes:''},{name:'Operative Three',company:'Example Fabrication Ltd',date:addDays(T,-15),rev:'B',briefedBy:'',method:'In person briefing',notes:''}],
+    checks:[{date:addDays(T,-3),by:'Supervisor 1',result:'Minor deviation',notes:'Rail clips missing on one bay',closed:false,closedNote:''}],
+    triggers:[{date:addDays(T,-2),type:'Change of equipment or materials',by:'Supervisor 1',note:'Access tower swapped for a scaffold lift',resolved:false,outcome:'',resolvedBy:'',resolvedDate:'',resolveNote:''}]},site));
+  logIt(a,'Example record created.');a.approvedDigest=fingerprint(a);
+  var b=mk({title:'EXAMPLE: Excavate and lay drainage run',contractor:'Example Groundworks Ltd',site:'Example Site B',location:'North yard',expectedCrew:3,
+    taskDesc:'Illustrative entry only. Not for real use.',author:'D. Digger',reviewer:'',approver:'D. Digger',revision:'A',status:'Under review',validFrom:addDays(T,3),validTo:addDays(T,33),reviewDue:addDays(T,30),plant:'6 tonne excavator, plate compactor',
+    special:{excavation:true},
+    steps:[{text:'Scan and mark buried services.'},{text:'Hand dig trial holes.'},{text:'Excavate, lay pipe and backfill.'}],
+    hazards:[{hazard:'Strike on buried services',who:'Operatives, public',iL:3,iS:5,controls:[{text:'Banksman present',level:'Administrative'},{text:'Gloves',level:'PPE'}],rL:3,rS:5,rejectReason:'',acceptNote:'',verified:false,guidance:''}],
+    emergency:'Site office first aid kit. Isolation points marked on the drawing.'});
+  logIt(b,'Example record created.');
+  var c=mk(Object.assign({title:'EXAMPLE: Replace roof sheets on store',contractor:'Example Roofing Ltd',site:'Example Site A',location:'Store roof',expectedCrew:2,
+    taskDesc:'Illustrative entry only. Not for real use.',author:'E. Estimator',reviewer:'F. Reviewer',reviewerBasis:'Example: roofing trade body membership',approver:'G. Approver',approvedDate:addDays(T,-60),revision:'A',status:'Approved',cppRef:'CPP-EX-02',validFrom:addDays(T,-60),validTo:addDays(T,-3),reviewDue:addDays(T,-3),plant:'Roof ladder, cradles',
+    special:{height:true},specialNote:'Roof work permit RW-221',
+    steps:[{text:'Install roof edge protection.'},{text:'Remove old sheets from the cradle.'},{text:'Fit new sheets and fixings.'}],
+    hazards:[{hazard:'Fall through fragile sheets',who:'Operatives',iL:3,iS:5,controls:[{text:'Crawling boards and netting below',level:'Engineering'},{text:'Edge protection',level:'Engineering'}],rL:1,rS:5,rejectReason:'',acceptNote:'',verified:false,guidance:'HSE safe working on roofs guidance'}],
+    consultation:[{date:addDays(T,-65),who:'Roofing crew',notes:'Agreed cradle position'}],
+    emergency:'First aider on site. Rescue by mobile platform.'},site));
+  logIt(c,'Example record created.');c.approvedDigest=fingerprint(c);
+  db.rams.push(a,b,c);save();
+}
+
+/* ---------- tiny UI helpers ---------- */
+function $(s){return document.querySelector(s);}
+function ask(title,body,yes){
+  return new Promise(function(res){
+    $('#modalTitle').textContent=title;$('#modalBody').textContent=body;$('#modalYes').textContent=yes||'Confirm';
+    var m=$('#modal');m.hidden=false;$('#modalYes').focus();
+    function done(v){m.hidden=true;$('#modalYes').onclick=null;$('#modalNo').onclick=null;res(v);}
+    $('#modalYes').onclick=function(){done(true);};$('#modalNo').onclick=function(){done(false);};
+  });
+}
+function setPath(o,path,v){var p=path.split('.');var t=o;for(var i=0;i<p.length-1;i++){t=t[p[i]];}t[p[p.length-1]]=v;}
+function dis(r){return isLocked(r)?' disabled':'';}
+function inp(path,val,d,type,extra){return '<input type="'+(type||'text')+'" data-p="'+path+'" value="'+esc(val)+'"'+d+(extra||'')+'>';}
+function ta(path,val,d,rows){return '<textarea data-p="'+path+'" rows="'+(rows||3)+'"'+d+'>'+esc(val)+'</textarea>';}
+function selNum(path,labels,val,d){
+  return '<select data-p="'+path+'" data-n="1" data-re="1"'+d+'>'+labels.map(function(l,i){return '<option value="'+(i+1)+'"'+(Number(val)===i+1?' selected':'')+'>'+(i+1)+' '+esc(l)+'</option>';}).join('')+'</select>';
+}
+function selList(path,list,val,d,re){
+  return '<select data-p="'+path+'"'+(re?' data-re="1"':'')+d+'>'+list.map(function(l){return '<option'+(l===val?' selected':'')+'>'+esc(l)+'</option>';}).join('')+'</select>';
+}
+function field(label,html,full){return '<div'+(full?' class="full"':'')+'><label>'+esc(label)+html+'</label></div>';}
+function flagList(r,onlySev){
+  var fl=flags(r);if(onlySev)fl=fl.filter(function(x){return onlySev.indexOf(x.sev)>=0;});
+  if(!fl.length)return '<p class="muted">No flags raised by the rules on the Rules tab. That does not mean the work is safe.</p>';
+  return '<ul class="flags">'+fl.map(function(x){return '<li><span class="tag t-'+x.sev.toLowerCase()+'">'+x.sev+'</span><span class="body">'+esc(x.msg)+'</span></li>';}).join('')+'</ul>';
+}
+
+/* ---------- bar and tabs ---------- */
+function renderBar(){
+  var m=$('#saveMsg');if(!m)return;var txt,cls='';
+  if(ui.storeFail){txt='This browser would not save your data. Export a copy now.';cls='warn';}
+  else if(db.dirty){txt='Changes since your last export. Export a copy so nothing is lost.';cls='warn';}
+  else if(db.lastExport){txt='Last exported '+new Date(db.lastExport).toLocaleString('en-GB')+'.';cls='ok';}
+  else{txt='Data is kept in this browser only. Export a copy to keep a backup.';}
+  m.textContent=txt;m.className='msg '+cls;
+}
+function renderTabs(){
+  $('#tabs').innerHTML=TABS.map(function(t){return '<button class="tab" role="tab" type="button" data-act="tab" data-t="'+t[0]+'" aria-selected="'+(ui.tab===t[0])+'">'+t[1]+'</button>';}).join('');
+}
+
+/* ---------- dashboard ---------- */
+function dashHTML(){
+  var R=db.rams,T=today(),S=db.settings;
+  if(!R.length)return '<div class="card empty"><h2>No RAMS recorded yet</h2><p>Start a new RAMS, or load the clearly labelled example data to see how the flags work.</p><div class="row" style="justify-content:center"><button class="btn primary" type="button" data-act="newRec">New RAMS</button><button class="btn" type="button" data-act="loadExample">Load example data</button></div></div>';
+  var live=R.filter(function(r){return LIVE.indexOf(r.status)>=0;});
+  var needing=R.filter(function(r){return countSev(r,'Action')>0;});
+  var dueSoon=live.filter(function(r){return r.reviewDue&&diff(T,r.reviewDue)<=S.warnDays;});
+  var wip=R.filter(function(r){return r.status==='Draft'||r.status==='Under review';});
+  var cov=0,exp=0;R.filter(function(r){return r.status==='Issued';}).forEach(function(r){var b=briefStats(r);if(b.expected>0){cov+=Math.min(b.cur,b.expected);exp+=b.expected;}});
+  var cons={};live.forEach(function(r){cons[r.contractor.trim().toLowerCase()||'(none)']=1;});
+  var kp=[['Live RAMS',live.length,'Approved or issued',''],
+    ['Needing action',needing.length,needing.length?'Open the list below':'No Action flags',needing.length?'bad':'good'],
+    ['Review due or overdue',dueSoon.length,'Within '+S.warnDays+' days',dueSoon.length?'warn':'good'],
+    ['Draft or in review',wip.length,'Not yet approved',''],
+    ['Briefing coverage',exp?Math.round(cov/exp*100)+'%':'n/a',exp?cov+' of '+exp+' expected, issued RAMS':'Set expected crew on issued RAMS',exp&&cov<exp?'warn':''],
+    ['Contractors with live RAMS',Object.keys(cons).length,'','']];
+  var h='<div class="grid kpis">'+kp.map(function(k){return '<div class="card kpi '+k[3]+'"><div class="n">'+k[1]+'</div><div class="l">'+k[0]+'</div><div class="h">'+esc(k[2])+'</div></div>';}).join('')+'</div>';
+  /* attention list */
+  var items=[];R.forEach(function(r){flags(r).forEach(function(x){if(x.sev!=='Note')items.push({r:r,x:x});});});
+  items.sort(function(a,b){return (a.x.sev==='Action'?0:1)-(b.x.sev==='Action'?0:1);});
+  h+='<div class="card" style="margin-top:14px"><div class="row sp"><h2>Needs attention</h2><span class="muted small">'+items.length+' flag'+(items.length===1?'':'s')+', Action first</span></div>';
+  if(!items.length)h+='<p class="muted">Nothing flagged. The rules only catch what is recorded here, so keep checking the work on site.</p>';
+  else h+='<ul class="flags">'+items.slice(0,40).map(function(i){return '<li><span class="tag t-'+i.x.sev.toLowerCase()+'">'+i.x.sev+'</span><span class="body">'+esc(i.x.msg)+'<span class="who">'+esc(i.r.id)+' | '+esc(i.r.title||'Untitled')+' | '+esc(i.r.contractor||'No contractor')+'</span></span><button class="btn small" type="button" data-act="openReview" data-id="'+esc(i.r.id)+'">Open</button></li>';}).join('')+'</ul>'+(items.length>40?'<p class="muted small">Showing 40 of '+items.length+'. The Register lists every record.</p>':'');
+  h+='</div>';
+  /* status mix + dates */
+  var mix=STATUSES.map(function(s){var n=R.filter(function(r){return r.status===s;}).length;return '<div class="sb"><span>'+s+'</span><div class="track"><div class="fill" style="width:'+(n/R.length*100)+'%"></div></div><strong>'+n+'</strong></div>';}).join('');
+  var ev=[];live.forEach(function(r){if(r.validTo)ev.push({r:r,t:'Validity ends',d:r.validTo});if(r.reviewDue)ev.push({r:r,t:'Review due',d:r.reviewDue});});
+  ev=ev.filter(function(e){return diff(T,e.d)<=60;}).sort(function(a,b){return a.d<b.d?-1:1;});
+  var evh=ev.length?'<div class="tablewrap"><table><thead><tr><th>When</th><th>What</th><th>RAMS</th><th>Days</th></tr></thead><tbody>'+ev.map(function(e){var d=diff(T,e.d);return '<tr><td>'+fd(e.d)+'</td><td>'+e.t+'</td><td>'+esc(e.r.id)+' '+esc(trunc(e.r.title,30))+'</td><td>'+(d<0?'<span class="tag t-action">'+(-d)+' overdue</span>':d+'')+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="muted">No live RAMS reach a validity or review date in the next 60 days.</p>';
+  h+='<div class="grid two" style="margin-top:14px"><div class="card"><h2>Status mix</h2><div class="stat-bars">'+mix+'</div></div><div class="card"><h2>Dates in the next 60 days</h2>'+evh+'</div></div>';
+  /* contractors */
+  var cm={};R.forEach(function(r){var k=r.contractor.trim()||'(none)';cm[k]=cm[k]||{n:0,live:0,act:0};cm[k].n++;if(LIVE.indexOf(r.status)>=0)cm[k].live++;cm[k].act+=countSev(r,'Action');});
+  var ck=Object.keys(cm).sort();
+  h+='<div class="card" style="margin-top:14px"><h2>By contractor</h2><div class="tablewrap"><table><thead><tr><th>Contractor</th><th>RAMS</th><th>Live</th><th>Action flags</th></tr></thead><tbody>'+ck.map(function(k){return '<tr><td>'+esc(k)+'</td><td>'+cm[k].n+'</td><td>'+cm[k].live+'</td><td>'+(cm[k].act?'<span class="tag t-action">'+cm[k].act+'</span>':'<span class="tag t-ok">0</span>')+'</td></tr>';}).join('')+'</tbody></table></div></div>';
+  return h;
+}
+
+/* ---------- register ---------- */
+function regHTML(){
+  var cs={};db.rams.forEach(function(r){if(r.contractor.trim())cs[r.contractor.trim()]=1;});
+  var h='<div class="card"><div class="row sp"><h2>Register</h2><div class="row"><button class="btn" type="button" data-act="printReg">Print register</button><button class="btn primary" type="button" data-act="newRec">New RAMS</button></div></div>';
+  h+='<div class="form" style="margin:10px 0 14px"><div><label>Search<input type="text" id="fQ" value="'+esc(ui.f.q)+'" placeholder="ID, title, contractor, site"></label></div>';
+  h+='<div><label>Status<select id="fS"><option value="">All</option>'+STATUSES.map(function(s){return '<option'+(ui.f.status===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></label></div>';
+  h+='<div><label>Contractor<select id="fC"><option value="">All</option>'+Object.keys(cs).sort().map(function(c){return '<option'+(ui.f.contractor===c?' selected':'')+'>'+esc(c)+'</option>';}).join('')+'</select></label></div></div>';
+  h+='<div id="regBody"></div></div>';return h;
+}
+function regBody(){
+  var q=ui.f.q.trim().toLowerCase();
+  var L=db.rams.filter(function(r){
+    if(ui.f.status&&r.status!==ui.f.status)return false;
+    if(ui.f.contractor&&r.contractor.trim()!==ui.f.contractor)return false;
+    if(q&&(r.id+' '+r.title+' '+r.contractor+' '+r.site).toLowerCase().indexOf(q)<0)return false;return true;});
+  if(!db.rams.length)return '<p class="empty">Nothing in the register yet.</p>';
+  if(!L.length)return '<p class="empty">No records match those filters.</p>';
+  return '<div class="tablewrap"><table><thead><tr><th>ID</th><th>Title</th><th>Contractor</th><th>Rev</th><th>Status</th><th>Highest residual</th><th>Valid to</th><th>Review due</th><th>Flags</th><th>Actions</th></tr></thead><tbody>'+L.map(function(r){
+    var a=countSev(r,'Action'),c=countSev(r,'Check');
+    return '<tr><td>'+esc(r.id)+'</td><td>'+esc(r.title||'Untitled')+(r.example?' <span class="tag t-note">Example</span>':'')+'</td><td>'+esc(r.contractor)+'</td><td>'+esc(r.revision)+'</td><td>'+statusTag(r.status)+'</td><td>'+scoreTag(maxRes(r))+'</td><td>'+fd(r.validTo)+'</td><td>'+fd(r.reviewDue)+'</td><td>'+(a?'<span class="tag t-action">'+a+' Action</span> ':'')+(c?'<span class="tag t-check">'+c+' Check</span>':'')+(!a&&!c?'<span class="tag t-ok">None</span>':'')+'</td><td><div class="row"><button class="btn small" type="button" data-act="open" data-id="'+esc(r.id)+'">Open</button><button class="btn small" type="button" data-act="dup" data-id="'+esc(r.id)+'">Copy</button><button class="btn small danger" type="button" data-act="del" data-id="'+esc(r.id)+'">Delete</button></div></td></tr>';}).join('')+'</tbody></table></div>';
+}
+
+/* ---------- builder ---------- */
+function chk(path,label,on,d){return '<label style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-p="'+path+'" '+(on?'checked':'')+d+'> '+esc(label)+'</label>';}
+function builderHTML(){
+  var r=cur();
+  if(!r){
+    var drafts=db.rams.filter(function(x){return x.status==='Draft';});
+    return '<div class="card empty"><h2>Builder</h2><p>Start a new RAMS, or open one from the Register. Every RAMS you build is saved to the register automatically.</p><div class="row" style="justify-content:center"><button class="btn primary" type="button" data-act="newRec">New RAMS</button></div>'+(drafts.length?'<p class="small muted">Drafts in progress: '+drafts.map(function(d){return '<button class="btn small" type="button" data-act="open" data-id="'+esc(d.id)+'">'+esc(d.id)+'</button>';}).join(' ')+'</p>':'')+'</div>';
+  }
+  var h='<div class="card" style="margin-bottom:14px"><div class="row sp"><div><strong>'+esc(r.id)+'</strong> | Revision '+esc(r.revision)+' '+statusTag(r.status)+(r.example?' <span class="tag t-note">Example</span>':'')+'<div class="muted small">'+esc(r.title||'Untitled')+'</div></div><div class="row"><button class="btn small" type="button" data-act="toReg">Back to register</button></div></div>';
+  if(isLocked(r))h+='<p class="disclaimer small" style="margin-top:10px">This RAMS is '+r.status.toLowerCase()+' so the fields are locked. To change it, use Revise on the sign-off step. That clears the approval and starts a new revision.</p>';
+  h+='</div><ol class="steps">'+STEPS.map(function(s,i){return '<li><button type="button" data-act="step" data-s="'+(i+1)+'"'+(ui.step===i+1?' aria-current="step"':'')+'>'+(i+1)+'. '+s+'</button></li>';}).join('')+'</ol>';
+  var d=dis(r);
+  if(ui.step===1){
+    h+='<div class="card"><h2>Details</h2><div class="form">'+
+      field('Title',inp('title',r.title,d),true)+field('Contractor',inp('contractor',r.contractor,d))+field('Site name',inp('site',r.site,d))+field('Location on site',inp('location',r.location,d))+
+      field('Expected operatives',inp('expectedCrew',r.expectedCrew,d,'number',' min="0" data-n="1"'))+
+      field('Author',inp('author',r.author,d))+field('Competent reviewer',inp('reviewer',r.reviewer,d))+field('Basis of reviewer competence (qualification or experience for this work)',inp('reviewerBasis',r.reviewerBasis,d))+field('Approver',inp('approver',r.approver,d))+
+      field('Valid from',inp('validFrom',r.validFrom,d,'date'))+field('Valid to',inp('validTo',r.validTo,d,'date'))+field('Review due (a backstop: reviews are also triggered by events)',inp('reviewDue',r.reviewDue,d,'date'))+
+      field('Task description',ta('taskDesc',r.taskDesc,d,4),true)+'</div></div>';
+    h+='<div class="card" style="margin-top:14px"><h2>Site specific details</h2><p class="muted small">A RAMS must describe this site and this task. Type "None" or "Not applicable" with a reason where it truly does not apply.</p><div class="form">'+
+      field('Site address',inp('siteAddress',r.siteAddress,d),true)+field('Access and egress',ta('access',r.access,d,2))+field('Services: buried, overhead, utilities',ta('services',r.services,d,2))+
+      field('Adjacent work and other contractors',ta('adjacent',r.adjacent,d,2))+field('Public and client interface',ta('publicInterface',r.publicInterface,d,2))+field('Asbestos and hazardous substances information',ta('asbestos',r.asbestos,d,2))+
+      field('Construction phase plan reference (CDM 2015)',inp('cppRef',r.cppRef,d))+'</div></div>';
+    h+='<div class="card" style="margin-top:14px"><h2>Higher risk work</h2><p class="muted small">Tick anything that applies. Some of these need specific written arrangements or inspections beyond a method statement.</p><div class="form">'+SPECIAL.map(function(x){return '<div>'+chk('special.'+x[0],x[1],r.special[x[0]],d)+'</div>';}).join('')+field('Specific arrangement or inspection reference (permit, plan, inspection register)',inp('specialNote',r.specialNote,d),true)+'</div></div>';
+    if(r.copiedFrom)h+='<div class="card" style="margin-top:14px"><h2>Copied RAMS</h2><p class="muted small">This was copied from '+esc(r.copiedFrom)+'. Site details, dates, approval, briefings and checks were cleared. Hazards and controls were kept, so check every one against this site.</p>'+chk('copyReviewed','I have reviewed every hazard, control and method step for this site',r.copyReviewed,d)+'</div>';
+  }
+  if(ui.step===2){
+    h+='<div class="card"><h2>Method: sequence of operations</h2><p class="muted small">One step per line, in the order the work happens.</p>';
+    r.steps.forEach(function(s,i){h+='<div class="row" style="margin-bottom:8px;flex-wrap:nowrap"><strong style="min-width:28px">'+(i+1)+'.</strong><input type="text" data-p="steps.'+i+'.text" value="'+esc(s.text)+'" aria-label="Step '+(i+1)+'"'+d+'>'+(d?'':'<button class="btn small" type="button" data-act="upStep" data-i="'+i+'" aria-label="Move step up">Up</button><button class="btn small" type="button" data-act="dnStep" data-i="'+i+'" aria-label="Move step down">Down</button><button class="btn small danger" type="button" data-act="delStep" data-i="'+i+'" aria-label="Remove step">Remove</button>')+'</div>';});
+    h+=(d?'':'<button class="btn" type="button" data-act="addStep">Add step</button>')+'<div style="margin-top:14px">'+field('Plant, equipment and materials',ta('plant',r.plant,d,3),true)+'</div></div>';
+  }
+  if(ui.step===3){
+    h+='<div class="card"><h2>Hazards and controls</h2><p class="muted small">Scores are likelihood x severity on a 5 x 5 grid. They are a ranking aid, not the probability of harm, and never a reason to drop a control that recognised good practice calls for. Order controls from elimination down to PPE.</p>'+
+      '<div class="form" style="margin-bottom:14px">'+field('Groups especially at risk: young, new or expectant, disabled, lone workers, public, others (or "None identified")',ta('atRisk',r.atRisk,d,2),true)+'</div>';
+    r.hazards.forEach(function(z,i){
+      var is=z.iL*z.iS,rs=z.rL*z.rS;
+      h+='<div class="haz"><div class="row sp"><h3>Hazard '+(i+1)+'</h3>'+(d?'':'<button class="btn small danger" type="button" data-act="delHaz" data-i="'+i+'">Remove hazard</button>')+'</div><div class="form">'+
+        field('Hazard',inp('hazards.'+i+'.hazard',z.hazard,d),true)+field('Who could be harmed and how',inp('hazards.'+i+'.who',z.who,d),true)+
+        field('Initial likelihood',selNum('hazards.'+i+'.iL',LIK,z.iL,d))+field('Initial severity',selNum('hazards.'+i+'.iS',SEV,z.iS,d))+'</div><p>Initial: '+scoreTag(is)+'</p>';
+      h+='<h4>Controls</h4>';
+      z.controls.forEach(function(c,ci){h+='<div class="ctl"><input type="text" data-p="hazards.'+i+'.controls.'+ci+'.text" value="'+esc(c.text)+'" aria-label="Control '+(ci+1)+'"'+d+'>'+selList('hazards.'+i+'.controls.'+ci+'.level',LEVELS,c.level,d,true)+(d?'<span></span>':'<button class="btn small danger" type="button" data-act="delCtl" data-i="'+i+'" data-c="'+ci+'">Remove</button>')+'</div>';});
+      h+=(d?'':'<button class="btn small" type="button" data-act="addCtl" data-i="'+i+'">Add control</button>');
+      h+='<div class="form" style="margin-top:12px">'+field('Residual likelihood (with controls)',selNum('hazards.'+i+'.rL',LIK,z.rL,d))+field('Residual severity (with controls)',selNum('hazards.'+i+'.rS',SEV,z.rS,d))+'</div><p>Residual: '+scoreTag(rs)+'</p>';
+      h+=field('HSE or industry guidance followed for this hazard (required for severity 4 or 5)',inp('hazards.'+i+'.guidance',z.guidance,d),true);
+      if(z.iS>=3&&!hasHigher(z))h+=field('Why is no elimination, substitution or engineering control reasonable?',ta('hazards.'+i+'.rejectReason',z.rejectReason,d,2),true);
+      if(rs>db.settings.tolerable)h+=field('Competent person decision on a residual risk above the tolerable level ('+tolLabel()+'). Name and reason.',ta('hazards.'+i+'.acceptNote',z.acceptNote,d,2),true);
+      h+='<label style="display:flex;gap:10px;align-items:center;margin-top:8px"><input type="checkbox" data-p="hazards.'+i+'.verified" '+(z.verified?'checked':'')+(r.status==='Closed'||r.status==='Withdrawn'?' disabled':'')+'> Controls confirmed in place on site</label></div>';
+    });
+    h+=(d?'':'<button class="btn primary" type="button" data-act="addHaz">Add hazard</button>')+'</div>';
+  }
+  if(ui.step===4){
+    h+='<div class="card"><h2>PPE, permits, emergency, consultation and competence</h2><div class="form">'+field('Task level PPE',ta('ppe',r.ppe,d,2),true)+field('Emergency arrangements: first aid, muster point, rescue, contacts',ta('emergency',r.emergency,d,3),true)+'</div>';
+    h+='<h3 style="margin-top:14px">Permits and plans</h3><div class="tablewrap"><table><thead><tr><th>Permit or plan</th><th>Required</th><th>Reference</th></tr></thead><tbody>'+r.permits.map(function(p,i){return '<tr><td>'+esc(p.name)+'</td><td><input type="checkbox" data-p="permits.'+i+'.required" aria-label="'+esc(p.name)+' required" '+(p.required?'checked':'')+d+'></td><td><input type="text" data-p="permits.'+i+'.ref" value="'+esc(p.ref)+'" aria-label="'+esc(p.name)+' reference"></td></tr>';}).join('')+'</tbody></table></div>';
+    h+='<h3 style="margin-top:14px">Consultation with the people doing the work</h3><p class="muted small">Record who helped identify the hazards and controls. If the author is the only person doing the work, record that.</p>';
+    r.consultation.forEach(function(c,i){h+='<div class="form" style="margin-bottom:8px;align-items:end">'+field('Date',inp('consultation.'+i+'.date',c.date,d,'date'))+field('Who',inp('consultation.'+i+'.who',c.who,d))+field('What they contributed',inp('consultation.'+i+'.notes',c.notes,d))+(d?'':'<div><button class="btn small danger" type="button" data-act="delCons" data-i="'+i+'">Remove</button></div>')+'</div>';});
+    h+=(d?'':'<button class="btn" type="button" data-act="addCons">Add consultation</button>');
+    h+='<h3 style="margin-top:14px">Competence evidence</h3>';
+    if(!r.competence.length)h+='<p class="muted small">Record tickets and training for the people doing the work, with expiry dates. Use the same name as on the briefing sign-on.</p>';
+    r.competence.forEach(function(c,i){h+='<div class="form" style="margin-bottom:8px;align-items:end">'+field('Person',inp('competence.'+i+'.person',c.person,d))+field('Ticket or training',inp('competence.'+i+'.evidence',c.evidence,d))+field('Expires',inp('competence.'+i+'.expiry',c.expiry,d,'date'))+(d?'':'<div><button class="btn small danger" type="button" data-act="delComp" data-i="'+i+'">Remove</button></div>')+'</div>';});
+    h+=(d?'':'<button class="btn" type="button" data-act="addComp">Add competence evidence</button>')+'</div>';
+  }
+  if(ui.step===5){
+    var gs=gateSubmit(r),ga=gateApprove(r),fp=fingerprint(r);
+    h+='<div class="card"><h2>Review and sign-off</h2><h3>Flags on this RAMS</h3>'+flagList(r)+'</div>';
+    h+='<div class="card" style="margin-top:14px"><h3>Status: '+r.status+'</h3><div class="row">';
+    var st=r.status;
+    if(st==='Draft')h+='<button class="btn primary" type="button" data-act="status" data-what="submit"'+(gs.length?' disabled':'')+'>Submit for review</button>';
+    if(st==='Under review')h+='<button class="btn primary" type="button" data-act="status" data-what="approve"'+(ga.length?' disabled':'')+'>Record approval</button><button class="btn" type="button" data-act="status" data-what="return">Return to draft</button>';
+    if(st==='Approved')h+='<button class="btn primary" type="button" data-act="status" data-what="issue">Mark issued to site</button>';
+    if(st==='Approved'||st==='Issued')h+='<button class="btn" type="button" data-act="status" data-what="revise">Revise (new revision)</button>';
+    if(st==='Issued')h+='<button class="btn" type="button" data-act="status" data-what="close">Close out</button>';
+    if(st!=='Withdrawn'&&st!=='Closed')h+='<button class="btn danger" type="button" data-act="status" data-what="withdraw">Withdraw</button>';
+    h+='</div>';
+    if(st==='Draft'&&gs.length)h+='<p class="small muted" style="margin-top:10px">To submit for review:</p><ul class="small">'+gs.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+    if(st==='Under review'&&ga.length)h+='<p class="small muted" style="margin-top:10px">Approval is blocked until:</p><ul class="small">'+ga.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>';
+    if(st==='Under review'&&!ga.length)h+='<p class="small muted" style="margin-top:10px">Recording approval confirms that '+esc(r.approver)+' has approved revision '+esc(r.revision)+' after review by '+esc(r.reviewer)+'. This tool records that decision. It does not make it.</p>';
+    h+='</div><div class="card" style="margin-top:14px"><h3>Fingerprint and audit trail</h3><p class="small">Content fingerprint (SHA-256, first 12 characters): <strong>'+short(fp)+'</strong>'+(r.approvedDigest?(fp===r.approvedDigest?' <span class="tag t-ok">Matches the approved version</span>':' <span class="tag t-action">Differs from approved version '+short(r.approvedDigest)+'</span>'):' <span class="tag t-note">Not yet approved</span>')+'</p><div class="row"><button class="btn small" type="button" data-act="verifyLog">Verify audit trail</button><span id="auditOut" class="small" role="status"></span></div><p class="muted small">Each log entry is chained to the one before it. This detects edits to the history made outside the tool. It is not tamper-proof: anyone who can edit this file can rebuild the chain. A hosted system is needed for that.</p>';
+    h+='<h3 style="margin-top:12px">Change log</h3>'+(r.log.length?'<ul class="small">'+r.log.slice().reverse().map(function(l){return '<li>'+esc(l.ts)+': '+esc(l.text)+(l.hash?' <span class="muted">['+l.hash.slice(0,8)+']</span>':'')+'</li>';}).join('')+'</ul>':'<p class="muted small">No entries.</p>')+'</div>';
+  }
+  if(ui.step===6){
+    h+='<div class="card"><div class="row sp"><h2>Print view</h2><button class="btn primary" type="button" data-act="print">Print or save as PDF</button></div><p class="muted small">Includes a blank briefing sign-on sheet and the content fingerprint. Printing a draft shows a not-approved banner.</p><div class="paper">'+docInner(r)+'</div></div>';
+  }
+  h+='<div class="row sp" style="margin-top:14px"><button class="btn" type="button" data-act="prev"'+(ui.step===1?' disabled':'')+'>Previous</button><button class="btn primary" type="button" data-act="next"'+(ui.step===STEPS.length?' disabled':'')+'>Next</button></div>';
+  return h;
+}
+
+function docInner(r){
+  var live=LIVE.indexOf(r.status)>=0;
+  var h='';
+  if(r.status==='Withdrawn')h+='<div class="watermark">WITHDRAWN. Do not work to this document.</div>';
+  else if(!live)h+='<div class="watermark">'+(r.status==='Closed'?'CLOSED OUT.':'NOT APPROVED ('+esc(r.status)+'). Draft: requires competent review. Do not work to this document.')+'</div>';
+  h+='<h1>Risk Assessment and Method Statement</h1><p>'+esc(r.id)+' | Revision '+esc(r.revision)+'</p>';
+  h+='<table class="kv"><tbody>'+[['Title',r.title],['Contractor',r.contractor],['Site and location',[r.site,r.location].filter(Boolean).join(', ')],['Site address',r.siteAddress],['Task',r.taskDesc],['Expected operatives',r.expectedCrew||''],['Valid',fd(r.validFrom)+' to '+fd(r.validTo)],['Review due',fd(r.reviewDue)+' (also reviewed on any change, incident, near miss or worker concern)'],['Construction phase plan',r.cppRef],['Author',r.author],['Competent reviewer',r.reviewer+(r.reviewerBasis?' ('+r.reviewerBasis+')':'')],['Approver',r.approver+(r.approvedDate?' on '+fd(r.approvedDate):'')]].map(function(x){return '<tr><th>'+x[0]+'</th><td>'+esc(x[1])+'</td></tr>';}).join('')+'</tbody></table>';
+  h+='<h3>Site specific information</h3><table class="kv"><tbody>'+[['Access and egress',r.access],['Services',r.services],['Adjacent work',r.adjacent],['Public and client interface',r.publicInterface],['Asbestos and hazardous substances',r.asbestos],['Groups especially at risk',r.atRisk],['Higher risk work',specialOn(r).map(function(x){return x[1];}).join('; ')+(r.specialNote?' | '+r.specialNote:'')]].map(function(x){return '<tr><th>'+x[0]+'</th><td>'+esc(x[1])+'</td></tr>';}).join('')+'</tbody></table>';
+  h+='<h3>Method</h3><table><colgroup><col style="width:9%"><col></colgroup><thead><tr><th>Step</th><th>Operation</th></tr></thead><tbody>'+r.steps.filter(function(s){return s.text.trim();}).map(function(s,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(s.text)+'</td></tr>';}).join('')+'</tbody></table><p><strong>Plant, equipment and materials:</strong> '+esc(r.plant)+'</p>';
+  h+='<h3>Hazards and controls</h3><table><colgroup><col style="width:5%"><col style="width:21%"><col style="width:14%"><col style="width:34%"><col style="width:14%"><col style="width:12%"></colgroup><thead><tr><th>No</th><th>Hazard and who is at risk</th><th>Initial</th><th>Controls (hierarchy level)</th><th>Residual</th><th>Checked on site</th></tr></thead><tbody>'+r.hazards.map(function(z,i){
+    var is=z.iL*z.iS,rs=z.rL*z.rS;
+    function sc(l,s,n){return db.settings.showScores?l+' x '+s+' = '+n+'<br>'+bandName(n):'L'+l+' S'+s+'<br>'+bandName(n);}
+    return '<tr><td>'+(i+1)+'</td><td>'+esc(z.hazard)+'<br>'+esc(z.who)+'</td><td class="band">'+sc(z.iL,z.iS,is)+'</td><td>'+z.controls.filter(function(c){return c.text.trim();}).map(function(c){return esc(c.text)+' ('+c.level+')';}).join('<br>')+(z.guidance?'<br><em>Guidance followed: '+esc(z.guidance)+'</em>':'')+(z.rejectReason?'<br><em>Higher control not reasonable: '+esc(z.rejectReason)+'</em>':'')+(z.acceptNote?'<br><em>Competent person decision: '+esc(z.acceptNote)+'</em>':'')+'</td><td class="band">'+sc(z.rL,z.rS,rs)+'</td><td>'+(z.verified?'Yes':'')+'</td></tr>';}).join('')+'</tbody></table><p class="note">Scores rank risks. They are not the probability of harm and do not replace recognised good practice.</p>';
+  h+='<h3>PPE, permits and emergency</h3><table class="kv"><tbody><tr><th>PPE</th><td>'+esc(r.ppe)+'</td></tr><tr><th>Permits and plans</th><td>'+(r.permits.filter(function(p){return p.required;}).map(function(p){return esc(p.name)+': '+esc(p.ref||'reference not recorded');}).join('<br>')||'None required')+'</td></tr><tr><th>Emergency</th><td>'+esc(r.emergency)+'</td></tr></tbody></table>';
+  h+='<h3>Consultation</h3><table><thead><tr><th>Date</th><th>Who</th><th>Contribution</th></tr></thead><tbody>'+(r.consultation.length?r.consultation.map(function(c){return '<tr><td>'+fd(c.date)+'</td><td>'+esc(c.who)+'</td><td>'+esc(c.notes)+'</td></tr>';}).join(''):'<tr><td colspan="3">None recorded</td></tr>')+'</tbody></table>';
+  h+='<h3>Competence evidence</h3><table><thead><tr><th>Person</th><th>Ticket or training</th><th>Expires</th></tr></thead><tbody>'+(r.competence.length?r.competence.map(function(c){return '<tr><td>'+esc(c.person)+'</td><td>'+esc(c.evidence)+'</td><td>'+fd(c.expiry)+'</td></tr>';}).join(''):'<tr><td colspan="3">None recorded</td></tr>')+'</tbody></table>';
+  h+='<h3>Sign-off</h3><table class="sig"><thead><tr><th>Role</th><th>Name</th><th>Signature</th><th>Date</th></tr></thead><tbody><tr><td>Author</td><td>'+esc(r.author)+'</td><td></td><td></td></tr><tr><td>Competent reviewer</td><td>'+esc(r.reviewer)+'</td><td></td><td></td></tr><tr><td>Approver</td><td>'+esc(r.approver)+'</td><td></td><td>'+(r.approvedDate?fd(r.approvedDate):'')+'</td></tr></tbody></table>';
+  var cur=r.briefings.filter(function(b){return b.rev===r.revision;});var blank=Math.max(0,10-cur.length);
+  h+='<h3>Briefing sign-on, revision '+esc(r.revision)+'</h3><p class="note">By signing you confirm you have been briefed, understand this RAMS and will work to it. Raise any question or concern before starting.</p><table class="sig"><thead><tr><th>Name</th><th>Company</th><th>Signature</th><th>Date</th></tr></thead><tbody>'+cur.map(function(b){return '<tr><td>'+esc(b.name)+'</td><td>'+esc(b.company)+'</td><td></td><td>'+fd(b.date)+'</td></tr>';}).join('')+Array(blank+1).join('<tr><td></td><td></td><td></td><td></td></tr>')+'</tbody></table>';
+  if(r.checks.length)h+='<h3>Site checks</h3><table><thead><tr><th>Date</th><th>By</th><th>Result</th><th>Notes</th></tr></thead><tbody>'+r.checks.slice(-8).map(function(c){return '<tr><td>'+fd(c.date)+'</td><td>'+esc(c.by)+'</td><td>'+esc(c.result)+(c.closed&&c.result!=='Method followed'?' (closed)':'')+'</td><td>'+esc(c.notes)+'</td></tr>';}).join('')+'</tbody></table>';
+  h+='<h3>History</h3><table><tbody>'+(r.log.map(function(l){return '<tr><td style="width:28%">'+esc(l.ts)+'</td><td>'+esc(l.text)+'</td></tr>';}).join('')||'<tr><td>No entries</td></tr>')+'</tbody></table>';
+  var fp=fingerprint(r);
+  h+='<p class="note">Content fingerprint (SHA-256, first 12 characters): <strong>'+short(fp)+'</strong>'+(r.approvedDigest?(fp===r.approvedDigest?'. Matches the approved version.':'. DIFFERS from the approved version ('+short(r.approvedDigest)+').'):'. Not yet approved.')+' Printed '+new Date().toLocaleString('en-GB')+'.</p><p class="note">Record-keeping aid. Content is the author\'s and must be reviewed by a competent person and checked against the real site before work starts. Not approved or endorsed by the HSE or any accreditation scheme.</p>';
+  return h;
+}
+
+/* ---------- briefings ---------- */
+function briefHTML(){
+  var cand=db.rams.filter(function(r){return r.status!=='Closed'&&r.status!=='Withdrawn';});
+  if(!cand.length)return '<div class="card empty"><h2>Briefings</h2><p>Create a RAMS first. Sign-ons are recorded against a revision.</p></div>';
+  if(!ui.bid||!rec(ui.bid))ui.bid=cand[0].id;
+  var r=rec(ui.bid),b=briefStats(r);
+  var h='<div class="card"><h2>Briefings</h2><p class="muted small">Record who has been briefed, by whom, how, and against which revision. A new revision means people briefed earlier need briefing again. Briefing is two way: record any question or change that came out of it.</p><div class="form"><div><label>RAMS<select id="bSel">'+db.rams.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===ui.bid?' selected':'')+'>'+esc(x.id)+' | '+esc(trunc(x.title||'Untitled',34))+' | rev '+esc(x.revision)+'</option>';}).join('')+'</select></label></div></div>';
+  h+='<p>Revision '+esc(r.revision)+' '+statusTag(r.status)+' | briefed on this revision: <strong>'+b.cur+'</strong>'+(b.expected?' of '+b.expected+' expected':'')+(b.oldOnly?' | <span class="tag t-action">'+b.oldOnly+' on an older revision only</span>':'')+'</p></div>';
+  h+='<div class="card" style="margin-top:14px"><h3>Add a sign-on</h3><p class="muted small">Record names and company only. Do not enter health details, ID numbers or card numbers. The contractor is responsible for how this personal data is kept and for how long.</p><div class="form" style="align-items:end"><div><label>Name<input type="text" id="bName"></label></div><div><label>Company<input type="text" id="bCo" value="'+esc(r.contractor)+'"></label></div><div><label>Date<input type="date" id="bDate" value="'+today()+'"></label></div><div><label>Revision<input type="text" id="bRev" value="'+esc(r.revision)+'"></label></div><div><label>Briefed by<input type="text" id="bBy"></label></div><div><label>How<select id="bMeth">'+METHODS.map(function(m){return '<option>'+m+'</option>';}).join('')+'</select></label></div><div class="full"><label>Questions or changes raised (optional)<input type="text" id="bNotes"></label></div><div><button class="btn primary" type="button" data-act="addBrief">Add sign-on</button></div></div><p id="bErr" class="small" style="color:var(--red)" role="alert"></p></div>';
+  h+='<div class="card" style="margin-top:14px"><h3>Sign-ons</h3>'+(r.briefings.length?'<div class="tablewrap"><table><thead><tr><th>Name</th><th>Company</th><th>Date</th><th>Rev</th><th>Briefed by</th><th>How</th><th>Raised</th><th>Current?</th><th></th></tr></thead><tbody>'+r.briefings.map(function(x,i){return '<tr><td>'+esc(x.name)+'</td><td>'+esc(x.company)+'</td><td>'+fd(x.date)+'</td><td>'+esc(x.rev)+'</td><td>'+(x.briefedBy?esc(x.briefedBy):'<span class="tag t-check">Not recorded</span>')+'</td><td>'+esc(x.method||'')+'</td><td>'+esc(x.notes||'')+'</td><td>'+(x.rev===r.revision?'<span class="tag t-ok">Current</span>':'<span class="tag t-action">Older</span>')+'</td><td><button class="btn small danger" type="button" data-act="delBrief" data-i="'+i+'">Remove</button></td></tr>';}).join('')+'</tbody></table></div>':'<p class="muted">No sign-ons yet.</p>')+'</div>';
+  return h;
+}
+function monHTML(){
+  var cand=db.rams.filter(function(r){return LIVE.indexOf(r.status)>=0;});
+  if(!cand.length)return '<div class="card empty"><h2>Site checks and reviews</h2><p>This tab works on approved or issued RAMS. Site checks confirm the method is followed in practice. Review triggers record events that mean a RAMS must be looked at again.</p></div>';
+  if(!ui.mid||!rec(ui.mid)||LIVE.indexOf(rec(ui.mid).status)<0)ui.mid=cand[0].id;
+  var r=rec(ui.mid),T=today();
+  var last=r.checks.reduce(function(m,c){return c.date>m?c.date:m;},'');
+  var openA=r.checks.filter(function(c){return !c.closed;}).length,openT=r.triggers.filter(function(t){return !t.resolved;}).length;
+  var h='<div class="card"><h2>Site checks and reviews</h2><p class="muted small">Paperwork alone does not control risk. Record checks that the method is being followed on site, and the events that trigger a fresh review of the RAMS.</p><div class="form"><div><label>RAMS<select id="mSel">'+cand.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===ui.mid?' selected':'')+'>'+esc(x.id)+' | '+esc(trunc(x.title||'Untitled',34))+' | rev '+esc(x.revision)+'</option>';}).join('')+'</select></label></div></div>'+
+    '<p>Last site check: <strong>'+(last?fd(last)+' ('+diff(last,T)+' days ago)':'none recorded')+'</strong> | open actions: '+(openA?'<span class="tag t-action">'+openA+'</span>':'<span class="tag t-ok">0</span>')+' | open review triggers: '+(openT?'<span class="tag t-action">'+openT+'</span>':'<span class="tag t-ok">0</span>')+'</p></div>';
+  h+='<div class="card" style="margin-top:14px"><h3>Record a site check</h3><div class="form" style="align-items:end"><div><label>Date<input type="date" id="kDate" value="'+T+'"></label></div><div><label>Checked by<input type="text" id="kBy"></label></div><div><label>Result<select id="kRes">'+RESULTS.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></label></div><div class="full"><label>What you saw (for any deviation, say what and where)<input type="text" id="kNotes"></label></div><div><button class="btn primary" type="button" data-act="addCheck">Record check</button></div></div><p id="kErr" class="small" style="color:var(--red)" role="alert"></p>';
+  h+=(r.checks.length?'<div class="tablewrap" style="margin-top:8px"><table><thead><tr><th>Date</th><th>By</th><th>Result</th><th>Notes</th><th>Action</th></tr></thead><tbody>'+r.checks.map(function(c,i){return '<tr><td>'+fd(c.date)+'</td><td>'+esc(c.by)+'</td><td>'+(c.result==='Method followed'?'<span class="tag t-ok">'+esc(c.result)+'</span>':'<span class="tag t-action">'+esc(c.result)+'</span>')+'</td><td>'+esc(c.notes)+'</td><td>'+(c.closed?(c.closedNote?'<span class="tag t-ok">Closed</span> '+esc(c.closedNote):'<span class="tag t-ok">None needed</span>'):'<div class="row"><input type="text" aria-label="Closing note" placeholder="What was done" style="min-width:160px"><button class="btn small" type="button" data-act="closeCheck" data-i="'+i+'">Close action</button></div>')+'</td></tr>';}).join('')+'</tbody></table></div>':'<p class="muted">No site checks recorded.</p>')+'</div>';
+  h+='<div class="card" style="margin-top:14px"><h3>Raise a review trigger</h3><p class="muted small">Review the RAMS when staff, method, equipment or site conditions change, after an accident or near miss, when a worker raises a concern, or when the review date is reached. The calendar date is only a backstop.</p><div class="form" style="align-items:end"><div><label>Date<input type="date" id="tDate" value="'+T+'"></label></div><div><label>Trigger<select id="tType">'+TRIGGERS.map(function(x){return '<option>'+x+'</option>';}).join('')+'</select></label></div><div><label>Raised by<input type="text" id="tBy"></label></div><div class="full"><label>What happened<input type="text" id="tNote"></label></div><div><button class="btn primary" type="button" data-act="addTrigger">Raise trigger</button></div></div><p id="tErr" class="small" style="color:var(--red)" role="alert"></p></div>';
+  var open=r.triggers.map(function(t,i){return {t:t,i:i};}).filter(function(x){return !x.t.resolved;});
+  h+='<div class="card" style="margin-top:14px"><h3>Open review triggers</h3>'+(open.length?open.map(function(x){return '<div class="haz" data-ti="'+x.i+'"><div class="row" style="align-items:flex-start;flex-wrap:nowrap;margin-bottom:10px"><span class="tag t-action">Open</span><div style="min-width:0;overflow-wrap:anywhere">'+fd(x.t.date)+' | <strong>'+esc(x.t.type)+'</strong> | raised by '+esc(x.t.by)+(x.t.note?' | '+esc(x.t.note):'')+'</div></div><div class="form" style="align-items:end"><div><label>Outcome<select class="rtOut"><option>Reviewed, no change needed</option><option>Revision started</option></select></label></div><div><label>Reviewed by<input type="text" class="rtBy"></label></div><div><label>Review note<input type="text" class="rtNote"></label></div><div><label>New review due (if no change)<input type="date" class="rtDue"></label></div><div><button class="btn primary" type="button" data-act="resolveTrigger">Record review</button></div></div><p class="rtErr small" style="color:var(--red)" role="alert"></p></div>';}).join(''):'<p class="muted">None open.</p>')+'</div>';
+  var done=r.triggers.filter(function(t){return t.resolved;});
+  if(done.length)h+='<div class="card" style="margin-top:14px"><h3>Reviews recorded</h3><div class="tablewrap"><table><thead><tr><th>Raised</th><th>Trigger</th><th>Outcome</th><th>By</th><th>Note</th></tr></thead><tbody>'+done.map(function(t){return '<tr><td>'+fd(t.date)+'</td><td>'+esc(t.type)+'</td><td>'+esc(t.outcome)+'</td><td>'+esc(t.resolvedBy)+' ('+fd(t.resolvedDate)+')</td><td>'+esc(t.resolveNote)+'</td></tr>';}).join('')+'</tbody></table></div></div>';
+  return h;
+}
+
+/* ---------- rules ---------- */
+function rulesHTML(){
+  var S=db.settings;
+  var rules=[['Action','Live RAMS past its validity end date or review date.'],['Action','Live RAMS whose content differs from the fingerprint taken at approval, or with no fingerprint.'],['Action','Live RAMS with an open review trigger (staff, method, equipment, site, incident, near miss, worker concern).'],['Action','Issued RAMS with a site check that found a deviation or stopped work and the action is not closed.'],['Action','Live without a named approver and approval date.'],['Action','Author and approver are the same person (any RAMS past draft).'],['Action','No competent reviewer, no method steps or no hazards (past draft).'],['Action','Hazard with no controls (past draft).'],['Action','Residual risk above the tolerable level with no competent person decision recorded.'],['Action','Permit marked required with no reference, on a live RAMS.'],['Action','Competence evidence past its expiry date.'],['Action','Issued RAMS where people are briefed only on an older revision.'],['Action','Copied RAMS not yet confirmed as reviewed for this site.'],
+    ['Check','Review due within the warning window, or no validity, review date or construction phase plan reference on a live RAMS.'],['Check','Site specific details, groups at risk, consultation or reviewer competence basis missing (past draft).'],['Check','Higher risk work selected with no specific arrangement or inspection reference.'],['Check','Author and reviewer are the same person; no emergency arrangements.'],['Check','Severity 3 to 5 with no elimination, substitution or engineering control and no reason recorded.'],['Check','Severity 4 or 5 with no HSE or industry guidance recorded, or showing Low after controls.'],['Check','Residual severity lowered with no elimination, substitution or engineering control.'],['Check','Residual risk higher than initial risk.'],['Check','Controls not confirmed in place on site (issued RAMS).'],['Check','No site check recorded, or the last one is older than the check interval (issued RAMS).'],['Check','Competence evidence expires within 30 days, none recorded, or briefed people with no competence evidence under the same name.'],['Check','Nobody briefed on the current revision, fewer briefed than expected, or sign-ons with no "briefed by".'],['Note','Residual risk above tolerable level with a competent person decision recorded.']];
+  var links=[['HSE: managing risks and risk assessment, steps needed','https://www.hse.gov.uk/simple-health-safety/risk/steps-needed-to-manage-risk.htm'],['HSE: construction, administration and method statements','https://www.hse.gov.uk/construction/safetytopics/admin.htm'],['HSE: CDM 2015 frequently asked questions','https://www.hse.gov.uk/construction/cdm/faq/index.htm'],['HSE: managing risk using PPE and the hierarchy of controls','https://www.hse.gov.uk/ppe/managing-risk-using-ppe.htm'],['Management of Health and Safety at Work Regulations 1999, regulation 3','https://www.legislation.gov.uk/uksi/1999/3242/regulation/3'],['SSIP core criteria','https://ssip.org.uk/ssip-core-criteria/']];
+  return '<div class="grid two"><div class="card"><h2>What this tool is, and is not</h2><p class="disclaimer">It records RAMS, checks the record against fixed rules and shows what needs attention. It does not decide that work is safe, that a control works or that a residual risk is acceptable. A competent person makes those decisions and the tool records them.</p><p>The HSE does not approve or certify software. Inspectors judge the real site, the real controls and whether people were told. This tool is not approved or endorsed by the HSE or by any accreditation scheme, and it does not make anyone compliant. It is a demonstration project and no substitute for competent health and safety advice.</p><p>It has no hazard library and no auto-suggested content, on purpose. Every hazard and control is written by a person for the task in front of them.</p></div>'+
+  '<div class="card"><h2>Settings</h2><div class="form"><div><label>Tolerable residual score (flag above this)<input type="number" min="1" max="25" data-set="tolerable" value="'+S.tolerable+'"></label></div><div><label>Review warning window (days)<input type="number" min="0" max="180" data-set="warnDays" value="'+S.warnDays+'"></label></div><div><label>Site check interval for issued RAMS (days)<input type="number" min="1" max="90" data-set="checkDays" value="'+S.checkDays+'"></label></div><div class="full"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-set="showScores" '+(S.showScores?'checked':'')+'> Show numeric scores (untick to show Low, Medium, High, Very high bands only)</label></div></div><p class="muted small">The tolerable level is a starting value, not a standard. Agree it with your competent person before relying on it. Scores 1 to 4 Low, 5 to 9 Medium, 10 to 16 High, 17 to 25 Very high. No law or HSE guidance requires a numeric matrix. It is a ranking aid, not a probability of harm.</p></div></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Approval gate</h2><p>Approval is blocked until a different person is named as reviewer and as approver, the reviewer\'s basis of competence is recorded, the dates are set, site specific details and groups at risk are completed, consultation with the people doing the work is recorded, every hazard has a control and a residual score, severity 4 or 5 hazards cite guidance, any hazard without a higher order control has a reason, higher risk work has an arrangement reference, a copied RAMS is confirmed reviewed, and any residual risk above the tolerable level has a competent person decision.</p><p>Editing is locked once approved. Revise creates a new revision letter, clears approval and controls confirmation, and flags earlier briefings as out of date.</p></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Fingerprint and audit trail</h2><p>At approval the tool stores a SHA-256 fingerprint of the RAMS content. If the content later differs, the RAMS is flagged as unapproved. Every log entry is chained to the one before it, and exports carry a data fingerprint that is checked on import. This detects edits made outside the tool. It is not tamper-proof, because anyone with access to the file or the browser can rebuild the chain. For legal-grade records a hosted system with accounts and server-side history is needed.</p></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Every flag rule</h2><ul class="flags">'+rules.map(function(x){return '<li><span class="tag t-'+x[0].toLowerCase()+'">'+x[0]+'</span><span class="body">'+esc(x[1])+'</span></li>';}).join('')+'</ul><p class="muted small">Flags on drafts show as Check, because drafts are expected to be incomplete.</p></div>'+
+  '<div class="grid two" style="margin-top:14px"><div class="card"><h2>What no software can do</h2><ul class="small"><li>Confirm that a control is actually in place. Only a person on site can. The site check log prompts and records it.</li><li>Establish competence. The tool records the basis named by the reviewer and the evidence entered. It does not verify either.</li><li>Replace site visits, worker consultation and competent advice.</li><li>Make a RAMS "HSE compliant". No such approval exists.</li></ul></div>'+
+  '<div class="card"><h2>Personal data</h2><p class="small">Names, companies and sign-ons are personal data. Data stays in this browser unless exported. The contractor using the tool is responsible for lawful use, telling workers, keeping only what is needed, and deleting it when it is no longer needed. Do not enter health details, ID numbers or card numbers.</p></div></div>'+
+  '<div class="card" style="margin-top:14px"><h2>Guidance this tool is designed around</h2><p class="muted small">Reviewed against published guidance on 8 November 2026. Guidance changes, so check the live pages.</p><ul class="small">'+links.map(function(l){return '<li><a href="'+l[1]+'" target="_blank" rel="noopener noreferrer">'+esc(l[0])+'</a></li>';}).join('')+'</ul></div>';
+}
+
+/* ---------- main render ---------- */
+function render(){
+  renderBar();renderTabs();
+  var v=$('#view'),y=window.scrollY;
+  if(ui.tab==='dash')v.innerHTML=dashHTML();
+  else if(ui.tab==='reg'){v.innerHTML=regHTML();$('#regBody').innerHTML=regBody();}
+  else if(ui.tab==='build')v.innerHTML=builderHTML();
+  else if(ui.tab==='brief')v.innerHTML=briefHTML();
+  else if(ui.tab==='mon')v.innerHTML=monHTML();
+  else v.innerHTML=rulesHTML();
+  window.scrollTo(0,y);
+}
+function go(tab,id,step){ui.tab=tab;if(id)ui.id=id;if(step)ui.step=step;render();window.scrollTo(0,0);}
+
+/* ---------- events ---------- */
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!$('#modal').hidden)$('#modalNo').click();});
+var viewEl=$('#view');
+function fieldChange(e){
+  var el=e.target;
+  if(el.id==='fQ'){ui.f.q=el.value;$('#regBody').innerHTML=regBody();return;}
+  if(el.id==='fS'){ui.f.status=el.value;$('#regBody').innerHTML=regBody();return;}
+  if(el.id==='fC'){ui.f.contractor=el.value;$('#regBody').innerHTML=regBody();return;}
+  if(el.id==='bSel'){ui.bid=el.value;render();return;}
+  if(el.id==='mSel'){ui.mid=el.value;render();return;}
+  if(el.dataset.set){
+    var sv=el.type==='checkbox'?el.checked:Number(el.value);
+    if(typeof sv==='number'&&isNaN(sv))return;
+    db.settings[el.dataset.set]=sv;save();
+    if(el.type==='checkbox'&&e.type==='change')render();
+    return;
+  }
+  if(!el.dataset.p)return;
+  var r=cur();if(!r)return;
+  var isCheck=el.type==='checkbox',isSel=el.tagName==='SELECT';
+  if(e.type==='input'&&(isCheck||isSel))return;
+  if(e.type==='change'&&!(isCheck||isSel))return;
+  if(el.disabled)return;
+  var v=isCheck?el.checked:el.value;if(el.dataset.n)v=Number(v)||0;
+  setPath(r,el.dataset.p,v);r.updated=today();save();
+  if(el.dataset.re){render();}
+}
+viewEl.addEventListener('input',fieldChange);
+viewEl.addEventListener('change',fieldChange);
+viewEl.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  var a=b.dataset.act,r=cur(),i=Number(b.dataset.i);
+  if(a==='tab'){ui.tab=b.dataset.t;render();return;}
+  if(a==='newRec'){var n=create();go('build',n.id,1);return;}
+  if(a==='loadExample'){example();render();return;}
+  if(a==='open'){go('build',b.dataset.id,1);return;}
+  if(a==='openReview'){go('build',b.dataset.id,5);return;}
+  if(a==='toReg'){ui.tab='reg';render();return;}
+  if(a==='dup'){var c=duplicate(rec(b.dataset.id));go('build',c.id,1);return;}
+  if(a==='del'){var t=rec(b.dataset.id);ask('Delete '+t.id+'?','This removes the record and its history from this browser. Export first if you may need it.','Delete').then(function(ok){if(!ok)return;db.rams=db.rams.filter(function(x){return x.id!==t.id;});if(ui.id===t.id)ui.id=null;save();render();});return;}
+  if(a==='step'){ui.step=Number(b.dataset.s);render();window.scrollTo(0,0);return;}
+  if(a==='next'){ui.step=Math.min(STEPS.length,ui.step+1);render();window.scrollTo(0,0);return;}
+  if(a==='prev'){ui.step=Math.max(1,ui.step-1);render();window.scrollTo(0,0);return;}
+  if(a==='print'){$('#printRoot').innerHTML='<div class="paper">'+docInner(r)+'</div>';window.print();return;}
+  if(a==='addBrief'){
+    var r2=rec(ui.bid),nm=$('#bName').value.trim(),by=$('#bBy').value.trim();
+    if(!nm){$('#bErr').textContent='Enter a name.';return;}
+    if(!by){$('#bErr').textContent='Enter who gave the briefing.';return;}
+    r2.briefings.push({name:nm,company:$('#bCo').value.trim(),date:$('#bDate').value||today(),rev:$('#bRev').value.trim()||r2.revision,briefedBy:by,method:$('#bMeth').value,notes:$('#bNotes').value.trim()});
+    logIt(r2,'Briefing sign-on recorded: '+nm+' on revision '+(r2.briefings[r2.briefings.length-1].rev)+', briefed by '+by+'.');
+    save();render();return;
+  }
+  if(a==='addCheck'){
+    var r3=rec(ui.mid),kb=$('#kBy').value.trim();
+    if(!kb){$('#kErr').textContent='Enter who carried out the check.';return;}
+    addCheck(r3,$('#kDate').value,kb,$('#kRes').value,$('#kNotes').value.trim());render();return;
+  }
+  if(a==='closeCheck'){
+    var r4=rec(ui.mid),inpEl=b.closest('tr').querySelector('input'),cn=inpEl.value.trim();
+    if(!cn){inpEl.setAttribute('aria-invalid','true');inpEl.focus();return;}
+    closeCheck(r4,i,cn);render();return;
+  }
+  if(a==='addTrigger'){
+    var r5=rec(ui.mid),tb=$('#tBy').value.trim();
+    if(!tb){$('#tErr').textContent='Enter who raised the trigger.';return;}
+    addTrigger(r5,$('#tDate').value,$('#tType').value,tb,$('#tNote').value.trim());render();return;
+  }
+  if(a==='resolveTrigger'){
+    var box=b.closest('[data-ti]'),ti=Number(box.dataset.ti),rb=box.querySelector('.rtBy').value.trim();
+    if(!rb){box.querySelector('.rtErr').textContent='Enter who carried out the review.';return;}
+    resolveTrigger(rec(ui.mid),ti,box.querySelector('.rtOut').value,rb,box.querySelector('.rtNote').value.trim(),box.querySelector('.rtDue').value);render();return;
+  }
+  if(a==='printReg'){
+    var rows=db.rams.map(function(x){return '<tr><td>'+esc(x.id)+'</td><td>'+esc(x.title)+'</td><td>'+esc(x.contractor)+'</td><td>'+esc(x.site)+'</td><td>'+esc(x.revision)+'</td><td>'+esc(x.status)+'</td><td>'+fd(x.validTo)+'</td><td>'+fd(x.reviewDue)+'</td><td>'+short(x.approvedDigest)+'</td></tr>';}).join('');
+    $('#printRoot').innerHTML='<div class="paper"><h1>RAMS register</h1><p>Printed '+new Date().toLocaleString('en-GB')+'</p><table><thead><tr><th>ID</th><th>Title</th><th>Contractor</th><th>Site</th><th>Rev</th><th>Status</th><th>Valid to</th><th>Review due</th><th>Approval fingerprint</th></tr></thead><tbody>'+rows+'</tbody></table><p class="note">Record-keeping aid. Not approved or endorsed by the HSE or any accreditation scheme.</p></div>';
+    window.print();return;
+  }
+  if(a==='delBrief'){rec(ui.bid).briefings.splice(i,1);save();render();return;}
+  if(!r)return;
+  if(a==='verifyLog'){var v=verifyLog(r);$('#auditOut').innerHTML=v.ok?'<span class="tag t-ok">Intact: '+v.n+' entries, chain verified</span>':'<span class="tag t-action">Broken at entry '+v.at+': '+esc(v.why)+'</span>';return;}
+  if(a==='status'){
+    var w=b.dataset.what;
+    if(w==='approve'||w==='issue'||w==='revise'||w==='withdraw'||w==='close'){
+      var msg={approve:'Record that '+r.approver+' has approved revision '+r.revision+' after review by '+r.reviewer+'.',issue:'Mark this RAMS as issued to site.',revise:'This clears the approval, unlocks editing and starts the next revision. Controls must be re-confirmed and people re-briefed.',withdraw:'Withdraw this RAMS. It should no longer be used.',close:'Close out this RAMS.'}[w];
+      ask(b.textContent.trim()+'?',msg,'Confirm').then(function(ok){if(ok){act(r,w);render();}});
+    }else{act(r,w);render();}
+    return;
+  }
+  if(isLocked(r))return;
+  if(a==='addStep'){r.steps.push({text:''});}
+  else if(a==='delStep'){r.steps.splice(i,1);if(!r.steps.length)r.steps.push({text:''});}
+  else if(a==='upStep'&&i>0){var s=r.steps.splice(i,1)[0];r.steps.splice(i-1,0,s);}
+  else if(a==='dnStep'&&i<r.steps.length-1){var s2=r.steps.splice(i,1)[0];r.steps.splice(i+1,0,s2);}
+  else if(a==='addHaz'){r.hazards.push(newHaz());}
+  else if(a==='delHaz'){r.hazards.splice(i,1);}
+  else if(a==='addCtl'){r.hazards[i].controls.push({text:'',level:'Administrative'});}
+  else if(a==='delCtl'){r.hazards[i].controls.splice(Number(b.dataset.c),1);if(!r.hazards[i].controls.length)r.hazards[i].controls.push({text:'',level:'Engineering'});}
+  else if(a==='addCons'){r.consultation.push({date:today(),who:'',notes:''});}
+  else if(a==='delCons'){r.consultation.splice(i,1);}
+  else if(a==='addComp'){r.competence.push({person:'',evidence:'',expiry:''});}
+  else if(a==='delComp'){r.competence.splice(i,1);}
+  else return;
+  r.updated=today();save();render();
+});
+$('#tabs').addEventListener('click',function(e){var b=e.target.closest('[data-t]');if(!b)return;ui.tab=b.dataset.t;render();window.scrollTo(0,0);});
+document.addEventListener('click',function(e){
+  var b=e.target.closest('#saveBar button');if(!b)return;
+  if(b.id==='btnExport'){
+    db.exportedAt=new Date().toISOString();db.exportDigest=sha256(JSON.stringify(db.rams));var blob=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);a.download='rams-data-'+today()+'.json';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+    db.dirty=false;db.lastExport=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(db));}catch(x){}renderBar();
+  }
+  if(b.id==='btnImport'){$('#fileIn').click();}
+  if(b.id==='btnExample'){ask('Load example data?','Adds three clearly labelled example records so you can see the flags working. They are illustrative only.','Load').then(function(ok){if(ok){example();ui.tab='dash';render();}});}
+  if(b.id==='btnClear'){ask('Clear everything?','This deletes all RAMS, briefings and settings from this browser. Export first if you may need them.','Clear all').then(function(ok){if(ok){db=blank();ui.id=null;ui.bid=null;try{localStorage.removeItem(KEY);}catch(x){}render();}});}
+});
+$('#fileIn').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){
+    var o;try{o=JSON.parse(rd.result);}catch(x){ask('Could not read that file','It is not valid JSON, so nothing was changed.','OK');return;}
+    if(!o||!Array.isArray(o.rams)){ask('Not a RAMS data file','The file has no RAMS list, so nothing was changed.','OK');return;}
+    var bad=o.exportDigest&&sha256(JSON.stringify(o.rams))!==o.exportDigest;
+    ask(bad?'This file does not match its fingerprint':'Replace current data?',(bad?'It was edited outside this tool or came from another version, so its contents cannot be trusted as exported. ':'')+'This replaces everything in the tool with the file contents ('+o.rams.length+' RAMS).',bad?'Import anyway':'Replace').then(function(ok){if(ok){db=fix(o);db.dirty=false;ui.id=null;ui.bid=null;try{localStorage.setItem(KEY,JSON.stringify(db));}catch(x){}render();}});
+  };rd.readAsText(f);e.target.value='';
+});
+window.addEventListener('beforeunload',function(e){if(db.dirty&&db.rams.some(function(x){return !x.example;})){e.preventDefault();e.returnValue='';}});
+render();
+})();
+</script>
+</body>
+</html>
