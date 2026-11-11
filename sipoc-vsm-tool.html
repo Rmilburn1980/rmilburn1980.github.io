@@ -8,7 +8,7 @@
 <style>
 :root{
   --bg:#0B1220; --card:#11192B; --line:#2A3A52;
-  --teal:#00D9C0; --gold:#FFB800; --green:#00E68A; --red:#FF3B5C;
+  --teal:#00D9C0; --gold:#FFB800; --green:#00E68A; --red:#FF3B5C; --pink:#FF6EB4;
   --text:#F1F5F9; --muted:#8B9CB5;
 }
 *{box-sizing:border-box}
@@ -75,6 +75,12 @@ button.add{width:100%;border-style:dashed;color:var(--teal);margin-top:2px}
 .vsm-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
 .step{background:var(--bg);border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:8px;padding:10px;margin-bottom:10px}
 .step.over{border-left-color:var(--red)}
+.step.flag{border-top-color:var(--pink);border-right-color:var(--pink);border-bottom-color:var(--pink)}
+.wf{display:flex;align-items:flex-end;padding-bottom:7px}
+.fields .span2{grid-column:span 2}
+.wf label.chk{color:var(--text)}
+.fields select{width:100%}
+input:disabled{opacity:.45;cursor:not-allowed}
 .step-h{display:flex;gap:6px;align-items:center;margin-bottom:8px}
 .badge{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal);color:var(--bg);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:.85rem}
 .step.over .badge{background:var(--red);color:var(--bg)}
@@ -88,6 +94,7 @@ button.add{width:100%;border-style:dashed;color:var(--teal);margin-top:2px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:12px;height:12px;border:2px solid var(--teal);border-radius:2px}
 .sw.red{border-color:var(--red)}
+.sw.pink{border-color:var(--pink)}
 .sw.gold{border-color:var(--gold);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);background:var(--gold)}
 label.chk{display:inline-flex;gap:6px;align-items:center;color:var(--muted);font-size:.85rem;margin:0}
 label.chk input{width:auto}
@@ -317,6 +324,7 @@ input.bad{border-color:var(--red)}
     <span><i class="sw"></i>Process step</span>
     <span><i class="sw red"></i>Cycle time is above takt</span>
     <span><i class="sw gold"></i>Queue between steps</span>
+    <span><i class="sw pink"></i>Target for improvement</span>
   </div>
 </section>
 
@@ -330,8 +338,8 @@ input.bad{border-color:var(--red)}
 'use strict';
 var $=function(s){return document.querySelector(s)};
 var KEY='sipoc_vsm_tiles_v1';
-var DARK={bg:'#0B1220',card:'#11192B',line:'#2A3A52',teal:'#00D9C0',gold:'#FFB800',green:'#00E68A',red:'#FF3B5C',text:'#F1F5F9',muted:'#8B9CB5'};
-var LIGHT={bg:'#FFFFFF',card:'#F8FAFC',line:'#94A3B8',teal:'#00796B',gold:'#8A5A00',green:'#00794A',red:'#C8102E',text:'#0F172A',muted:'#475569'};
+var DARK={bg:'#0B1220',card:'#11192B',line:'#2A3A52',teal:'#00D9C0',gold:'#FFB800',green:'#00E68A',red:'#FF3B5C',pink:'#FF6EB4',text:'#F1F5F9',muted:'#8B9CB5'};
+var LIGHT={bg:'#FFFFFF',card:'#F8FAFC',line:'#94A3B8',teal:'#00796B',gold:'#8A5A00',green:'#00794A',red:'#C8102E',pink:'#B0206B',text:'#0F172A',muted:'#475569'};
 var C=DARK;
 var FF='Segoe UI, system-ui, Arial, sans-serif';
 var UNIT={s:{short:'s'},min:{short:'min'},h:{short:'h'},d:{short:'d'}};
@@ -339,14 +347,14 @@ var UNIT={s:{short:'s'},min:{short:'min'},h:{short:'h'},d:{short:'d'}};
 /* show the hub link only when hosted on the portfolio hub */
 if(location.hostname==='rmilburn1980.github.io'){$('#hubLink').hidden=false}
 
-function newStep(){return {name:'',ops:'',ct:'',co:'',up:'',fpy:'',va:'',wait:'',qty:''}}
+function newStep(){return {name:'',ops:'',ct:'',co:'',up:'',fpy:'',va:'',wait:'',qty:'',type:'',owner:'',waste:''}}
 function blank(){return {
   project:{org:'',name:'',by:'',date:''},
   detail:false,hideWelcome:false,
   sipoc:{meta:{process:'',start:'',end:'',owner:''},S:[''],I:[''],P:['','','',''],O:[''],C:['']},
   vsm:{family:'',item:'units',unit:'min',available:'',demand:'',supplier:'',customer:'',steps:[newStep(),newStep(),newStep()]}
 }}
-function st(name,ops,ct,co,up,fpy,va,wait,qty){return {name:name,ops:ops,ct:ct,co:co,up:up,fpy:fpy,va:va,wait:wait,qty:qty}}
+function st(name,ops,ct,co,up,fpy,va,wait,qty){return {name:name,ops:ops,ct:ct,co:co,up:up,fpy:fpy,va:va,wait:wait,qty:qty,type:'',owner:'',waste:''}}
 var EXAMPLES={
   mfg:function(){return {
     sipoc:{
@@ -410,7 +418,7 @@ function normalise(o){
   ['family','item','unit','available','demand','supplier','customer'].forEach(function(k){if(v[k]!=null)out.vsm[k]=String(v[k])});
   if(!UNIT[out.vsm.unit])out.vsm.unit='min';
   if(Array.isArray(v.steps)){
-    out.vsm.steps=v.steps.map(function(x){var n=newStep();Object.keys(n).forEach(function(k){if(x&&x[k]!=null)n[k]=String(x[k])});return n});
+    out.vsm.steps=v.steps.map(function(x){var n=newStep();Object.keys(n).forEach(function(k){if(x&&x[k]!=null)n[k]=String(x[k])});if(['VA','BVA','NVA'].indexOf(n.type)<0)n.type='';n.waste=n.waste?'1':'';return n});
   }
   out.detail=typeof o.detail==='boolean'?o.detail:out.vsm.steps.some(function(s){return s.co!==''||s.up!==''||s.fpy!==''||s.va!==''});
   out.hideWelcome=!!o.hideWelcome;
@@ -462,21 +470,28 @@ function nm(s,i){return (s.name||'').trim()||('step '+(i+1))}
 function joinNames(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1]}
 function reducedMotion(){return window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches}
 
-/* calculations */
+/* value-added time for one step: type NVA or BVA counts as none, VA uses the entered value-added time or the whole cycle time, no type keeps the old rule */
+function stepVA(s){
+  if(s.type==='NVA'||s.type==='BVA')return 0;
+  var c=num(s.ct), a=num(s.va);
+  return isNaN(a)?c:a;
+}
 function calc(){
   var v=state.vsm, takt=NaN;
   if(num(v.available)>0&&num(v.demand)>0)takt=num(v.available)/num(v.demand);
-  var wait=0,ct=0,va=0,rty=1,rtyN=0,over=0;
+  var wait=0,ct=0,va=0,rty=1,rtyN=0,over=0,tv=0,tb=0,tn=0,tu=0,fl=0,cb=0,cn=0;
   v.steps.forEach(function(s){
-    var c=num(s.ct), w=num(s.wait), a=isNaN(num(s.va))?c:num(s.va), f=num(s.fpy);
+    var c=num(s.ct), w=num(s.wait), a=stepVA(s), f=num(s.fpy);
     if(!isNaN(w))wait+=w;
     if(!isNaN(c))ct+=c;
     if(!isNaN(a))va+=a;
     if(!isNaN(f)){rty*=f/100;rtyN++}
     if(!isNaN(takt)&&!isNaN(c)&&c>takt)over++;
+    if(s.type==='VA')tv++;else if(s.type==='BVA'){tb++;if(!isNaN(c))cb+=c}else if(s.type==='NVA'){tn++;if(!isNaN(c))cn+=c}else tu++;
+    if(s.waste)fl++;
   });
   var lead=wait+ct;
-  return {takt:takt,wait:wait,ct:ct,va:va,lead:lead,pce:lead>0?va/lead*100:NaN,rty:rtyN?rty*100:NaN,rtyN:rtyN,over:over};
+  return {takt:takt,wait:wait,ct:ct,va:va,lead:lead,pce:lead>0?va/lead*100:NaN,rty:rtyN?rty*100:NaN,rtyN:rtyN,over:over,nVA:tv,nBVA:tb,nNVA:tn,nUntyped:tu,flagged:fl,ctBVA:cb,ctNVA:cn};
 }
 /* plain-English reading of the numbers */
 function insights(k){
@@ -506,6 +521,14 @@ function insights(k){
   var lo=-1,lv=101;
   steps.forEach(function(s,i){var f=num(s.fpy);if(!isNaN(f)&&f<lv){lv=f;lo=i}});
   if(lo>=0&&lv<100)out.push('The most rework is at '+nm(steps[lo],lo)+' (first pass yield '+fmt1(lv)+'%).'+(k.rtyN>1?' Across all steps, '+fmt1(k.rty)+'% of items are right first time.':''));
+  if(k.nVA+k.nBVA+k.nNVA>0){
+    var tp='Step types: '+k.nVA+' value-add, '+k.nBVA+' business-value-add, '+k.nNVA+' non-value-add.';
+    if(k.ctBVA+k.ctNVA>0&&k.ct>0)tp+=' Those last two take '+fmt1((k.ctBVA+k.ctNVA)/k.ct*100)+'% of the cycle time.';
+    if(k.nUntyped>0)tp+=' '+k.nUntyped+' still '+(k.nUntyped===1?'has':'have')+' no type, so '+(k.nUntyped===1?'it counts':'they count')+' as value-adding until you set one.';
+    out.push(tp);
+  }
+  var fnames=[];steps.forEach(function(s,i){if(s.waste)fnames.push(nm(s,i))});
+  if(fnames.length)out.push('Flagged for improvement: '+joinNames(fnames)+'.');
   return out;
 }
 
@@ -564,7 +587,7 @@ var FIELDS=[
   {k:'co',l:'Changeover or setup',u:'t',hint:'Time lost switching between products or jobs'},
   {k:'up',l:'Uptime or availability',u:'%',max:100,hint:'Share of time the step is ready to work'},
   {k:'fpy',l:'First pass yield',u:'%',max:100,hint:'Done right first time, with no rework'},
-  {k:'va',l:'Value-added time',u:'t',hint:'The part of cycle time the customer would pay for'}
+  {k:'va',l:'Value-added time',u:'t',hint:'The part of cycle time the customer would pay for. Ignored when the step type is Business-Value-Add or Non-Value-Add.'}
 ];
 function fieldLabel(f){
   var suffix=f.u==='t'?unitShort():(f.u==='i'?itemPlural():f.u);
@@ -589,16 +612,22 @@ function stepHtml(s,i,len){
   var fields=list.map(function(f){
     var id='s'+i+'-'+f.k, bad=badMsg(f,s[f.k]);
     return '<div><label class="f" for="'+id+'" data-lab="'+f.k+'">'+esc(fieldLabel(f))+'</label>'+
-      '<input type="number" id="'+id+'" data-i="'+i+'" data-f="'+f.k+'" inputmode="decimal" min="0" step="any"'+(f.max?' max="'+f.max+'"':'')+' value="'+esc(s[f.k])+'"'+(bad?' class="bad" aria-invalid="true"':'')+' title="'+esc(f.hint)+'">'+
+      '<input type="number" id="'+id+'" data-i="'+i+'" data-f="'+f.k+'" inputmode="decimal" min="0" step="any"'+(f.max?' max="'+f.max+'"':'')+' value="'+esc(s[f.k])+'"'+(bad?' class="bad" aria-invalid="true"':'')+((f.k==='va'&&(s.type==='NVA'||s.type==='BVA'))?' disabled':'')+' title="'+esc(f.hint)+'">'+
       (i===0?'<small class="fh">'+esc(f.hint)+'</small>':'')+'</div>';
   }).join('');
+  var tid='s'+i+'-type', oid='s'+i+'-owner', wid='s'+i+'-waste';
+  var typeSel='<div class="span2"><label class="f" for="'+tid+'">Step type</label><select id="'+tid+'" data-i="'+i+'" data-f="type">'+
+    [['','Not set'],['VA','Value-Add'],['BVA','Business-Value-Add'],['NVA','Non-Value-Add']].map(function(o){return '<option value="'+o[0]+'"'+(s.type===o[0]?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>'+
+    (i===0?'<small class="fh">Value-Add counts toward value-added time. The other two count as none.</small>':'')+'</div>';
+  var ownerIn='<div><label class="f" for="'+oid+'">Step owner</label><input type="text" id="'+oid+'" data-i="'+i+'" data-f="owner" maxlength="60" placeholder="Who owns it" value="'+esc(s.owner)+'"></div>';
+  var wasteIn='<div class="wf"><label class="chk" for="'+wid+'"><input type="checkbox" id="'+wid+'" data-i="'+i+'" data-f="waste"'+(s.waste?' checked':'')+'> Flag for improvement</label></div>';
   return '<div class="step" data-step="'+i+'">'+
     '<div class="step-h"><span class="badge" aria-hidden="true">'+(i+1)+'</span>'+
     '<input type="text" data-i="'+i+'" data-f="name" aria-label="Name of step '+(i+1)+'" placeholder="Step name" value="'+esc(s.name)+'">'+
     '<button type="button" class="mini" data-act="sup" data-i="'+i+'" aria-label="Move step '+(i+1)+' up"'+(i===0?' disabled':'')+'>&#8593;</button>'+
     '<button type="button" class="mini" data-act="sdn" data-i="'+i+'" aria-label="Move step '+(i+1)+' down"'+(i===len-1?' disabled':'')+'>&#8595;</button>'+
     '<button type="button" class="mini" data-act="sdel" data-i="'+i+'" aria-label="Remove step '+(i+1)+'">&#215;</button></div>'+
-    '<div class="fields">'+fields+'</div></div>';
+    '<div class="fields">'+typeSel+ownerIn+wasteIn+fields+'</div></div>';
 }
 function renderVsmForm(){
   var v=state.vsm;
@@ -628,6 +657,7 @@ function renderKpis(k){
   document.querySelectorAll('#steps .step').forEach(function(el,i){
     var s=state.vsm.steps[i];
     el.classList.toggle('over',!isNaN(k.takt)&&num(s.ct)>k.takt);
+    el.classList.toggle('flag',!!s.waste);
   });
 }
 
@@ -695,7 +725,7 @@ function buildMapString(pal){
     if(has('up'))metrics.push({l:'Uptime',get:function(s){return num(s.up)},unit:'%'});
     if(has('fpy'))metrics.push({l:'FPY',get:function(s){return num(s.fpy)},unit:'%'});
     if(has('ops'))metrics.push({l:'Staff',get:function(s){return num(s.ops)},unit:''});
-    if(has('va'))metrics.push({l:'VA',get:function(s){return isNaN(num(s.va))?num(s.ct):num(s.va)},unit:' '+u});
+    if(has('va')||st2.some(function(s){return s.type}))metrics.push({l:'VA',get:function(s){return stepVA(s)},unit:' '+u});
     var rows=Math.ceil(metrics.length/2);
 
     var py=112,ph=50,dy=py+ph,dh=28+(rows-1)*19,hi=264,lo=294;
@@ -715,7 +745,18 @@ function buildMapString(pal){
       if(lines.length===1)p.push(tx(bs+BW/2,py+30,lines[0],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}));
       else{p.push(tx(bs+BW/2,py+21,lines[0],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}));
            p.push(tx(bs+BW/2,py+38,lines[1],{size:13,weight:600,anchor:'middle',bg:C.bg,maxw:BW-16,box:box}))}
+      var TL={VA:'Value-Add',BVA:'Business-Value-Add',NVA:'Non-Value-Add'}, TC={VA:C.green,BVA:C.gold,NVA:C.red};
+      if(s.type&&TL[s.type]){
+        var tcol=TC[s.type];
+        p.push('<rect x="'+bs+'" y="'+(py-24)+'" width="'+(s.waste?BW-72:BW)+'" height="20" rx="3" fill="'+C.bg+'" stroke="'+tcol+'" stroke-width="1.5"/>');
+        p.push(tx(bs+(s.waste?BW-72:BW)/2,py-10,TL[s.type],{size:11,weight:600,fill:tcol,anchor:'middle',bg:C.bg,maxw:(s.waste?BW-72:BW)-12,box:[bs,py-24,(s.waste?BW-72:BW),20].join(',')}));
+      }
+      if(s.waste){
+        p.push('<rect x="'+(be-68)+'" y="'+(py-24)+'" width="68" height="20" rx="3" fill="'+C.bg+'" stroke="'+C.pink+'" stroke-width="1.5"/>');
+        p.push(tx(be-34,py-10,'Target',{size:11,weight:600,fill:C.pink,anchor:'middle',bg:C.bg,maxw:56,box:[be-68,py-24,68,20].join(',')}));
+      }
       p.push('<rect x="'+bs+'" y="'+dy+'" width="'+BW+'" height="'+dh+'" fill="'+C.card+'" stroke="'+col+'" stroke-width="2"/>');
+      if((s.owner||'').trim())p.push(tx(bs+BW/2,dy+dh+16,'Owner: '+s.owner.trim(),{size:11,fill:C.muted,anchor:'middle',maxw:BW-8}));
       if(metrics.length>1)p.push('<line x1="'+(bs+85)+'" y1="'+(dy+6)+'" x2="'+(bs+85)+'" y2="'+(dy+dh-6)+'" stroke="'+C.line+'" stroke-width="1"/>');
       var dbox=[bs,dy,BW,dh].join(',');
       metrics.forEach(function(m,j){
@@ -809,7 +850,7 @@ function buildReport(){
   var steps=v.steps.map(function(s,i){
     var c=num(s.ct), over=!isNaN(k.takt)&&!isNaN(c)&&c>k.takt;
     var nn=function(x){return '<td class="n">'+(isNaN(num(x))?'':esc(fmt(num(x))))+'</td>'};
-    return '<tr><td>'+(i+1)+'. '+esc(s.name||'Unnamed step')+(over?' (over takt)':'')+'</td>'+nn(s.ops)+nn(s.ct)+nn(s.co)+nn(s.up)+nn(s.fpy)+nn(s.va)+nn(s.wait)+nn(s.qty)+'</tr>';
+    return '<tr><td>'+(i+1)+'. '+esc(s.name||'Unnamed step')+(over?' (over takt)':'')+'</td><td>'+esc({VA:'Value-Add',BVA:'Business-Value-Add',NVA:'Non-Value-Add'}[s.type]||'')+'</td><td>'+esc(s.owner||'')+'</td><td>'+(s.waste?'Yes':'')+'</td>'+nn(s.ops)+nn(s.ct)+nn(s.co)+nn(s.up)+nn(s.fpy)+nn(s.va)+nn(s.wait)+nn(s.qty)+'</tr>';
   }).join('');
   var map=measured(buildMapString(LIGHT));
   $('#report').innerHTML=
@@ -818,7 +859,7 @@ function buildReport(){
     '<h2>Summary</h2><div class="kp">'+kp+'</div><ul>'+notes+'</ul>'+
     '<h2>SIPOC</h2><table><thead><tr><th>Suppliers</th><th>Inputs</th><th>Process</th><th>Outputs</th><th>Customers</th></tr></thead><tbody>'+sip+'</tbody></table>'+
     '<h2>Value stream map</h2>'+(map||'<p>No process steps entered.</p>')+
-    '<h2>Step data</h2><table><thead><tr><th>Step</th><th>People</th><th>Cycle time ('+u+')</th><th>Changeover ('+u+')</th><th>Uptime (%)</th><th>First pass yield (%)</th><th>Value-added time ('+u+')</th><th>Wait before ('+u+')</th><th>Queue ('+esc(itemPlural())+')</th></tr></thead><tbody>'+(steps||'<tr><td colspan="9">No steps entered.</td></tr>')+'</tbody></table>'+
+    '<h2>Step data</h2><table><thead><tr><th>Step</th><th>Type</th><th>Owner</th><th>Target</th><th>People</th><th>Cycle time ('+u+')</th><th>Changeover ('+u+')</th><th>Uptime (%)</th><th>First pass yield (%)</th><th>Value-added time ('+u+')</th><th>Wait before ('+u+')</th><th>Queue ('+esc(itemPlural())+')</th></tr></thead><tbody>'+(steps||'<tr><td colspan="12">No steps entered.</td></tr>')+'</tbody></table>'+
     '<p class="rfoot">Generated '+esc(new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}))+' with the SIPOC and Value Stream Map tool.</p>';
 }
 
@@ -883,8 +924,10 @@ document.querySelectorAll('[data-v]').forEach(function(inp){
 });
 $('#steps').addEventListener('input',function(e){
   var t=e.target;if(!t.dataset.f)return;
-  state.vsm.steps[+t.dataset.i][t.dataset.f]=t.value;
-  var def=FIELDS.filter(function(x){return x.k===t.dataset.f})[0], msg=def?badMsg(def,t.value):'';
+  var val=t.type==='checkbox'?(t.checked?'1':''):t.value;
+  state.vsm.steps[+t.dataset.i][t.dataset.f]=val;
+  if(t.dataset.f==='type'){var tid2=t.id;renderVsmForm();refresh();persist();var again=document.getElementById(tid2);if(again)again.focus();return}
+  var def=FIELDS.filter(function(x){return x.k===t.dataset.f})[0], msg=def?badMsg(def,val):'';
   t.classList.toggle('bad',!!msg);
   if(msg){t.setAttribute('aria-invalid','true');setStatus(msg,false)}else t.removeAttribute('aria-invalid');
   refresh();persist();
