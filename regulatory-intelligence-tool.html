@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
 <title>Regulatory Intelligence Maturity</title>
+<meta property="og:title" content="Regulatory Intelligence Maturity">
+<meta property="og:description" content="Five levels of how a workplace tracks and acts on changing EHS law, a 10 question scorer and a printable one-page interview summary. A conversation tool, not an audit.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rmilburn1980.github.io/regulatory-intelligence-tool.html">
+<meta property="og:image" content="https://rmilburn1980.github.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Richard Milburn: Operations, Lean and EHS evidence portfolio.">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="description" content="Five levels of how a workplace tracks and acts on changing EHS law, a 10 question scorer, and a one page interview summary that prints.">
 <style>
 :root{
@@ -110,6 +119,97 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
 }
 </style>
 <link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
+<!-- rm-dialogs: in-page message and confirm boxes, so they still work where a browser blocks native pop-ups -->
+<script>
+(function(){
+  if(window.__rmDialogs)return;window.__rmDialogs=true;
+  var nativeConfirm=window.confirm, nativeAlert=window.alert;
+  var ctx=null, approved=null, dlg=null, msgEl=null, okBtn=null, noBtn=null, queue=[], busy=false;
+  function clearCtx(){ctx=null}
+  function setCtx(c){ctx=c;setTimeout(clearCtx,0)}
+  document.addEventListener('click',function(e){
+    var t=e.target;if(dlg&&dlg.contains(t))return;
+    setCtx({replay:function(){t.click()}});
+  },true);
+  /* file loads: remember the handler so a confirm inside it can be re-run after the answer */
+  try{
+    var slot='__rmOnload';
+    Object.defineProperty(FileReader.prototype,'onload',{configurable:true,
+      get:function(){return this[slot]||null},
+      set:function(fn){
+        var rd=this;
+        if(rd.__rmWrapped)rd.removeEventListener('load',rd.__rmWrapped);
+        rd[slot]=fn;rd.__rmWrapped=null;
+        if(typeof fn!=='function')return;
+        rd.__rmWrapped=function(ev){
+          var self={replay:function(){setCtx(self);fn.call(rd,ev)}};
+          setCtx(self);
+          return fn.call(rd,ev);
+        };
+        rd.addEventListener('load',rd.__rmWrapped);
+      }});
+  }catch(err){}
+  function build(){
+    if(dlg)return true;
+    if(!document.body||typeof HTMLDialogElement==='undefined')return false;
+    dlg=document.createElement('dialog');
+    dlg.id='rmDialog';dlg.setAttribute('role','alertdialog');dlg.setAttribute('aria-labelledby','rmDialogMsg');
+    dlg.style.cssText='box-sizing:border-box;max-width:min(92vw,440px);width:auto;margin:auto;padding:20px;border:1px solid #3a4d6b;border-radius:12px;background:#11192B;color:#F1F5F9;font:16px/1.5 system-ui,Segoe UI,Arial,sans-serif;box-shadow:0 18px 60px rgba(0,0,0,.6);text-align:left';
+    msgEl=document.createElement('p');msgEl.id='rmDialogMsg';
+    msgEl.style.cssText='margin:0 0 18px;color:#F1F5F9;font:inherit;white-space:pre-wrap;overflow-wrap:anywhere';
+    var row=document.createElement('div');row.style.cssText='display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap';
+    var base='box-sizing:border-box;min-height:44px;min-width:96px;padding:10px 18px;border-radius:8px;font:600 16px/1.2 system-ui,Segoe UI,Arial,sans-serif;cursor:pointer;margin:0;';
+    noBtn=document.createElement('button');noBtn.type='button';noBtn.textContent='Cancel';
+    noBtn.style.cssText=base+'background:#11192B;color:#F1F5F9;border:1px solid #8B9CB5';
+    okBtn=document.createElement('button');okBtn.type='button';okBtn.textContent='OK';
+    okBtn.style.cssText=base+'background:#00D9C0;color:#0B1220;border:1px solid #00D9C0';
+    row.appendChild(noBtn);row.appendChild(okBtn);dlg.appendChild(msgEl);dlg.appendChild(row);
+    var st=document.createElement('style');
+    st.textContent='#rmDialog::backdrop{background:rgba(4,8,16,.7)}#rmDialog button:focus-visible{outline:3px solid #FFB800;outline-offset:2px}@media print{#rmDialog{display:none!important}}';
+    document.head.appendChild(st);document.body.appendChild(dlg);
+    return true;
+  }
+  function show(item){
+    busy=true;msgEl.textContent=item.msg;noBtn.style.display=item.ask?'':'none';
+    var done=false;
+    function finish(yes){
+      if(done)return;done=true;
+      okBtn.onclick=noBtn.onclick=dlg.oncancel=null;
+      if(dlg.open)dlg.close();
+      busy=false;
+      if(item.ask&&yes&&item.replay){
+        approved={msg:item.msg,until:Date.now()+2000};
+        try{item.replay()}finally{approved=null}
+      }
+      if(queue.length)show(queue.shift());
+    }
+    okBtn.onclick=function(){finish(true)};
+    noBtn.onclick=function(){finish(false)};
+    dlg.oncancel=function(e){e.preventDefault();finish(false)};
+    try{dlg.showModal()}catch(e){busy=false;return false}
+    (item.ask?noBtn:okBtn).focus();
+    return true;
+  }
+  function open(item){
+    if(!build())return false;
+    if(busy&&!dlg.open)busy=false;
+    if(busy){queue.push(item);return true}
+    return show(item);
+  }
+  window.confirm=function(m){
+    var msg=String(m==null?'':m);
+    if(approved&&approved.msg===msg&&Date.now()<approved.until){approved=null;return true}
+    var c=ctx;
+    if(!c||!c.replay)return nativeConfirm.call(window,msg);
+    if(!open({msg:msg,ask:true,replay:c.replay}))return nativeConfirm.call(window,msg);
+    return false;
+  };
+  window.alert=function(m){
+    var msg=String(m==null?'':m);
+    if(!open({msg:msg,ask:false}))nativeAlert.call(window,msg);
+  };
+})();
+</script>
 </head>
 <body>
 <div class="wrap" role="main">
