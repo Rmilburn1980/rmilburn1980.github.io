@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>AI in operations: Richard Milburn</title>
+<link rel="icon" type="image/svg+xml" href="rm-monogram.svg">
+<meta name="description" content="How I use Claude in Lean, EHS and operations: 8 Anthropic Academy courses, 29 working tools, and the rules I hold so that AI output gets checked.">
+<meta property="og:title" content="AI in operations: Richard Milburn">
+<meta property="og:description" content="How I use Claude in Lean, EHS and operations, with the rules I hold so that AI output gets checked.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rmilburn1980.github.io/ai-in-operations.html">
+<meta property="og:image" content="https://rmilburn1980.github.io/og-image.png">
+<style>
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/special-gothic-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/special-gothic-latin-700-normal.woff2') format('woff2')}
+:root{--bg:#070a1a;--panel:rgba(30,27,75,.42);--panel2:rgba(49,43,110,.55);--line:rgba(139,120,255,.30);--text:#f2f1ff;--muted:#b9b8da;--violet:#a78bfa;--cyan:#22d3ee;--pink:#f0abfc;--green:#4ade80;--amber:#fcd34d;--radius:16px;--gutter:16px}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;color:var(--text);background:radial-gradient(900px 520px at 85% -5%,rgba(124,58,237,.35),transparent 70%),radial-gradient(800px 500px at -10% 12%,rgba(34,211,238,.16),transparent 70%),var(--bg);font-family:"Special Gothic",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.55;-webkit-text-size-adjust:100%}
+a{color:var(--cyan)}
+.wrap{max-width:960px;margin:0 auto;padding:0 var(--gutter)}
+header{padding:44px 0 8px}
+.eyebrow{font-weight:700;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan)}
+h1{font-size:clamp(2rem,8vw,3.2rem);line-height:1.05;margin:6px 0 12px;text-transform:uppercase}
+.lead{color:var(--muted);font-size:1.05rem;max-width:62ch;margin:0}
+h2{font-size:1.5rem;text-transform:uppercase;margin:0 0 6px}
+section{padding:34px 0 0}
+.sub{color:var(--muted);margin:0 0 16px;max-width:62ch}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+.tile{display:flex;flex-direction:column;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:inset 0 3px 0 var(--c,var(--violet))}
+.tile .kind{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--c,var(--violet))}
+.tile h3{margin:0;font-size:1.12rem;line-height:1.3}
+.tile p{margin:0;color:var(--muted);font-size:.93rem}
+a.tile{color:inherit;text-decoration:none}
+a.tile:hover,a.tile:focus-visible{background:var(--panel2);outline:none;border-color:var(--c)}
+.open{margin-top:auto;padding-top:6px;font-weight:700;color:var(--c,var(--cyan));font-size:.9rem}
+ul.rules{margin:0;padding-left:20px;color:var(--muted)}
+ul.rules li{margin:8px 0}
+ul.rules b{color:var(--text)}
+.note{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;color:var(--muted)}
+.note b{color:var(--text)}
+footer{padding:36px 0 90px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="eyebrow">Richard Milburn · AI skills</div>
+  <h1>AI in operations</h1>
+  <p class="lead">I use Claude to turn what I know from 21 years on a caravan production line into working tools: dashboards, trackers and checks that people on the floor can open in a browser. The AI drafts and builds. I decide what is right, and I check it.</p>
+</header>
+<main class="wrap">
+
+  <section>
+    <h2>What I have built with it</h2>
+    <p class="sub">29 working tools and dashboards, each a single HTML page with no sign-in. Each one comes from a problem I met in production, quality or safety work.</p>
+    <div class="grid">
+      <a class="tile" style="--c:var(--green)" href="sqcdp-dashboard/"><span class="kind">Operations</span><h3>SQCDP interview evidence</h3><p>Safety, Quality, Cost, Delivery and People, the framework behind the weekly review I ran at work.</p><span class="open">Open dashboard</span></a>
+      <a class="tile" style="--c:var(--pink)" href="dmaic-fpy-dashboard.html"><span class="kind">Continuous improvement</span><h3>DMAIC and first pass yield board</h3><p>My Green Belt project on first pass yield, laid out stage by stage.</p><span class="open">Open dashboard</span></a>
+      <a class="tile" style="--c:var(--cyan)" href="skills-matrix-dashboard.html"><span class="kind">People development</span><h3>Skills matrix and cross-training</h3><p>Who is trained on what, and where cover is thin.</p><span class="open">Open dashboard</span></a>
+      <a class="tile" style="--c:#fda4af" href="risk-assessment-dashboard.html"><span class="kind">Safety</span><h3>Risk assessment dashboard</h3><p>A 5x5 matrix and risk register, built to a safety critical standard.</p><span class="open">Open dashboard</span></a>
+    </div>
+  </section>
+
+  <section>
+    <h2>The rules I hold</h2>
+    <p class="sub">AI output can look right and be wrong. These are the habits that stop that reaching the shop floor.</p>
+    <ul class="rules">
+      <li><b>A person is responsible for the result.</b> Claude drafts. I read it, test it and own it.</li>
+      <li><b>Gaps are shown, not hidden.</b> A tool says "Gaps found. Do not rely on this" when its checks fail. It never says something is safe or compliant.</li>
+      <li><b>Example data is labelled.</b> Anything that is not a real figure says so on the page.</li>
+      <li><b>Safety tools get a higher bar.</b> Tools that deal with people's lives are checked more closely than the rest.</li>
+      <li><b>Every figure names its source.</b> My tracker, my CV or my scrap record, and what has not been checked against company records.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>AI and safety</h2>
+    <p class="sub">I hold the NEBOSH verified Artificial Intelligence: Application in OSH certificate from Phoenix Health and Safety (July 2026), and I am studying for the NEBOSH General Certificate.</p>
+  </section>
+
+  <section>
+    <h2>Anthropic Academy courses</h2>
+    <p class="sub">8 certificates of completion. Each can be checked on my <a href="https://www.linkedin.com/in/richard-milburn-manufacturing/details/certifications/" rel="noopener">LinkedIn certifications page</a>.</p>
+    <div class="grid">
+      <div class="tile"><span class="kind">Anthropic Academy · Jun 2026</span><h3>Claude 101</h3><p>The core Claude skills: prompting, working with documents and getting reliable output.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Jun 2026</span><h3>Claude Code 101</h3><p>Working with Claude in a code project, used to build and edit the tools on this site.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Jun 2026</span><h3>Introduction to Claude Cowork</h3><p>Handing multi step work to Claude and checking the result.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Jun 2026</span><h3>AI Fluency for Small Businesses</h3><p>Using AI sensibly in a small business setting.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Jul 2026</span><h3>Claude Platform 101</h3><p>How Claude is built into products and tools.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Jul 2026</span><h3>AI Fluency Framework and Foundations</h3><p>The framework for working with AI: delegating, describing, discerning and staying responsible for the result.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Aug 2026</span><h3>AI Capabilities and Limitations</h3><p>What AI does well, where it fails, and why output has to be checked.</p></div>
+      <div class="tile"><span class="kind">Anthropic Academy · Nov 2026</span><h3>Teaching the AI Fluency Framework</h3><p>Passing the framework on to other people.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="note"><b>What this is, and is not.</b> I am an operations and EHS practitioner who builds and checks tools with AI. I am not an AI engineer, and I do not claim these tools replace company systems or safety advice.</div>
+  </section>
+</main>
+<footer class="wrap">
+  <a href="https://rmilburn1980.github.io/">Back to the portfolio hub</a> · <a href="Richard-Milburn-CV.pdf" download>Download my CV</a> · <a href="https://linkedin.com/in/richard-milburn-manufacturing">LinkedIn</a>
+</footer>
+<!-- Back to portfolio hub: paste this block just before 
+</body>
+</html>
