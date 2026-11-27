@@ -6,7 +6,7 @@
 <meta name="color-scheme" content="dark">
 <title>5 Whys Root Cause Tool</title>
 <meta property="og:title" content="5 Whys Root Cause Tool">
-<meta property="og:description" content="Ask why with evidence at each step, test the logic in reverse, then set actions and verify the fix. Prints as a one page report.">
+<meta property="og:description" content="Ask why with evidence at each step, test the logic in reverse, then set actions and verify the fix. Prints as a report.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://rmilburn1980.github.io/5-whys-tool.html">
 <meta property="og:image" content="https://rmilburn1980.github.io/og-image.png">
@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Richard Milburn: Operations, Lean and EHS evidence portfolio.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="description" content="Structured 5 Whys root cause analysis with evidence checks, reverse logic test, corrective actions and verification. Prints as a one page report.">
+<meta name="description" content="Structured 5 Whys root cause analysis with evidence checks, reverse logic test, corrective actions and verification. Prints as a report.">
 <style>
 :root{
   --bg:#0B1220;
@@ -274,7 +274,11 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
   var STATUS=[['','How do you know?'],['gemba','Verified at the gemba'],['data','Data or records'],['assumed','Assumption, unchecked']];
   var TYPES=['Containment','Corrective','Preventive'];
   var ASTAT=['Open','In progress','Done','Verified'];
-  var BLAME=/\b(careless|carelessness|lazy|forgot|forgotten|negligent|negligence|mistake|failed to|did not bother|didn't bother|not paying attention|human error|operator error|complacen\w*|wasn't listening|ignored)\b/i;
+  /* Blame wording: some words always judge a person; others ("failed to", "ignored") only do when a person is named */
+  var BLAME_HARD=/\b(careless|carelessness|lazy|negligent|negligence|did not bother|didn't bother|not paying attention|human error|operator error|complacen\w*|wasn't listening)\b/i;
+  var BLAME_SOFT=/\b(forgot|forgotten|mistake|failed to|ignored)\b/i;
+  var PERSON=/\b(operators?|operatives?|he|she|they|him|her|them|his|staff|workers?|employees?|drivers?|fitters?|someone|somebody|people|person|team members?|supervisors?|engineers?|technicians?|managers?|crew)\b/i;
+  var BLAME={test:function(t){t=String(t||'');return BLAME_HARD.test(t)||(BLAME_SOFT.test(t)&&PERSON.test(t));}};
 
   var $=function(id){return document.getElementById(id);};
   var saveTimer=null;
@@ -466,7 +470,9 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
       ['Reverse test passed',S.reverse==='yes'],
       ['Corrective or preventive action set',hasCorr],
       ['Every action has an owner',owners],
+      ['Every action has a due date',actsOk&&S.actions.filter(function(a){return a.text.trim();}).every(function(a){return a.due;})],
       ['Verification measure and target set',S.verify.measure.trim()&&S.verify.target.trim()],
+      ['Check date set for the result',!!S.verify.checkDate],
       ['Result checked and effective',S.verify.effective==='effective']
     ];
     var ul=$('checklist');ul.innerHTML='';
