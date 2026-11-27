@@ -187,6 +187,19 @@ section.group{padding:46px 0 4px}
 .num{flex:0 0 auto;font-family:var(--display);font-weight:800;font-size:2rem;line-height:1;color:var(--c);text-shadow:0 0 16px var(--c)}
 .group h2{font-family:var(--display);text-transform:uppercase;font-size:clamp(1.6rem,6vw,2.3rem);line-height:1.05;margin:0}
 .group .sub{color:var(--muted);margin:2px 0 18px;max-width:60ch}
+/* Role tabs: built by the script, so without JavaScript every tool section shows */
+.tabs{padding-top:46px}
+.tabs h2{font-size:1.1rem;margin:0 0 12px}
+.tablist{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tab{font:inherit;font-family:var(--display);font-weight:600;font-size:.86rem;line-height:1.25;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 8px;min-height:48px;cursor:pointer;text-align:center;box-shadow:inset 0 -3px 0 transparent}
+.tab em{display:block;font-style:normal;font-weight:700;font-size:.8rem;color:var(--c);margin-top:2px}
+.tab:hover{color:var(--text);border-color:var(--c)}
+.tab:focus-visible{outline:2px solid var(--c);outline-offset:2px}
+.tab[aria-selected="true"]{color:var(--text);background:var(--panel2);border-color:var(--c);box-shadow:inset 0 -3px 0 var(--c)}
+.tabbed section.group[data-tab]{padding-top:22px}
+.tabbed section.group[data-tab][hidden]{display:none}
+@media (min-width:640px){.tab{font-size:.95rem;padding:12px}}
+@media print{.tabs{display:none}.tabbed section.group[data-tab][hidden]{display:block}}
 .grid{display:grid;grid-template-columns:1fr;gap:12px}
 .tile{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:inset 0 3px 0 var(--c)}
 .tile:hover,.tile:focus-visible{background:var(--panel2);outline:none;border-color:var(--c);transform:translateY(-2px);box-shadow:inset 0 3px 0 var(--c),0 12px 32px -14px var(--c)}
@@ -253,6 +266,7 @@ footer a{color:var(--cyan)}
 .refs blockquote{margin:0;color:var(--text);font-size:1rem;line-height:1.6}
 .refs blockquote p{margin:0 0 10px}
 .refs figcaption{margin-top:6px;color:var(--muted);font-size:.9rem;font-weight:700}
+.refs .refnote{margin:8px 0 0;color:var(--muted);font-size:.85rem;line-height:1.5}
 
 /* graphics */
 .tile{position:relative}
@@ -332,6 +346,7 @@ footer a{color:var(--cyan)}
         <p>Richie will be an asset to any business, and I would have no hesitation in recommending Richie for future opportunities and wish him every success in his career.&rdquo;</p>
       </blockquote>
       <figcaption>Nigel Freeman, Head of Manufacturing</figcaption>
+      <p class="refnote">Nigel&rsquo;s figures cover a different time period from the first pass yield figures elsewhere on this site, which come from my line performance tracker (September 2024 to March 2025 average of 58%, 92% in July 2025).</p>
     </figure>
 
     <div class="board-wrap">
@@ -735,6 +750,70 @@ footer a{color:var(--cyan)}
   function openCase(){var id=(location.hash||"").slice(1);var d=id&&document.getElementById(id);if(d&&d.tagName==="DETAILS")d.open=true;}
   window.addEventListener("hashchange",openCase);openCase();
   document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest('a[href^="#case-"]');if(!a)return;var d=document.getElementById(a.getAttribute("href").slice(1));if(d&&d.tagName==="DETAILS")d.open=true;});
+})();
+
+// Role tabs: show one role's tools at a time. Links to #operations, #ci or #ehs
+// (the role cards, the top menu, or links from other pages) open that tab.
+(function(){
+  var roles=[
+    {id:"operations",label:"Operations Manager"},
+    {id:"ci",label:"Continuous Improvement"},
+    {id:"ehs",label:"EHS and Supervisor"}
+  ];
+  var panels=roles.map(function(r){return document.getElementById(r.id);});
+  if(panels.some(function(p){return !p;}))return;
+
+  var box=document.createElement("div");
+  box.className="wrap tabs";box.id="tools";
+  box.innerHTML='<h2 id="tabs-h">All 29 tools, by the role you are hiring for</h2><div class="tablist" role="tablist" aria-labelledby="tabs-h"></div>';
+  var list=box.querySelector(".tablist");
+  var tabs=roles.map(function(r,i){
+    var p=panels[i],n=p.querySelectorAll(".tile").length;
+    var b=document.createElement("button");
+    b.type="button";b.className="tab";b.id="tab-"+r.id;
+    b.setAttribute("role","tab");b.setAttribute("aria-controls",r.id);
+    b.style.setProperty("--c",p.style.getPropertyValue("--c"));
+    b.innerHTML=r.label+"<em>"+n+" tools</em>";
+    p.setAttribute("role","tabpanel");p.setAttribute("aria-labelledby",b.id);p.dataset.tab=r.id;
+    list.appendChild(b);return b;
+  });
+  panels[0].parentNode.insertBefore(box,panels[0]);
+  document.body.classList.add("tabbed");
+
+  function select(i,focus){
+    tabs.forEach(function(t,j){
+      var on=i===j;t.setAttribute("aria-selected",on);t.tabIndex=on?0:-1;panels[j].hidden=!on;
+    });
+    if(focus)tabs[i].focus();
+  }
+  function fromHash(){
+    var id=(location.hash||"").slice(1);
+    for(var i=0;i<roles.length;i++){
+      if(roles[i].id===id){select(i);box.scrollIntoView({behavior:"instant"});return true;}
+    }
+    return false;
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener("click",function(){select(i);});
+    t.addEventListener("keydown",function(e){
+      var k=e.key,j=null;
+      if(k==="ArrowRight")j=(i+1)%tabs.length;else if(k==="ArrowLeft")j=(i+tabs.length-1)%tabs.length;
+      else if(k==="Home")j=0;else if(k==="End")j=tabs.length-1;
+      if(j!==null){e.preventDefault();select(j,true);}
+    });
+  });
+  // A link to a role opens its tab and scrolls to the tab row, even if the hash is unchanged.
+  document.addEventListener("click",function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a)return;
+    var id=a.getAttribute("href").slice(1);
+    for(var i=0;i<roles.length;i++){
+      if(roles[i].id===id){e.preventDefault();select(i);box.scrollIntoView({behavior:"smooth"});history.replaceState(null,"","#"+id);return;}
+    }
+  });
+  window.addEventListener("hashchange",fromHash);
+  if(!fromHash())select(0);
+  // Images and fonts can shift the page after first paint, so line up a deep link again once loaded.
+  window.addEventListener("load",function(){if(roles.some(function(r){return "#"+r.id===location.hash;}))setTimeout(function(){box.scrollIntoView({behavior:"instant"});},60);});
 })();
 </script>
 </body>
