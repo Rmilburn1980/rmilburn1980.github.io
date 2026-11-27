@@ -20,6 +20,8 @@
 @font-face{font-family:'Special Gothic';font-style:normal;font-weight:500;font-display:swap;src:url('https://rmilburn1980.github.io/fonts/special-gothic-latin-500-normal.woff2') format('woff2')}
 @font-face{font-family:'Special Gothic';font-style:normal;font-weight:600;font-display:swap;src:url('https://rmilburn1980.github.io/fonts/special-gothic-latin-600-normal.woff2') format('woff2')}
 @font-face{font-family:'Special Gothic';font-style:normal;font-weight:700;font-display:swap;src:url('https://rmilburn1980.github.io/fonts/special-gothic-latin-700-normal.woff2') format('woff2')}
+
+.tablewrap:focus-visible,.chartbox:focus-visible,.op-scroll:focus-visible,.scroll:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
 </style>
 <style>
 :root{
@@ -222,7 +224,7 @@ function fd(s){return s?s.split('-').reverse().join('/'):'not set';}
 function trunc(s,n){s=String(s||'').trim();n=n||28;return s.length>n?s.slice(0,n-1)+'...':s;}
 function same(a,b){a=String(a||'').trim().toLowerCase();b=String(b||'').trim().toLowerCase();return !!a&&a===b;}
 function band(n){return n<=0?'none':n<=4?'low':n<=9?'med':n<=16?'high':'vhigh';}
-function bandName(n){return n<=0?'Not set':n<=4?'Low':n<=9?'Medium':n<=16?'High':'Very high';}
+function bandName(n){return n<=0?'Not set':n<=4?'Low':n<=9?'Medium':n<=16?'High':'Critical';}
 function scoreTag(n){return '<span class="score b-'+band(n)+'">'+(n>0?disp(n):'Not set')+'</span>';}
 function statusTag(s){return '<span class="tag st st-'+s.split(' ')[0]+'">'+esc(s)+'</span>';}
 function sha256(str){
@@ -617,7 +619,7 @@ function dashHTML(){
   for(var sv=1;sv<=5;sv++)hg+='<span class="hx">S'+sv+'</span>';
   for(var lk=5;lk>=1;lk--){hg+='<span class="hx">L'+lk+'</span>';for(var s2=1;s2<=5;s2++){var c=hm[lk+'-'+s2]||0;hg+='<span class="hc b-'+band(lk*s2)+(c?'':' z')+'">'+(c||'')+'</span>';}}
   hg+='</div>';
-  h+='<div class="card" style="margin-top:14px"><div class="row sp"><h2>Residual risk on live RAMS</h2><span class="muted small">'+hn+' hazard'+(hn===1?'':'s')+' scored</span></div><div class="heatwrap">'+hg+'<p class="muted small">Each cell counts the hazards on approved or issued RAMS at that residual likelihood (L) and severity (S), as scored by the author. Colours follow the Low, Medium, High and Very high bands. It is a ranking aid, not a measure of safety.</p></div></div>';
+  h+='<div class="card" style="margin-top:14px"><div class="row sp"><h2>Residual risk on live RAMS</h2><span class="muted small">'+hn+' hazard'+(hn===1?'':'s')+' scored</span></div><div class="heatwrap">'+hg+'<p class="muted small">Each cell counts the hazards on approved or issued RAMS at that residual likelihood (L) and severity (S), as scored by the author. Colours follow the Low, Medium, High and Critical bands. It is a ranking aid, not a measure of safety.</p></div></div>';
   /* attention list */
   var items=[];R.forEach(function(r){flags(r).forEach(function(x){if(x.sev!=='Note')items.push({r:r,x:x});});});
   items.sort(function(a,b){return (a.x.sev==='Action'?0:1)-(b.x.sev==='Action'?0:1);});
@@ -810,7 +812,7 @@ function rulesHTML(){
     ['Check','Review due within the warning window, or no validity, review date or construction phase plan reference on a live RAMS.'],['Check','Site specific details, groups at risk, consultation or reviewer competence basis missing (past draft).'],['Check','Higher risk work selected with no specific arrangement or inspection reference.'],['Check','Author and reviewer are the same person; no emergency arrangements.'],['Check','Severity 3 to 5 with no elimination, substitution or engineering control and no reason recorded.'],['Check','Severity 4 or 5 with no HSE or industry guidance recorded, or showing Low after controls.'],['Check','Residual severity lowered with no elimination, substitution or engineering control.'],['Check','Residual risk higher than initial risk.'],['Check','Controls not confirmed in place on site (issued RAMS).'],['Check','No site check recorded, or the last one is older than the check interval (issued RAMS).'],['Check','Competence evidence expires within 30 days, none recorded, or briefed people with no competence evidence under the same name.'],['Check','Nobody briefed on the current revision, fewer briefed than expected, or sign-ons with no "briefed by".'],['Note','Residual risk above tolerable level with a competent person decision recorded.']];
   var links=[['HSE: managing risks and risk assessment, steps needed','https://www.hse.gov.uk/simple-health-safety/risk/steps-needed-to-manage-risk.htm'],['HSE: construction, administration and method statements','https://www.hse.gov.uk/construction/safetytopics/admin.htm'],['HSE: CDM 2015 frequently asked questions','https://www.hse.gov.uk/construction/cdm/faq/index.htm'],['HSE: managing risk using PPE and the hierarchy of controls','https://www.hse.gov.uk/ppe/managing-risk-using-ppe.htm'],['Management of Health and Safety at Work Regulations 1999, regulation 3','https://www.legislation.gov.uk/uksi/1999/3242/regulation/3'],['SSIP core criteria','https://ssip.org.uk/ssip-core-criteria/']];
   return '<div class="grid two"><div class="card"><h2>What this tool is, and is not</h2><p class="disclaimer">It records RAMS, checks the record against fixed rules and shows what needs attention. It does not decide that work is safe, that a control works or that a residual risk is acceptable. A competent person makes those decisions and the tool records them.</p><p>The HSE does not approve or certify software. Inspectors judge the real site, the real controls and whether people were told. This tool is not approved or endorsed by the HSE or by any accreditation scheme, and it does not make anyone compliant. It is a demonstration project and no substitute for competent health and safety advice.</p><p>It has no hazard library and no auto-suggested content, on purpose. Every hazard and control is written by a person for the task in front of them.</p></div>'+
-  '<div class="card"><h2>Settings</h2><div class="form"><div><label>Tolerable residual score (flag above this)<input type="number" min="1" max="25" data-set="tolerable" value="'+S.tolerable+'"></label></div><div><label>Review warning window (days)<input type="number" min="0" max="180" data-set="warnDays" value="'+S.warnDays+'"></label></div><div><label>Site check interval for issued RAMS (days)<input type="number" min="1" max="90" data-set="checkDays" value="'+S.checkDays+'"></label></div><div class="full"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-set="showScores" '+(S.showScores?'checked':'')+'> Show numeric scores (untick to show Low, Medium, High, Very high bands only)</label></div></div><p class="muted small">The tolerable level is a starting value, not a standard. Agree it with your competent person before relying on it. Scores 1 to 4 Low, 5 to 9 Medium, 10 to 16 High, 17 to 25 Very high. No law or HSE guidance requires a numeric matrix. It is a ranking aid, not a probability of harm.</p></div></div>'+
+  '<div class="card"><h2>Settings</h2><div class="form"><div><label>Tolerable residual score (flag above this)<input type="number" min="1" max="25" data-set="tolerable" value="'+S.tolerable+'"></label></div><div><label>Review warning window (days)<input type="number" min="0" max="180" data-set="warnDays" value="'+S.warnDays+'"></label></div><div><label>Site check interval for issued RAMS (days)<input type="number" min="1" max="90" data-set="checkDays" value="'+S.checkDays+'"></label></div><div class="full"><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-set="showScores" '+(S.showScores?'checked':'')+'> Show numeric scores (untick to show Low, Medium, High, Critical bands only)</label></div></div><p class="muted small">The tolerable level is a starting value, not a standard. Agree it with your competent person before relying on it. Scores 1 to 4 Low, 5 to 9 Medium, 10 to 16 High, 17 to 25 Critical. No law or HSE guidance requires a numeric matrix. It is a ranking aid, not a probability of harm.</p></div></div>'+
   '<div class="card" style="margin-top:14px"><h2>Approval gate</h2><p>Approval is blocked until a different person is named as reviewer and as approver, the reviewer\'s basis of competence is recorded, the dates are set, site specific details and groups at risk are completed, consultation with the people doing the work is recorded, every hazard has a control and a residual score, severity 4 or 5 hazards cite guidance, any hazard without a higher order control has a reason, higher risk work has an arrangement reference, a copied RAMS is confirmed reviewed, and any residual risk above the tolerable level has a competent person decision.</p><p>Editing is locked once approved. Revise creates a new revision letter, clears approval and controls confirmation, and flags earlier briefings as out of date.</p></div>'+
   '<div class="card" style="margin-top:14px"><h2>Fingerprint and audit trail</h2><p>At approval the tool stores a SHA-256 fingerprint of the RAMS content. If the content later differs, the RAMS is flagged as unapproved. Every log entry is chained to the one before it, and exports carry a data fingerprint that is checked on import. This detects edits made outside the tool. It is not tamper-proof, because anyone with access to the file or the browser can rebuild the chain. For legal-grade records a hosted system with accounts and server-side history is needed.</p></div>'+
   '<div class="card" style="margin-top:14px"><h2>Every flag rule</h2><ul class="flags">'+rules.map(function(x){return '<li><span class="tag t-'+x[0].toLowerCase()+'">'+x[0]+'</span><span class="body">'+esc(x[1])+'</span></li>';}).join('')+'</ul><p class="muted small">Flags on drafts show as Check, because drafts are expected to be incomplete.</p></div>'+
@@ -947,7 +949,7 @@ document.addEventListener('click',function(e){
   }
   if(b.id==='btnImport'){$('#fileIn').click();}
   if(b.id==='btnExample'){ask('Load example data?','Adds three clearly labelled example records so you can see the flags working. They are illustrative only.','Load').then(function(ok){if(ok){example();ui.tab='dash';render();}});}
-  if(b.id==='btnClear'){ask('Clear everything?','This deletes all RAMS, briefings and settings from this browser. Export first if you may need them.','Clear all').then(function(ok){if(ok){db=blank();ui.id=null;ui.bid=null;try{localStorage.removeItem(KEY);}catch(x){}render();}});}
+  if(b.id==='btnClear'){ask('Clear everything?','This deletes all RAMS, briefings and settings from this browser. Export first if you may need them.','Clear all').then(function(ok){if(ok){db=blank();ui.id=null;ui.bid=null;try{localStorage.setItem(KEY,JSON.stringify(db));}catch(x){}render();}});}
 });
 $('#fileIn').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;var rd=new FileReader();
@@ -959,7 +961,44 @@ $('#fileIn').addEventListener('change',function(e){
   };rd.readAsText(f);e.target.value='';
 });
 window.addEventListener('beforeunload',function(e){if(db.dirty&&db.rams.some(function(x){return !x.example;})){e.preventDefault();e.returnValue='';}});
+/* First visit, nothing stored yet: open with the labelled example records, as the other tools do. Never runs once anything is saved. */
+try{if(localStorage.getItem(KEY)===null&&!db.rams.length)example();}catch(e){}
 render();
+})();
+</script>
+<script>
+/* Keyboard access to sideways-scrolling tables and charts: a box that scrolls
+   gets a tab stop and a name, and loses them again when it no longer scrolls. */
+(function(){
+  var SEL='.tablewrap,.chartbox,.op-scroll,.scroll';
+  function nameFor(el){
+    var kind=el.querySelector('table')?'Table':'Chart',head='',n=el;
+    while(n&&n!==document.body&&!head){
+      var p=n.previousElementSibling;
+      while(p&&!head){if(/^H[1-6]$/.test(p.tagName))head=p.textContent;else{var h=p.querySelector&&p.querySelector('h1,h2,h3,h4,h5,h6');if(h)head=h.textContent;}p=p.previousElementSibling;}
+      n=n.parentElement;
+    }
+    var base=(head?head.trim().replace(/\s+/g,' ').slice(0,60)+': '+kind.toLowerCase():kind)+', scrolls sideways',name=base,i=2;
+    while(document.querySelector('[aria-label="'+name.replace(/"/g,'\\"')+'"]'))name=base+' '+(i++);
+    return name;
+  }
+  function fix(){
+    document.querySelectorAll(SEL).forEach(function(el){
+      var ox=getComputedStyle(el).overflowX, scrolls=(ox==='auto'||ox==='scroll')&&el.scrollWidth>el.clientWidth+1;
+      if(scrolls&&!el.hasAttribute('tabindex')){
+        el.tabIndex=0;el.dataset.scrollfix='1';
+        if(!el.hasAttribute('role'))el.setAttribute('role','region');
+        if(!el.hasAttribute('aria-label'))el.setAttribute('aria-label',nameFor(el));
+      }else if(!scrolls&&el.dataset.scrollfix){
+        el.removeAttribute('tabindex');delete el.dataset.scrollfix;
+        if(el.getAttribute('role')==='region')el.removeAttribute('role');
+        if(/scrolls sideways$/.test(el.getAttribute('aria-label')||''))el.removeAttribute('aria-label');
+      }
+    });
+  }
+  var t;function later(){clearTimeout(t);t=setTimeout(fix,50);}
+  fix();new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});
+  addEventListener('resize',later);
 })();
 </script>
 </body>
