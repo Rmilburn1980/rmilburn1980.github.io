@@ -299,6 +299,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   <div class="card"><h2>The rules the tool applies</h2>
     <ul>
       <li>A level 3 or 4 counts as covered only when it has an assessor, a date, the assessor is not the operator, and the date is within the valid period.</li>
+      <li>If the assessor is someone in the matrix, they should be signed off at level 4, able to train others, in that skill. If they are not, a note says so. An assessor from outside the matrix, such as a supervisor, is not checked.</li>
       <li>Anything else at level 3 or 4 is shown with a dashed outline and left out of the coverage count.</li>
       <li>A critical skill with fewer signed-off people than you need is a gap. With none, it says so plainly.</li>
       <li>A non-critical skill short of its target is a note.</li>
@@ -451,7 +452,11 @@ function analyse(){
     S.people.forEach(function(p){var st=state(p,s);if(st.ok){ok.push(p);if(st.lv===4)tr.push(p);}
       if(st.unsigned||st.expired)g("c"+ck(p.id,s.id),(p.name||"(no name)")+", "+(s.name||"(no name)")+": level "+st.lv+" not counted, "+st.why+".");
       if(st.late)g("c"+ck(p.id,s.id),(p.name||"(no name)")+", "+(s.name||"(no name)")+": "+st.why+" and the person is still below competent.");
-      if(st.unsigned||st.expired)pend++;});
+      if(st.unsigned||st.expired)pend++;
+      /* An assessor who is in the matrix should be signed off as able to train others in this skill */
+      if(st.lv>=3&&st.c.by.trim()&&!st.self){var as=null;S.people.forEach(function(q){if(q.id!==p.id&&norm(q.name)&&norm(q.name)===norm(st.c.by))as=q;});
+        if(as){var ast=state(as,s);if(!(ast.ok&&ast.lv===4))n("c"+ck(p.id,s.id),(p.name||"(no name)")+", "+(s.name||"(no name)")+": signed off by "+as.name+", who is not signed off as able to train others in this skill"+(ast.ok?" (level "+ast.lv+")":"")+". An assessor should be.");}}
+    });
     cov[s.id]={ok:ok,tr:tr,pend:pend};
     if(ok.length===1)key[ok[0].id].push(s);
     if(!s.name.trim())g("s"+s.id,"A skill has no name.");
