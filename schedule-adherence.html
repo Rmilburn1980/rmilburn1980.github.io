@@ -269,11 +269,12 @@ td.num,th.num{text-align:right}
       <li><strong>A block</strong> is one planned period for one line: an hour, a shift or a day. Use the same size of block for a line. Do not record both a day total and the hours inside it.</li>
       <li><strong>Blocks on plan</strong> is the share of blocks where actual met plan, within the tolerance you set. This is the main measure, because it cannot be hidden by one good block covering a bad one.</li>
       <li><strong>Attainment</strong> is total actual divided by total planned, for blocks that have both. It can look healthy when overbuild covers a shortfall, so read it beside blocks on plan.</li>
+      <li><strong>Adherence</strong> counts each block only up to its plan, so overbuild in one block cannot cover a shortfall in another: the total of the smaller of actual and plan, divided by total planned.</li>
       <li><strong>Units short</strong> adds up the shortfall on every missed block. <strong>Units over</strong> adds up the overbuild. They are not netted off.</li>
     </ul></div>
   <div class="card"><h2>The rules the log applies</h2>
     <ul>
-      <li>A block with no plan, or a plan of zero, cannot be judged and is flagged.</li>
+      <li>A block with no plan recorded cannot be judged and is flagged. A plan of zero means nothing was planned, for example planned maintenance, and is not a gap. Anything built in it is noted as unplanned production and counted as overbuild.</li>
       <li>A past block with no actual recorded is a gap. It is left out of the results and counted separately, never treated as met.</li>
       <li>A missed block needs a reason, taken from the same list as the OEE and Downtime Log. "Other" needs a note.</li>
       <li>Building well over plan is noted. It is waste, and it can mean the plan was wrong.</li>
@@ -344,7 +345,9 @@ function clean(d){
 
 /* ---------- judging a block ---------- */
 function judge(r){
-  if(r.planned===null||r.planned<=0)return "noplan";
+  if(r.planned===null)return "noplan";
+  /* Nothing planned is a valid block; building during it is unplanned production */
+  if(r.planned<=0)return (r.actual!==null&&r.actual>0)?"unplanned":"zero";
   if(r.actual===null)return "noact";
   return r.actual>=r.planned*(1-D.tol/100)?"met":"miss";
 }
@@ -354,19 +357,21 @@ function key(r){return r.date+"|"+norm(r.line)+"|"+norm(r.block);}
 
 /* ---------- aggregation ---------- */
 function summarise(rows){
-  var s={blocks:0,met:0,miss:0,noact:0,noplan:0,planned:0,actual:0,short:0,over:0,missReason:0,days:{},reasons:{},lines:{}};
+  var s={blocks:0,met:0,miss:0,noact:0,noplan:0,zero:0,unplanned:0,within:0,planned:0,actual:0,short:0,over:0,missReason:0,days:{},reasons:{},lines:{}};
   rows.forEach(function(r){
     var j=judge(r);
     var L=s.lines[r.line.trim()||"(no line)"]||(s.lines[r.line.trim()||"(no line)"]={blocks:0,met:0,planned:0,actual:0,short:0,over:0,noact:0});
     if(j==="noplan"){s.noplan++;return;}
+    if(j==="zero"){s.zero++;return;}
+    if(j==="unplanned"){s.unplanned+=r.actual;s.over+=r.actual;L.over+=r.actual;return;}
     if(j==="noact"){s.noact++;L.noact++;return;}
-    s.blocks++;L.blocks++;s.planned+=r.planned;s.actual+=r.actual;L.planned+=r.planned;L.actual+=r.actual;
+    s.blocks++;L.blocks++;s.planned+=r.planned;s.actual+=r.actual;s.within+=Math.min(r.actual,r.planned);L.planned+=r.planned;L.actual+=r.actual;
     var dy=s.days[r.date]||(s.days[r.date]={planned:0,actual:0,blocks:0,met:0});dy.planned+=r.planned;dy.actual+=r.actual;dy.blocks++;
     if(j==="met"){s.met++;L.met++;dy.met++;}else{s.miss++;var sh=shortOf(r);s.short+=sh;L.short+=sh;if(r.reason)s.missReason++;
       var rk=r.reason||"none";var R=s.reasons[rk]||(s.reasons[rk]={units:0,count:0});R.units+=sh;R.count++;}
     var ov=overOf(r);s.over+=ov;L.over+=ov;
   });
-  s.onPlan=s.blocks?s.met/s.blocks*100:null;s.att=s.planned>0?s.actual/s.planned*100:null;
+  s.onPlan=s.blocks?s.met/s.blocks*100:null;s.att=s.planned>0?s.actual/s.planned*100:null;s.adh=s.planned>0?s.within/s.planned*100:null;
   return s;
 }
 function inScope(r,days,line,unit){var td=today();if(!r.date||r.date>td)return false;if(days&&daysBetween(r.date,td)>=days)return false;if(line&&r.line.trim()!==line)return false;if(unit!==null&&unit!==undefined&&r.unit.trim()!==unit)return false;return true;}
@@ -383,7 +388,8 @@ function analyse(){
     var k=key(r);if(seen[k])g(r,"Another record has the same date, line and block. Combine them or change the block.");seen[k]=1;
     if(r.date>td){if(r.actual!==null)g(r,"An actual is recorded for a date in the future.");return;}
     var j=judge(r);
-    if(j==="noplan")g(r,"There is no plan, or the plan is zero, so this block cannot be judged.");
+    if(j==="noplan")g(r,"No plan is recorded, so this block cannot be judged.");
+    else if(j==="unplanned")n(r,"Built "+fnum(r.actual)+" "+(r.unit||"units")+" with nothing planned. That is unplanned production, or the plan was not recorded.");
     else if(j==="noact"){if(r.date<td)g(r,"No actual is recorded. It is left out of the results, not counted as met.");else n(r,"No actual is recorded yet.");}
     else if(j==="miss"){misses++;if(r.reason==="plan")planChg++;
       if(!r.reason)g(r,"Missed plan by "+fnum(shortOf(r))+" "+(r.unit||"units")+" and no reason is recorded.");
@@ -427,7 +433,7 @@ function renderRows(){
   t.appendChild(h("thead",{},h("tr",{},["Date","Line","Block","Planned","Actual","Of plan","Result","Reason","Actions"].map(function(x,i){return h("th",{class:(i>=3&&i<=5)?"num":"",text:x});}))));
   var tb=h("tbody");
   if(!shown.length)tb.appendChild(h("tr",{},h("td",{colspan:"9",text:D.rows.length?"No records in this range.":"Nothing here yet."})));
-  shown.forEach(function(r){var j=judge(r),res={met:["ok","On plan"],miss:["r","Missed"],noact:["y","No actual"],noplan:["y","No plan"]}[j];
+  shown.forEach(function(r){var j=judge(r),res={met:["ok","On plan"],miss:["r","Missed"],noact:["y","No actual"],noplan:["y","No plan"],zero:["ok","Nothing planned"],unplanned:["y","Built with nothing planned"]}[j];
     tb.appendChild(h("tr",{},h("td",{text:fmt(r.date)}),h("td",{text:r.line}),h("td",{text:r.block}),h("td",{class:"num",text:fnum(r.planned)+(r.unit&&r.planned!==null?" "+r.unit:"")}),h("td",{class:"num",text:fnum(r.actual)}),
       h("td",{class:"num",text:(r.planned>0&&r.actual!==null)?Math.round(r.actual/r.planned*100)+"%":""}),h("td",{},h("span",{class:"chip "+res[0],text:res[1]}),r.ex?h("span",{class:"chip",text:"Example"}):null),h("td",{text:j==="miss"?rname(r.reason):""}),
       h("td",{},h("button",{class:"btn sec small",type:"button","data-k":"r"+r.id,text:"Edit",onclick:function(){openRow(r.id);}}))));});
@@ -479,7 +485,7 @@ function renderDash(){
   ["dayTable","parTable","lineTable"].forEach(function(id){$(id).innerHTML="";});$("chDay").innerHTML="";$("chPar").innerHTML="";
   if(!rows.length){$("dashNote").textContent=D.rows.length?"No records in this selection.":"";return;}
   var S=summarise(rows),short=S.short,missRs=S.miss?Math.round(S.missReason/S.miss*100)+"%":"None missed";
-  add(k,kpi(pc(S.onPlan),"Blocks on plan ("+S.met+" of "+S.blocks+")",S.onPlan!==null&&S.onPlan<100?"warn":"ok"),kpi(pc(S.att),"Attainment, total actual over total planned"),kpi(fnum(S.planned),"Planned"+(unitF?" ("+unitF+")":"")),kpi(fnum(S.actual),"Actual"),
+  add(k,kpi(pc(S.onPlan),"Blocks on plan ("+S.met+" of "+S.blocks+")",S.onPlan!==null&&S.onPlan<100?"warn":"ok"),kpi(pc(S.att),"Attainment, total actual over total planned"),kpi(pc(S.adh),"Adherence, each block counted only up to its plan"),kpi(fnum(S.planned),"Planned"+(unitF?" ("+unitF+")":"")),kpi(fnum(S.actual),"Actual"),
     kpi(fnum(short),"Units short, on missed blocks",short?"crit":"ok"),kpi(fnum(S.over),"Units over, on all blocks",S.over?"warn":""),kpi(missRs,"Missed blocks with a reason"),kpi(S.noact+S.noplan,"Left out: no actual or no plan",(S.noact+S.noplan)?"warn":"ok"));
   /* day */
   $("chDay").appendChild(dayChart(S.days));
@@ -544,7 +550,7 @@ function renderChecks(){
 function csvq(c){var v=String(c==null?"":c);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 $("btnCsv").onclick=function(){
   var head=["Date","Line","Block","Unit","Planned","Actual","Of plan %","Result","Units short","Units over","Reason","Note","Example"];
-  var rows=D.rows.slice().sort(function(a,b){return (a.date||"").localeCompare(b.date||"");}).map(function(r){var j=judge(r);return [r.date,r.line,r.block,r.unit,r.planned===null?"":r.planned,r.actual===null?"":r.actual,(r.planned>0&&r.actual!==null)?Math.round(r.actual/r.planned*1000)/10:"",{met:"On plan",miss:"Missed",noact:"No actual",noplan:"No plan"}[j],shortOf(r),overOf(r),j==="miss"?rname(r.reason):"",r.note,r.ex?"Example":""];});
+  var rows=D.rows.slice().sort(function(a,b){return (a.date||"").localeCompare(b.date||"");}).map(function(r){var j=judge(r);return [r.date,r.line,r.block,r.unit,r.planned===null?"":r.planned,r.actual===null?"":r.actual,(r.planned>0&&r.actual!==null)?Math.round(r.actual/r.planned*1000)/10:"",{met:"On plan",miss:"Missed",noact:"No actual",noplan:"No plan",zero:"Nothing planned",unplanned:"Built with nothing planned"}[j],shortOf(r),overOf(r),j==="miss"?rname(r.reason):"",r.note,r.ex?"Example":""];});
   download("schedule-adherence.csv",[head].concat(rows).map(function(r){return r.map(csvq).join(",");}).join("\r\n"),"text/csv");};
 function buildReport(){
   var r=$("report"),A=analyse();r.innerHTML="";add(r,h("h1",{text:"Schedule adherence report"}));
@@ -552,7 +558,7 @@ function buildReport(){
   var rows=D.rows.filter(function(x){return inScope(x,period,lineF,unitF);}),S=summarise(rows);
   add(r,h("p",{text:"Printed "+fmt(today())+". "+(period?"Last "+period+" days":"All records")+(lineF?", "+lineF:", all lines")+(unitF?", unit "+unitF:"")+". Met means within "+D.tol+"% of plan or better."}));
   add(r,h("p",{class:"gapx",text:!D.rows.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on these results until they are dealt with.":"No gaps found by the checks. A competent person must still judge the results."}));
-  var t=h("table",{});[["Blocks on plan",S.blocks?pc(S.onPlan)+" ("+S.met+" of "+S.blocks+")":"n/a"],["Attainment (total actual over total planned)",pc(S.att)],["Planned",fnum(S.planned)],["Actual",fnum(S.actual)],["Units short on missed blocks",fnum(S.short)],["Units over",fnum(S.over)],["Left out: no actual or no plan",String(S.noact+S.noplan)]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
+  var t=h("table",{});[["Blocks on plan",S.blocks?pc(S.onPlan)+" ("+S.met+" of "+S.blocks+")":"n/a"],["Attainment (total actual over total planned)",pc(S.att)],["Adherence (each block counted only up to its plan)",pc(S.adh)],["Planned",fnum(S.planned)],["Actual",fnum(S.actual)],["Units short on missed blocks",fnum(S.short)],["Units over",fnum(S.over)],["Left out: no actual or no plan",String(S.noact+S.noplan)]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
   add(r,h("h2",{text:"Reasons for missed blocks"}));
   var pl=Object.keys(S.reasons).map(function(k){return {r:k,u:S.reasons[k].units,c:S.reasons[k].count};}).sort(function(a,b){return b.u-a.u;});
   if(!pl.length)add(r,h("p",{text:"No missed blocks."}));else{var t2=h("table",{}),h2=h("tr",{});["Reason","Missed blocks","Units short"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);pl.forEach(function(x){t2.appendChild(h("tr",{},[rname(x.r),x.c,fnum(x.u)].map(function(v){return h("td",{text:String(v)});})));});add(r,t2);}
