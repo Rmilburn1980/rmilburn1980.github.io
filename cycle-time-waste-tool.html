@@ -222,6 +222,8 @@
   }
   td.num{width:64px;}
   tr.va td.avg{color:var(--green);}
+  td.avg small.few{display:block;font-size:.72rem;font-weight:400;color:var(--muted, #8B9CB5)}
+  .waste-note{margin:10px 0 0;font-size:.85rem;color:var(--muted, #8B9CB5)}
   tr.nva td.avg{color:var(--red);}
   .row-badge{
     display:inline-block;
@@ -474,7 +476,8 @@
         <h3>Value-Added vs Non-Value-Added</h3>
         <ul>
           <li><b>VA</b> &mdash; the customer would pay for this step if they could see it happening (fitting a part, assembling a component).</li>
-          <li><b>NVA</b> &mdash; the process needs it right now, but the customer gets no value from it (walking, waiting, rework). Tag every NVA step with a waste type below.</li>
+          <li><b>Necessary</b> &mdash; the customer gets no value from it, but it cannot be removed yet (a required inspection, a legal check, a cure time set by the material). Reduce it, but it is not counted as waste.</li>
+          <li><b>NVA</b> &mdash; waste: the customer gets no value and it could be removed (walking, waiting, rework). Tag every NVA step with a waste type below.</li>
         </ul>
       </div>
       <div>
@@ -495,7 +498,7 @@
         <ul>
           <li>Fill in shift length, breaks and demand to get a takt time</li>
           <li>List each step in order, timing 3&ndash;5 repeat cycles per step</li>
-          <li>Mark VA/NVA, tag the waste type on NVA steps</li>
+          <li>Mark each step VA, Necessary or NVA, and tag the waste type on NVA steps. Enter 0 for a cycle where the step did not happen (for example rework); leave a cell blank if it was not timed</li>
           <li>Use the waste breakdown to prioritise what to fix first</li>
         </ul>
       </div>
@@ -592,6 +595,7 @@
     <h2>Waste Breakdown (TIMWOODS)</h2>
     <div class="waste-breakdown-layout">
       <div class="waste-grid" id="wasteGrid"></div>
+      <p class="waste-note" id="wasteNote" role="status" hidden></p>
       <div class="radar-panel">
         <svg id="radarChart" viewBox="0 0 340 300" role="img" aria-label="Radar chart of waste time by TIMWOODS category"></svg>
         <div class="radar-caption">Waste profile &mdash; % of total cycle time per category</div>
@@ -682,8 +686,12 @@
     rows: []
   };
 
+  function readingsOf(cycles){
+    // Blank means not timed. 0 is a real reading: the step did not happen on that cycle (for example rework).
+    return cycles.filter(v=>String(v==null?'':v).trim()!=='').map(v=>parseFloat(v)).filter(v=>!isNaN(v) && v>=0);
+  }
   function avgOf(cycles){
-    const nums = cycles.map(v=>parseFloat(v)).filter(v=>!isNaN(v) && v>0);
+    const nums = readingsOf(cycles);
     if(nums.length===0) return 0;
     return nums.reduce((a,b)=>a+b,0)/nums.length;
   }
@@ -759,15 +767,22 @@
       tdAvg.className='avg';
       tdAvg.dataset.label = 'Avg (s)';
       tdAvg.textContent = avg.toFixed(1);
+      const nRead = readingsOf(row.cycles).length;
+      if(nRead>0 && nRead<3){
+        const small = document.createElement('small');
+        small.className = 'few';
+        small.textContent = ' from ' + nRead + (nRead===1?' timing':' timings');
+        tdAvg.appendChild(small);
+      }
       tr.appendChild(tdAvg);
 
       const tdVa = document.createElement('td');
       tdVa.dataset.label = 'VA / NVA';
       const vaSelect = document.createElement('select');
-      vaSelect.title = 'VA = customer would pay for this step. NVA = waste - tag the type on the right.';
-      ['VA','NVA'].forEach(v=>{
+      vaSelect.title = 'VA = customer would pay for this step. Necessary = needed now but adds no value. NVA = waste - tag the type on the right.';
+      [['VA','VA'],['NNVA','Necessary'],['NVA','NVA (waste)']].forEach(([v,label])=>{
         const o = document.createElement('option');
-        o.value=v; o.textContent=v;
+        o.value=v; o.textContent=label;
         if(v===row.va) o.selected=true;
         vaSelect.appendChild(o);
       });
@@ -831,7 +846,7 @@
     els.setupHint.textContent = hint;
     els.setupHint.hidden = !hint;
 
-    let totalTime = 0, vaTime = 0, nvaTime = 0;
+    let totalTime = 0, vaTime = 0, nvaTime = 0, necTime = 0, untagged = 0;
     const wasteTotals = {};
     TIMWOODS.forEach(w=>wasteTotals[w]=0);
 
@@ -839,11 +854,12 @@
       const avg = avgOf(row.cycles);
       totalTime += avg;
       if(row.va === 'VA'){ vaTime += avg; }
+      else if(row.va === 'NNVA'){ necTime += avg; }
       else {
         nvaTime += avg;
         if(row.waste && wasteTotals.hasOwnProperty(row.waste)){
           wasteTotals[row.waste] += avg;
-        }
+        } else { untagged += avg; }
       }
     });
 
@@ -853,7 +869,7 @@
 
     els.tileTotal.textContent = totalTime.toFixed(1) + 's';
     els.tileVaPct.textContent = vaPct.toFixed(1) + '%';
-    els.tileVaSub.textContent = vaTime.toFixed(1) + 's VA / ' + nvaTime.toFixed(1) + 's NVA';
+    els.tileVaSub.textContent = vaTime.toFixed(1) + 's VA / ' + (necTime>0 ? necTime.toFixed(1) + 's necessary / ' : '') + nvaTime.toFixed(1) + 's NVA';
     els.tileTakt.textContent = taktValid ? taktTime.toFixed(1) + 's' : '-';
 
     if(taktValid && state.rows.length > 0){
@@ -899,6 +915,11 @@
     });
 
     renderRadar(wastePcts);
+    const wn = document.getElementById('wasteNote');
+    if(wn){
+      wn.textContent = untagged > 0 ? untagged.toFixed(1) + 's of NVA time has no waste type, so it is not in the breakdown above. Tag those steps.' : '';
+      wn.hidden = !(untagged > 0);
+    }
   }
 
   // Radar / spider chart of the 8 TIMWOODS categories, each axis showing
