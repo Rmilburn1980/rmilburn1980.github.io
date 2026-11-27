@@ -275,6 +275,10 @@ function seed(){
     o('WALK-007','Waiting','Inspector waits for the last build before releasing','D',2,'Trial staggered release of builds','Quality rep','2026-11-10',false,null,'',null),
     o('WALK-007','Motion','Tools on the shadow board are out of reach','D',1,'Reposition the shadow board','Cell leader','2026-11-03',true,null,'',null)
   ];
+  /* The example was written as seen on 24 Oct 2026. Shift it by whole weeks so it always looks that way today. */
+  var SH=7*Math.round(days('2026-10-24',TODAY)/7);
+  walks.forEach(function(w){w.date=addDays(w.date,SH);});
+  obs.forEach(function(x){x.due=addDays(x.due,SH);if(x.closedOn)x.closedOn=addDays(x.closedOn,SH);});
   var byId={};walks.forEach(function(w){byId[w.id]=w;});
   obs.forEach(function(x){
     var w=byId[x.walk];
@@ -448,15 +452,15 @@ function detailHtml(id){
   if(!x.closedOn){
     h+='<div class="box"><h3>Update this action</h3>';
     if(!x.prog)h+='<div class="btns" style="margin-bottom:10px"><button class="btn sec small" type="button" data-act="prog">Mark in progress</button></div>';
-    h+='<div class="two"><label class="field">Closure date<input id="cDate" type="date" value="'+TODAY+'" min="'+w.date+'"></label><label class="field">Evidence (required)<input id="cEv" type="text" placeholder="Photo ref, document, sign-off"></label></div>';
+    h+='<div class="two"><label class="field">Closure date<input id="cDate" type="date" value="'+TODAY+'" min="'+w.date+'" max="'+TODAY+'"></label><label class="field">Evidence (required)<input id="cEv" type="text" placeholder="Photo ref, document, sign-off"></label></div>';
     h+='<button class="btn primary small" type="button" data-act="close-act">Close with evidence</button></div>';
   }else if(!x.verifiedBy){
-    var cand=S.walks.filter(function(v){return v.id!==x.walk&&v.date>=x.closedOn;}).sort(function(a,b){return a.date.localeCompare(b.date);});
+    var cand=S.walks.filter(function(v){return v.id!==x.walk&&v.area===w.area&&v.date>=x.closedOn&&v.date<=TODAY;}).sort(function(a,b){return a.date.localeCompare(b.date);});
     h+='<div class="box"><h3>Verify on a re-walk</h3>';
     if(cand.length){
       h+='<label class="field">Re-walk<select id="vWalk">'+cand.map(function(v){return '<option value="'+v.id+'">'+esc(v.id+', '+fmt(v.date)+', '+v.area)+'</option>';}).join('')+'</select></label><div class="btns"><button class="btn primary small" type="button" data-act="verify">Record the re-walk check</button><button class="btn sec small" type="button" data-act="reopen">Reopen</button></div>';
     }else{
-      h+='<p class="hint">A re-walk must be logged on or after '+esc(fmt(x.closedOn))+'. Use Log observation to add the walk, then come back here.</p><button class="btn sec small" type="button" data-act="reopen">Reopen</button>';
+      h+='<p class="hint">A re-walk of '+esc(w.area)+' must be logged on or after '+esc(fmt(x.closedOn))+'. Use Log observation to add the walk, then come back here.</p><button class="btn sec small" type="button" data-act="reopen">Reopen</button>';
     }
     h+='</div>';
   }else{
@@ -508,6 +512,7 @@ document.addEventListener('click',function(e){
     var ev=$('cEv').value.trim(),dt=$('cDate').value,w=walkOf(x.walk);
     if(!ev){msg('Add the evidence before closing. A closed action with no proof cannot be traced.');$('cEv').focus();return;}
     if(!dt||dt<w.date){msg('The closure date cannot be before the walk on '+fmt(w.date)+'.');return;}
+    if(dt>TODAY){msg('The closure date cannot be in the future.');return;}
     x.closedOn=dt;x.evidence=ev;x.hist.push([dt,'Closed with evidence: '+ev]);save();renderAll();refreshDetail();toast(x.id+' closed');return;
   }
   if(a==='verify'&&x){

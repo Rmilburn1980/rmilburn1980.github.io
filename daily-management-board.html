@@ -788,7 +788,7 @@ function example(){
   var M=[[1,"S","Lost-time injuries","count","lower",0,0],[2,"S","Near misses reported","count","higher",2,1],[3,"Q","First pass yield","%","higher",98,95],[4,"Q","Customer complaints","count","lower",0,0],
     [5,"D","Plan attainment","%","higher",95,90],[6,"D","On-time dispatch","%","higher",98,95],[7,"C","Scrap","%","lower",1.5,2.5],[8,"C","Unplanned downtime","min","lower",30,60],[9,"P","Absence","%","lower",4,6],[10,"P","Overtime","hours","lower",20,40]];
   M.forEach(function(x){o.measures.push({id:x[0],cat:x[1],name:"Example: "+x[2],unit:x[3],dir:x[4],target:x[5],red:x[6],ex:true});});
-  var wk=[],i=1;while(wk.length<10&&i<30){var d=off(-i);if(o.days[dow(d)])wk.push(d);i++;}wk.reverse();
+  var wk=[],i=1;while(wk.length<20&&i<45){var d=off(-i);if(o.days[dow(d)])wk.push(d);i++;}wk.reverse();
   wk.forEach(function(d,k){var last=k>=wk.length-3,e={};
     function R(id,v,n){e[id]={v:Math.round(v*100)/100,n:n||""};}
     R(1,0);R(2,rnd()<.6?2+Math.floor(rnd()*2):1);R(3,97.2+rnd()*2.3);R(4,rnd()<.9?0:1,"");
