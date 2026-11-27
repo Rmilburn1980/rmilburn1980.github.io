@@ -117,6 +117,8 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
   .list{font-size:9pt}
   .wrap{padding:0}
 }
+
+.tablewrap:focus-visible,.chartbox:focus-visible,.op-scroll:focus-visible,.scroll:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
 </style>
 <link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
 <!-- rm-dialogs: in-page message and confirm boxes, so they still work where a browser blocks native pop-ups -->
@@ -411,31 +413,41 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
 })();
 </script>
 <style>.rm-disc{max-width:900px;margin:24px auto;padding:0 16px 24px;font:13px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#c9c8e6;text-align:center}@media print{.rm-disc{color:#000!important}}</style>
-<p class="rm-disc" role="note">Decision support only. It does not replace a competent person's judgement, a formal assessment or your own legal duties, and nothing here is a certification, audit result or proof of compliance. Provided free and as is, without warranty. Your answers stay in this browser and are not sent anywhere.</p>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
+<footer><p class="rm-disc" role="note">Decision support only. It does not replace a competent person's judgement, a formal assessment or your own legal duties, and nothing here is a certification, audit result or proof of compliance. Provided free and as is, without warranty. Your answers stay in this browser and are not sent anywhere.</p></footer>
 <script>
+/* Keyboard access to sideways-scrolling tables and charts: a box that scrolls
+   gets a tab stop and a name, and loses them again when it no longer scrolls. */
 (function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
+  var SEL='.tablewrap,.chartbox,.op-scroll,.scroll';
+  function nameFor(el){
+    var kind=el.querySelector('table')?'Table':'Chart',head='',n=el;
+    while(n&&n!==document.body&&!head){
+      var p=n.previousElementSibling;
+      while(p&&!head){if(/^H[1-6]$/.test(p.tagName))head=p.textContent;else{var h=p.querySelector&&p.querySelector('h1,h2,h3,h4,h5,h6');if(h)head=h.textContent;}p=p.previousElementSibling;}
+      n=n.parentElement;
+    }
+    var base=(head?head.trim().replace(/\s+/g,' ').slice(0,60)+': '+kind.toLowerCase():kind)+', scrolls sideways',name=base,i=2;
+    while(document.querySelector('[aria-label="'+name.replace(/"/g,'\\"')+'"]'))name=base+' '+(i++);
+    return name;
+  }
+  function fix(){
+    document.querySelectorAll(SEL).forEach(function(el){
+      var ox=getComputedStyle(el).overflowX, scrolls=(ox==='auto'||ox==='scroll')&&el.scrollWidth>el.clientWidth+1;
+      if(scrolls&&!el.hasAttribute('tabindex')){
+        el.tabIndex=0;el.dataset.scrollfix='1';
+        if(!el.hasAttribute('role'))el.setAttribute('role','region');
+        if(!el.hasAttribute('aria-label'))el.setAttribute('aria-label',nameFor(el));
+      }else if(!scrolls&&el.dataset.scrollfix){
+        el.removeAttribute('tabindex');delete el.dataset.scrollfix;
+        if(el.getAttribute('role')==='region')el.removeAttribute('role');
+        if(/scrolls sideways$/.test(el.getAttribute('aria-label')||''))el.removeAttribute('aria-label');
+      }
+    });
+  }
+  var t;function later(){clearTimeout(t);t=setTimeout(fix,50);}
+  fix();new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});
+  addEventListener('resize',later);
 })();
 </script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>

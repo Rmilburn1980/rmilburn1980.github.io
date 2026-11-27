@@ -31,6 +31,7 @@ header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:760px}
 .hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
 .hub:hover{background:var(--accent);color:var(--accent-ink)}
 nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav>.tablist{display:flex;gap:4px;flex-wrap:wrap}
 nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
 nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
 main{padding:20px;max-width:1280px;margin:0 auto}
@@ -103,6 +104,8 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   #report table{font-size:.75rem;width:100%}#report th,#report td{border:1px solid #888;padding:3px 5px;background:#fff;color:#000}
   #report li{font-size:.85rem;margin:3px 0}#report .gapx{font-weight:700}
 }
+
+.tablewrap:focus-visible,.chartbox:focus-visible,.op-scroll:focus-visible,.scroll:focus-visible{outline:2px solid #22d3ee;outline-offset:2px}
 </style>
 <link rel="stylesheet" href="https://rmilburn1980.github.io/theme.css">
 <!-- rm-dialogs: in-page message and confirm boxes, so they still work where a browser blocks native pop-ups -->
@@ -205,14 +208,14 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   </div>
   <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
 </header>
-<nav role="tablist" aria-label="Sections">
+<nav aria-label="Sections"><div class="tablist" role="tablist" aria-label="Sections">
   <button role="tab" aria-selected="true" data-tab="matrix">Matrix</button>
   <button role="tab" aria-selected="false" data-tab="setup">People and skills</button>
   <button role="tab" aria-selected="false" data-tab="cover">Coverage and gaps</button>
   <button role="tab" aria-selected="false" data-tab="audit">Audit pack</button>
   <button role="tab" aria-selected="false" data-tab="log">Change log</button>
   <button role="tab" aria-selected="false" data-tab="guide">Rules and guide</button>
-</nav>
+</div></nav>
 <main>
 <p class="savebar" id="saveNote" role="status"></p>
 <div class="banner" id="banner" hidden>Example data is loaded. Every name and rating is made up so you can see how the checks work. It is not a real team. Press New matrix to start your own.</div>
@@ -894,30 +897,40 @@ var ui=uiGet();showTab(["matrix","setup","cover","audit","log","guide"].indexOf(
 window.__fs=FS;window.__sm={analyse:analyse,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
 })();
 </script>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
 <script>
+/* Keyboard access to sideways-scrolling tables and charts: a box that scrolls
+   gets a tab stop and a name, and loses them again when it no longer scrolls. */
 (function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
+  var SEL='.tablewrap,.chartbox,.op-scroll,.scroll';
+  function nameFor(el){
+    var kind=el.querySelector('table')?'Table':'Chart',head='',n=el;
+    while(n&&n!==document.body&&!head){
+      var p=n.previousElementSibling;
+      while(p&&!head){if(/^H[1-6]$/.test(p.tagName))head=p.textContent;else{var h=p.querySelector&&p.querySelector('h1,h2,h3,h4,h5,h6');if(h)head=h.textContent;}p=p.previousElementSibling;}
+      n=n.parentElement;
+    }
+    var base=(head?head.trim().replace(/\s+/g,' ').slice(0,60)+': '+kind.toLowerCase():kind)+', scrolls sideways',name=base,i=2;
+    while(document.querySelector('[aria-label="'+name.replace(/"/g,'\\"')+'"]'))name=base+' '+(i++);
+    return name;
+  }
+  function fix(){
+    document.querySelectorAll(SEL).forEach(function(el){
+      var ox=getComputedStyle(el).overflowX, scrolls=(ox==='auto'||ox==='scroll')&&el.scrollWidth>el.clientWidth+1;
+      if(scrolls&&!el.hasAttribute('tabindex')){
+        el.tabIndex=0;el.dataset.scrollfix='1';
+        if(!el.hasAttribute('role'))el.setAttribute('role','region');
+        if(!el.hasAttribute('aria-label'))el.setAttribute('aria-label',nameFor(el));
+      }else if(!scrolls&&el.dataset.scrollfix){
+        el.removeAttribute('tabindex');delete el.dataset.scrollfix;
+        if(el.getAttribute('role')==='region')el.removeAttribute('role');
+        if(/scrolls sideways$/.test(el.getAttribute('aria-label')||''))el.removeAttribute('aria-label');
+      }
+    });
+  }
+  var t;function later(){clearTimeout(t);t=setTimeout(fix,50);}
+  fix();new MutationObserver(later).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden','class','style']});
+  addEventListener('resize',later);
 })();
 </script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>
