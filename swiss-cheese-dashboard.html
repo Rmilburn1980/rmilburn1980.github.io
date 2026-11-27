@@ -283,6 +283,7 @@ table.lk{width:100%;border-collapse:collapse;font-size:.85rem}
       <label class="fld">Severity of the credible worst outcome<select id="sSev"></select><small class="hint">The worst outcome that could credibly happen, not the usual one.</small></label>
       <label class="fld">Times per year the hazard is met<input id="sExpo" type="number" min="0" step="1" inputmode="numeric"><small class="hint">How often people meet this hazard in a year. A daily task over 250 working days is 250.</small></label>
       <label class="fld">Tolerable harm events per year (your own target)<input id="sTarget" type="number" min="0" step="any" inputmode="decimal"><small class="hint">What your organisation would accept, from your own risk criteria.</small></label>
+      <label class="fld">Share of failures that are linked (%)<input id="sLink" type="number" min="0" max="100" step="any" inputmode="decimal"><small class="hint">How often the layers fail together from one cause. 10% is a usual starting point (the beta factor in IEC 61508). Raise it where layers share people, equipment or a supervisor.</small></label>
       <label class="fld">Review due<input id="sReview" type="date"></label>
     </div>
     <p class="note">Choose severity from the worst outcome that could credibly happen, not the usual one. Set the tolerable level from your organisation's own risk criteria, the tool does not choose it for you.</p>
@@ -379,7 +380,7 @@ table.lk{width:100%;border-collapse:collapse;font-size:.85rem}
   <div class="card">
     <h2>How the numbers work and what it cannot tell you</h2>
     <p class="calc"><b>Best estimate</b> for a layer = (checks failed + 0.5) / (checks made + 1). This is a deliberately gentle figure and always sits beside the cautious one. <b>Cautious estimate</b> = the upper end of a two-sided 95% confidence interval (Wilson) for the same checks. Strictly that makes it a one-sided 97.5% bound, so it errs on the cautious side. A layer with few checks gets a wide, pessimistic figure: with no failures in 20 checks the best estimate is about 2.4% but the cautious figure is about 16%. The combined chance multiplies the layers together, which assumes they fail independently, so look at the linkage table as well.</p>
-    <p class="calc" style="margin-top:8px"><b>Status</b> compares harm events per year (times the hazard is met multiplied by the cautious chance, with layers 50% linked) against your own tolerable level. It also flags layers with no data, thin evidence (under 10 checks very weak, 10 to 29 weak, 30 to 59 moderate, 60 or more stronger), no evidence logged, evidence over 12 months old or dated before a logged event, announced checks, layers that share a cause, heavy reliance on procedures and PPE, no owner or reviewer, and a missing second reviewer for severity 4 or 5.</p>
+    <p class="calc" style="margin-top:8px"><b>Status</b> compares harm events per year (times the hazard is met multiplied by the cautious chance, with the share of linked failures you set, 10% unless you change it) against your own tolerable level. The linked share is how often the layers fail together from one cause rather than independently. Common-cause failure models (the beta factor in IEC 61508) usually start around 5 to 10%. Raise it where layers depend on the same people, equipment or supervision, and record that in the Shared cause field. The table below shows the result at other settings. It also flags layers with no data, thin evidence (under 10 checks very weak, 10 to 29 weak, 30 to 59 moderate, 60 or more stronger), no evidence logged, evidence over 12 months old or dated before a logged event, announced checks, layers that share a cause, heavy reliance on procedures and PPE, no owner or reviewer, and a missing second reviewer for severity 4 or 5.</p>
     <p class="note"><b>Settings that are this tool's own defaults, not from a standard:</b> the 12 month evidence age, the check tiers, the 50% linkage, treating a layer with no data as always failing, and giving a control credit only from checks made after it went in. They are fixed in the tool. If your organisation's criteria differ, record that in the change log and do not rely on the status.</p>
     <p class="note">Count checks that could genuinely fail: unannounced or random checks, near misses and incident data. Counts from announced audits where people knew they were watched will understate failure. Use one consistent definition of a failed check for each layer. A control only earns credit once you enter checks made after it went in.</p>
     <p class="note">Not covered: hazards and failure modes nobody has thought of. Severity does not change the calculation, it only raises how much evidence you should demand. This tool supports a risk assessment and does not replace a suitable and sufficient assessment by a competent person, or your site's own procedures and legal duties.</p>
@@ -402,7 +403,7 @@ var st=load(), roll=null;
 
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function blankLayer(k){return {name:NAMES[k],what:"",hole:"",kind:"",ctype:"",ctl:"",checks:"",fails:"",ctlOn:false,newHaz:false,shared:"",checkKind:"",cChecks:"",cFails:"",evidence:[]};}
-function blankScenario(name){return {name:name||"New scenario",hazard:"",example:false,riskId:"",riskName:"",modified:"",sev:0,expo:"",target:"",review:"",owner:"",reviewer:"",second:"",events:[],log:[],layers:[0,1,2,3,4].map(blankLayer)};}
+function blankScenario(name){return {name:name||"New scenario",hazard:"",example:false,riskId:"",riskName:"",modified:"",sev:0,expo:"",target:"",link:10,review:"",owner:"",reviewer:"",second:"",events:[],log:[],layers:[0,1,2,3,4].map(blankLayer)};}
 function exampleScenario(){
   var s=blankScenario("Example: pedestrian struck by forklift");
   s.hazard="A forklift travelling through a shared walkway.";s.example=true;s.sev=5;s.expo=200;s.target=0.01;s.review="2026-12-01";
@@ -430,7 +431,7 @@ function sanitize(d){
     if(!s||!Array.isArray(s.layers))return;
     var n=blankScenario(str(s.name,80)||"Scenario");n.hazard=str(s.hazard,140);n.example=!!s.example;
     n.riskId=(parseInt(s.riskId,10)>0)?parseInt(s.riskId,10):"";n.riskName=str(s.riskName,120);n.modified=/^\d{4}-\d{2}-\d{2}$/.test(String(s.modified||""))?String(s.modified):"";
-    var sv=parseInt(s.sev,10);n.sev=(sv>=0&&sv<=5)?sv:0;n.expo=bigNum(s.expo);n.target=fnum(s.target);n.review=/^\d{4}-\d{2}-\d{2}$/.test(String(s.review||""))?String(s.review):"";
+    var sv=parseInt(s.sev,10);n.sev=(sv>=0&&sv<=5)?sv:0;n.expo=bigNum(s.expo);n.target=fnum(s.target);var lk=parseFloat(s.link);n.link=(isFinite(lk)&&lk>=0&&lk<=100)?lk:10;n.review=/^\d{4}-\d{2}-\d{2}$/.test(String(s.review||""))?String(s.review):"";
     n.owner=str(s.owner,60);n.reviewer=str(s.reviewer,60);n.second=str(s.second,60);
     n.events=(Array.isArray(s.events)?s.events:[]).slice(0,30).map(function(e){e=e||{};return {type:EVTYPES.indexOf(e.type)>-1?e.type:"Other",date:/^\d{4}-\d{2}-\d{2}$/.test(String(e.date||""))?String(e.date):"",note:str(e.note,200)};}).filter(function(e){return e.date;});
     n.log=(Array.isArray(s.log)?s.log:[]).slice(0,200).map(function(e){e=e||{};return {date:/^\d{4}-\d{2}-\d{2}$/.test(String(e.date||""))?String(e.date):"",note:str(e.note,300)};}).filter(function(e){return e.date&&e.note.trim();});
@@ -462,7 +463,7 @@ function summarise(i){
   var keep=st.i,o=null;st.i=i;
   try{
     var s=cur(),stt=status();
-    o={best:combined(true),cautious:vals(true).reduce(mul,1),evCaut:(s.expo===""?null:s.expo*blend(vals(true),0.5)),level:stt.level,head:stt.head,sev:s.sev,updated:s.modified||today(),minChecks:minChecks(),oldest:oldestEv()};
+    o={best:combined(true),cautious:vals(true).reduce(mul,1),evCaut:(s.expo===""?null:s.expo*blend(vals(true),linkD(s))),level:stt.level,head:stt.head,sev:s.sev,updated:s.modified||today(),minChecks:minChecks(),oldest:oldestEv()};
   }catch(e){o=null;}
   st.i=keep;return o;
 }
@@ -594,6 +595,9 @@ function layerFlags(L){
 }
 function vals(up){return cur().layers.map(function(L){if(up)return upP(L);var v=effP(L).p;return v===null?1:v;});}
 function blend(v,d){return (1-d)*v.reduce(mul,1)+d*Math.min.apply(null,v);}
+/* Share of failures that are linked (common cause). Set per scenario; 10% is a usual starting point (beta factor). */
+function linkD(sc){var v=parseFloat((sc||cur()).link);return (isFinite(v)&&v>=0&&v<=100)?v/100:0.1;}
+function linkTxt(sc){return Math.round(linkD(sc)*1000)/10+"%";}
 function fmtE(x){return x===0?"0":x>=1?x.toFixed(1):x>=0.001?x.toPrecision(2):"under 0.001";}
 function yearsStr(e){
   if(!(e>0))return "never";
@@ -636,14 +640,14 @@ function status(){
   if(!s.review)reasons.push("No review date set.");
   else if(s.review<dstr(new Date()))reasons.push("Review overdue since "+fmtD(s.review)+".");
   var weak=vweak.length||low.length||noev.length||old.length||ann.length||pre.length;
-  var ev=(s.expo===""?0:s.expo)*blend(vals(true),0.5);
+  var ev=(s.expo===""?0:s.expo)*blend(vals(true),linkD(s));
   var level,head;
   if(blocking){level="inc";head="Not assessed yet. Fill in the missing items listed below.";}
   else if(s.target===""){level="none";head="No tolerable level set. Enter your own target to get a comparison.";}
   else if(ev>s.target){level="over";head="Above your tolerable level on the cautious estimate. Action needed.";}
   else if(weak||(s.sev>=4&&reasons.length)){level="weak";head="Under your target, but the evidence is weak. Do not rely on it yet.";}
   else{level="ok";head="Under your tolerable level on the cautious estimate. Keep reducing the risk where reasonably practicable (ALARP) and keep reviewing.";}
-  var line=blocking?"":"Cautious estimate with layers 50% linked (a judgement setting): "+fmtE(ev)+" harm events per year"+(s.target!==""?", against a tolerable level of "+fmtE(s.target)+".":".");
+  var line=blocking?"":"Cautious estimate with layers "+linkTxt(s)+" linked (your setting): "+fmtE(ev)+" harm events per year"+(s.target!==""?", against a tolerable level of "+fmtE(s.target)+".":".");
   return {level:level,head:head,reasons:reasons,line:line};
 }
 function renderStatus(){
@@ -655,7 +659,9 @@ function renderStatus(){
 }
 function renderLinked(){
   var s=cur(),b=vals(false),u=vals(true);
-  var rows=[["Layers fail independently (best case)",0],["25% linked",0.25],["50% linked (judgement setting used for the status)",0.5],["Fully linked (worst case, only the strongest layer counts)",1]];
+  var d=linkD(s),rows=[["Layers fail independently (best case)",0]];
+  [[d,linkTxt(s)+" linked (your setting, used for the status)"],[0.25,"25% linked"],[0.5,"50% linked"]].forEach(function(r){if(r[0]>0&&r[0]<1&&!rows.some(function(x){return Math.abs(x[1]-r[0])<1e-9;}))rows.push([r[1],r[0]]);});
+  rows.sort(function(a,b){return a[1]-b[1];});rows.push(["Fully linked (worst case, only the strongest layer counts)",1]);
   $("lk").innerHTML='<thead><tr><th>Assumption</th><th>Best estimate per exposure</th><th>Cautious per exposure</th><th>Cautious events per year</th><th>Roughly</th></tr></thead><tbody>'+
    rows.map(function(r){
      var pb=blend(b,r[1]),pu=blend(u,r[1]),ey=s.expo===""?null:s.expo*pu;
@@ -673,11 +679,11 @@ function kpisOnly(){
   var ev=s.layers.reduce(function(a,L){return a+L.evidence.length;},0);
   var fold=(c>0&&b>0)?b/c:1;
   var lat=s.layers.filter(function(L){return L.kind==='latent';}).length,act=s.layers.filter(function(L){return L.kind==='active';}).length;
-  var evy=s.expo===""?null:s.expo*blend(vals(true),0.5);
+  var evy=s.expo===""?null:s.expo*blend(vals(true),linkD(s));
   $("kpis").innerHTML=
    '<div class="kpi warn"><div class="n">'+pct(c)+'</div><div class="l">Best estimate that harm gets through, per exposure</div></div>'+
    '<div class="kpi crit"><div class="n">'+pct(cu)+'</div><div class="l">Cautious estimate per exposure (upper end of a 95% interval for each layer)</div></div>'+
-   '<div class="kpi crit"><div class="n">'+(evy===null?'Set times per year':fmtE(evy))+'</div><div class="l">Harm events per year, cautious, layers 50% linked</div></div>'+
+   '<div class="kpi crit"><div class="n">'+(evy===null?'Set times per year':fmtE(evy))+'</div><div class="l">Harm events per year, cautious, layers '+linkTxt(s)+' linked</div></div>'+
    '<div class="kpi ok"><div class="n">'+(fold>=100?fold.toFixed(0):fold.toFixed(1))+'x</div><div class="l">Best estimate reduction from evidenced controls ('+ctl+' layer'+(ctl===1?'':'s')+')</div></div>'+
    '<div class="kpi"><div class="n">'+withData+' of 5</div><div class="l">Layers with data</div></div>'+
    '<div class="kpi"><div class="n">'+ev+'</div><div class="l">Evidence items logged</div></div>'+
@@ -774,7 +780,7 @@ function renderModes(){
 }
 function renderTop(){
   var s=cur();
-  $("sName").value=s.name;$("sHaz").value=s.hazard;$("sSev").value=String(s.sev);$("sExpo").value=s.expo;$("sTarget").value=s.target;$("sReview").value=s.review;$("banner").hidden=!s.example;
+  $("sName").value=s.name;$("sHaz").value=s.hazard;$("sSev").value=String(s.sev);$("sExpo").value=s.expo;$("sTarget").value=s.target;$("sLink").value=(s.link===""||s.link==null)?10:s.link;$("sReview").value=s.review;$("banner").hidden=!s.example;
   $("scn").innerHTML=st.scenarios.map(function(x,i){return '<option value="'+i+'">'+esc(x.name||"Untitled")+'</option>';}).join("");
   $("scn").value=st.i;
 }
@@ -812,6 +818,7 @@ function setMeta(){cur().example=false;$("banner").hidden=true;save();renderKpis
 $("sSev").onchange=function(){cur().sev=+$("sSev").value;setMeta();};
 $("sExpo").oninput=function(){cur().expo=bigNum($("sExpo").value);setMeta();};
 $("sTarget").oninput=function(){cur().target=fnum($("sTarget").value);setMeta();};
+$("sLink").oninput=function(){var v=parseFloat($("sLink").value);cur().link=(isFinite(v)&&v>=0&&v<=100)?v:10;setMeta();};
 $("sReview").onchange=function(){var v=$("sReview").value;cur().review=/^\d{4}-\d{2}-\d{2}$/.test(v)?v:"";setMeta();};
 $("sOwner").oninput=function(){cur().owner=$("sOwner").value;setMeta();};
 $("sReviewer").oninput=function(){cur().reviewer=$("sReviewer").value;setMeta();};
