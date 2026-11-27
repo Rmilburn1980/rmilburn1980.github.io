@@ -291,7 +291,11 @@ var CATS=[["S","Safety"],["Q","Quality"],["D","Delivery"],["C","Cost"],["P","Peo
 var STAT=[["new","New, waiting for a decision"],["approved","Approved"],["doing","In progress"],["done","Done"],["rejected","Not going ahead"],["parked","Parked"]];
 var BT=[["time","Time saved"],["cost","Money saved"],["quality","Scrap or rework avoided"],["safety","Risk removed"],["other","Other"]];
 var EFF=[["S","Small, a day or less"],["M","Medium, a week or less"],["L","Large, more than a week"]];
-var BLAME=/\b(careless\w*|negligen\w*|lazy|stupid\w*|idiot\w*|reckless\w*|human error|operator error|should have|failed to|to blame|at fault|blame\w*)\b/i;
+/* Blame wording: some words always judge a person; others ("failed to", "at fault") only do when a person is named */
+var BLAME_HARD=/\b(careless\w*|negligen\w*|lazy|stupid\w*|idiot\w*|reckless\w*|human error|operator error|to blame|blame\w*)\b/i;
+var BLAME_SOFT=/\b(should have|failed to|at fault)\b/i;
+var PERSON=/\b(operators?|operatives?|he|she|they|him|her|them|his|staff|workers?|employees?|drivers?|fitters?|someone|somebody|people|person|team members?|supervisors?|engineers?|technicians?|managers?|crew)\b/i;
+var BLAME={test:function(t){t=String(t||"");return BLAME_HARD.test(t)||(BLAME_SOFT.test(t)&&PERSON.test(t));}};
 var MAXI=1000;
 var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,period=365;
 function blank(){return {example:false,ideas:[]};}
