@@ -331,7 +331,11 @@ var TYPES=[["action","Action"],["condition","Condition"],["system","System failu
 var EVS=[["verified","Verified: seen, measured, photographed or recorded"],["reported","Reported: a witness said so, not yet checked"],["assumed","Assumed: not yet supported"]];
 var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
 var SEVL=["Not set","1 Minor","2 Moderate","3 Serious","4 Major","5 Fatal or life changing"];
-var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|did ?n.?t bother|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*)\b/i;
+/* Blame wording: some words always judge a person; others ("failed to", "at fault", "should have") only do when a person is named */
+var BLAME_HARD=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|did ?n.?t bother|irresponsible|complacen\w*|wilful\w*|to blame|blame\w*)\b/i;
+var BLAME_SOFT=/\b(should have|failed to|failure to|at fault)\b/i;
+var PERSON=/\b(operators?|operatives?|he|she|they|him|her|them|his|staff|workers?|employees?|drivers?|fitters?|someone|somebody|people|person|team members?|supervisors?|engineers?|technicians?|managers?|crew|visitors?|contractors?|colleagues?)\b/i;
+function blameMatch(t){var m=t.match(BLAME_HARD);if(m)return m;return PERSON.test(t)?t.match(BLAME_SOFT):null;}
 var MAXN=300, MAXA=100;
 var S=blank(), tab="tree", saveTimer=null, dirty=false, storeOk=true, armed=null, armTimer=null;
 
@@ -434,7 +438,7 @@ function flags(){
     if(n.level==="root"&&n.type==="action"&&ch.length===0)g(r,"A root cause that is a single person's action means the system that allowed it has not been found yet.");
     var pi=par?lvIdx(par.level):-1,ci=lvIdx(n.level);
     if(par&&pi>=0&&ci>=0&&ci<pi)g(r,"Levels are out of order: a "+lvLabel(n.level).toLowerCase()+" sits under a "+lvLabel(par.level).toLowerCase()+".");
-    var m=n.text.match(BLAME);
+    var m=blameMatch(n.text);
     if(m)g(r,"The wording \""+m[0]+"\" sounds like a judgement. Rewrite it as what was seen or recorded.","note");
   });
   if(S.nodes.length&&!roots)g("e","No root cause has been identified yet.");

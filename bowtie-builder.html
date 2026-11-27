@@ -659,6 +659,9 @@ window.addEventListener("storage",function(e){if(e.key===RKEY){risks=readRisks()
 (function init(){
   risks=readRisks();
   var l=load();if(l===null){bts=seed();saveNow();uiSet("edit",0);}else bts=l;
+  /* The example links to the register risk of the same name. If the register was not there when the example was first saved, link it now. */
+  var linked=false;bts.forEach(function(b){if(b.example&&!b.riskId)risks.forEach(function(r){if(!b.riskId&&norm(r.hazard)===norm(b.name)){b.riskId=r.id;linked=true;}});});
+  if(linked)saveNow();
   var o=uiGet();if(o.view==="list"||o.view==="diagram")view=o.view;
   if(window.matchMedia&&window.matchMedia("(max-width:760px)").matches&&!o.view)view="list";
   renderSave();drawList();
