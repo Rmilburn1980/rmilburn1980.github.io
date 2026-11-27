@@ -31,6 +31,7 @@ header p{margin:2px 0 0;color:var(--muted);font-size:.85rem;max-width:780px}
 .hub{display:inline-block;padding:8px 14px;border:1px solid var(--accent);border-radius:8px;text-decoration:none;font-weight:600;font-size:.9rem}
 .hub:hover{background:var(--accent);color:var(--accent-ink)}
 nav{display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav>.tablist{display:flex;gap:4px;flex-wrap:wrap}
 nav button{background:transparent;color:var(--muted);border:1px solid transparent;border-bottom:none;padding:10px 16px;border-radius:8px 8px 0 0;cursor:pointer;font-size:.92rem;font-weight:600}
 nav button[aria-selected="true"]{background:var(--panel);color:var(--text);border-color:var(--line)}
 main{padding:20px;max-width:1180px;margin:0 auto}
@@ -231,12 +232,12 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
   </div>
   <a class="hub" href="https://rmilburn1980.github.io/">Back to portfolio hub</a>
 </header>
-<nav role="tablist" aria-label="Sections">
+<nav aria-label="Sections"><div class="tablist" role="tablist" aria-label="Sections">
   <button role="tab" aria-selected="true" data-tab="sheets">Sheets</button>
   <button role="tab" aria-selected="false" data-tab="edit">Sheet</button>
   <button role="tab" aria-selected="false" data-tab="checks">Checks</button>
   <button role="tab" aria-selected="false" data-tab="guide">How it works</button>
-</nav>
+</div></nav>
 <main>
 <p class="savebar" id="saveNote" role="status"></p>
 <div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records the names or roles of people who own and check problems and actions. It stays in this browser and in files you save. Nothing is sent to this website. If you enter names, your employer is responsible for that data. Use initials or roles where you can. Describe what happened and what the process allowed, not who was to blame, and keep health detail and anything about an individual's conduct out of it. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Clear data from this browser when you have finished.</span></div>
@@ -659,30 +660,5 @@ showTab(want);
 window.__a3={analyse:analyse,sheetCheck:sheetCheck,progress:progress,reached:reached,state:function(){return D;},clean:clean,set:function(x){D=clean(x);renderAll();}};
 })();
 </script>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
-<script>
-(function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
-})();
-</script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>

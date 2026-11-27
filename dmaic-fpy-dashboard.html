@@ -108,7 +108,7 @@
 
   .col-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
   .card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 11px 12px; }
-  .card h4 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 6px; }
   .card p, .card li { font-size: 14px; color: var(--text); margin: 0; }
   .card ul { padding-left: 18px; margin: 2px 0 0; }
   .card li { margin-bottom: 4px; }
@@ -188,12 +188,12 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>Problem statement</h4>
+          <h3>Problem statement</h3>
           <p>Stage 8 First Pass Yield was inconsistent and frequently below target, driving rework and delayed sign-off.</p>
         </div>
 
         <div class="card">
-          <h4>Project charter</h4>
+          <h3>Project charter</h3>
           <ul>
             <li><b>Project:</b> Improve FPY at Stage 8</li>
             <li><b>Method:</b> DMAIC</li>
@@ -203,7 +203,7 @@
         </div>
 
         <div class="card">
-          <h4>SIPOC (summary)</h4>
+          <h3>SIPOC (summary)</h3>
           <p><b>Suppliers:</b> Goods-in, upstream stages<br>
           <b>Inputs:</b> Torque wrench cal., operator competency, jig cal., DCR status<br>
           <b>Process:</b> Stage 8 assembly &amp; PDI check<br>
@@ -212,7 +212,7 @@
         </div>
 
         <div class="card">
-          <h4>Voice of the customer / critical to quality</h4>
+          <h3>Voice of the customer / critical to quality</h3>
           <ul>
             <li>First-time pass rate</li>
             <li>Consistent, auditable measurement</li>
@@ -229,7 +229,7 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>First pass yield data</h4>
+          <h3>First pass yield data</h3>
           <div class="stat-row"><span class="lbl">Year to Aug 2024, average</span><span class="val">71.8%</span></div>
           <div class="stat-row"><span class="lbl">Sep 2024 to Mar 2025, average</span><span class="val bad">57.7%</span></div>
           <div class="stat-row"><span class="lbl">Lowest month (Sep 2024)</span><span class="val bad">43.2%</span></div>
@@ -239,7 +239,7 @@
         </div>
 
         <div class="card">
-          <h4>Data collection plan</h4>
+          <h3>Data collection plan</h3>
           <p style="margin-bottom:5px;">2 Y variables, 4 X variables tracked:</p>
           <ul>
             <li><b>Y:</b> Pass/fail status (Avante system)</li>
@@ -252,12 +252,12 @@
         </div>
 
         <div class="card">
-          <h4>Measurement system</h4>
+          <h3>Measurement system</h3>
           <p>All faults logged on Avante, including on-the-spot corrections. Vans cannot receive final sign-off until every fault clears, which gives an auditable, gap-free measure of first-time pass performance.</p>
         </div>
 
         <div class="card">
-          <h4>Monthly first pass yield (tracker data)</h4>
+          <h3>Monthly first pass yield (tracker data)</h3>
           <p class="small" style="margin-bottom:6px;">Real monthly figures from the performance tracker. Months with fewer recorded days or vans are less reliable: Aug 2024 has 7 days, Jul 2025 has 12. One day in Aug 2024 was left out because it recorded more A vans than vans out.</p>
           <div class="chart-box"><canvas id="fpyChart" role="img" aria-label="Monthly first pass yield, August 2023 to July 2025. Most months fall between 43% and 84%, with a low of 43% in September 2024 and 92% in July 2025."></canvas></div>
         </div>
@@ -271,7 +271,7 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>C&amp;E matrix: top inputs</h4>
+          <h3>C&amp;E matrix: top inputs</h3>
           <div class="stat-row"><span class="lbl">Operator competency</span><span class="val warn">543</span></div>
           <div class="stat-row"><span class="lbl">Torque wrench calibration</span><span class="val warn">433</span></div>
           <div class="stat-row"><span class="lbl">SOP / work instruction clarity</span><span class="val">411</span></div>
@@ -280,7 +280,7 @@
         </div>
 
         <div class="card">
-          <h4>PFMEA: highest risk priority number (RPN)</h4>
+          <h3>PFMEA: highest risk priority number (RPN)</h3>
           <p style="margin-bottom:6px;">Both top failure modes trace to torque discipline:</p>
           <div class="stat-row"><span class="lbl">Torque wrench calibration</span><span class="tag rpn-hi">RPN 192</span></div>
           <div class="stat-row"><span class="lbl">Operator torque discipline</span><span class="tag rpn-hi">RPN 192</span></div>
@@ -288,7 +288,7 @@
         </div>
 
         <div class="card">
-          <h4>Root cause (5 Why style)</h4>
+          <h3>Root cause (5 Why style)</h3>
           <div class="rca-branch"><b>Fault:</b> torque-related rework at Stage 8</div>
           <div class="rca-branch i1">Why? No continuous torque reading recorded</div>
           <div class="rca-branch i2">Why? Wrench calibration tracked as pass/fail only</div>
@@ -297,7 +297,7 @@
         </div>
 
         <div class="card">
-          <h4>Regression check</h4>
+          <h3>Regression check</h3>
           <p>Weekly FPY vs time: quadratic fit R&sup2; = 0.275. Time alone is a weak predictor, which suggests the process inputs above, not the passage of time, are the drivers.</p>
         </div>
 
@@ -310,7 +310,7 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>Interventions</h4>
+          <h3>Interventions</h3>
           <ul>
             <li>Shop-floor teams given direct ownership of quality at Stage 8</li>
             <li>Torque wrench &amp; jig calibration upgraded from attribute (in/out) to continuous logging</li>
@@ -320,7 +320,7 @@
         </div>
 
         <div class="card">
-          <h4>Result</h4>
+          <h3>Result</h3>
           <div class="arrow-flow">
             <span class="bignum bad">57.7%</span>
             <span class="to">to</span>
@@ -330,7 +330,7 @@
         </div>
 
         <div class="card">
-          <h4>Linked wins</h4>
+          <h3>Linked wins</h3>
           <div class="stat-row"><span class="lbl">Vehicle defect reduction</span><span class="val good">40%</span></div>
           <div class="stat-row"><span class="lbl">Line 240 total scrap vs budget, Oct 2024 to Mar 2025 (my scrap document, not checked against finance records)</span><span class="val good">17.7% under</span></div>
           <div class="stat-row"><span class="lbl">Team skills competency</span><span class="val">36% to 86.6%</span></div>
@@ -345,7 +345,7 @@
       <div class="col-body">
 
         <div class="card">
-          <h4>Control strategy</h4>
+          <h3>Control strategy</h3>
           <ul>
             <li>Sustain gains through daily SQCDP performance tracking</li>
             <li>Continuous torque &amp; jig calibration logs kept live, not retrospective</li>
@@ -354,7 +354,7 @@
         </div>
 
         <div class="card">
-          <h4>Control plan</h4>
+          <h3>Control plan</h3>
           <div class="stat-row"><span class="lbl">SOP / quality visual aid (QVA) critical coverage</span><span class="val good">97.7%</span></div>
           <div class="stat-row"><span class="lbl">Close rate on my DCRs</span><span class="val good">93%</span></div>
           <div class="stat-row"><span class="lbl">DCRs I raised, of 38 site-wide</span><span class="val">29</span></div>
@@ -362,7 +362,7 @@
         </div>
 
         <div class="card">
-          <h4>Lessons learned</h4>
+          <h3>Lessons learned</h3>
           <ul>
             <li>Clear direction and genuine team ownership drove results, not top-down enforcement alone</li>
             <li>Continuous data beats attribute data even when it costs more upfront to set up</li>
@@ -371,7 +371,7 @@
         </div>
 
         <div class="card">
-          <h4>Note on scope</h4>
+          <h3>Note on scope</h3>
           <p class="small">C&amp;E matrix and PFMEA scoring shown here reflect the Green Belt project workup built from this data. The first pass yield figures on this page come from the Caravan Combined Performance Tracker and measure the whole line at PDI. Stage 8 end-of-line figures on the SQCDP dashboard come from a different source and have not been reconciled with these.</p>
         </div>
 
@@ -410,30 +410,5 @@
   });
 })();
 </script>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
-<script>
-(function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
-})();
-</script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>

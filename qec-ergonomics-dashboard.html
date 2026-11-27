@@ -337,7 +337,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
     </div>
   </header>
 
-  <p class="note" id="exampleNote" hidden>Example data is loaded so you can see how the scoring works. It is not a real assessment. Press Clear form to start your own.</p>
+  <p class="note" id="exampleNote" role="region" aria-label="Example data notice" hidden>Example data is loaded so you can see how the scoring works. It is not a real assessment. Press Clear form to start your own.</p>
 
   <main class="layout">
     <section class="inputs" aria-label="Assessment form">
@@ -413,7 +413,7 @@ td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
 </div>
 
 <div id="printRecord" aria-hidden="true"></div>
-<div class="bar" id="bar" aria-label="Live exposure summary"></div>
+<div class="bar" id="bar" role="region" aria-label="Live exposure summary"></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -1003,7 +1003,7 @@ $('#histList').addEventListener('click',function(e){
 /* ---------- Export, backup, restore ---------- */
 function download(name,text,mime){
   var blob=new Blob([text],{type:mime});var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();
+  var a=document.createElement('a');a.href=url;a.download=name;a.hidden=true;document.body.appendChild(a);a.click();
   setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
 }
 function csvCell(v){
@@ -1097,30 +1097,5 @@ syncInputs();
 refreshAll();
 })();
 </script>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
-<script>
-(function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
-})();
-</script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>

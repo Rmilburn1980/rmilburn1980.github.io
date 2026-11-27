@@ -63,7 +63,7 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible{outline:2px solid var
 .num{width:28px;height:28px;border-radius:50%;background:#f5c542;color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grp{border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
-.grp h4{margin:0;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.grp h3{margin:0;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .warn{color:var(--high);font-size:.78rem;margin:0}
 .calc{font-size:.84rem;margin:0}
 .calc b{color:var(--text)}
@@ -731,7 +731,7 @@ function renderLayers(){
      '<label class="fld" data-adv>What this layer is<input data-f="what" value="'+esc(L.what)+'" maxlength="140" placeholder="For example, barriers and speed limiters"></label>'+
      '<label class="fld">The hole (weakness found)<input data-f="hole" value="'+esc(L.hole)+'" maxlength="140" placeholder="What goes wrong in practice"><small class="hint">Where this layer lets the hazard through, in plain words.</small></label>'+
      '<label class="fld" data-adv>Type of hole<select data-f="kind">'+KINDS.map(function(o){return '<option value="'+o[0]+'"'+(L.kind===o[0]?' selected':'')+'>'+esc(o[1])+'</option>';}).join("")+'</select></label>'+
-     '<div class="grp"><h4>Before the control</h4><div class="pair">'+
+     '<div class="grp"><h3>Before the control</h3><div class="pair">'+
        '<label class="fld">Checks made<input type="number" min="0" step="1" inputmode="numeric" data-f="checks" value="'+esc(L.checks)+'"><small class="hint">Times you looked at this layer: audits, walk-rounds, near miss reviews.</small></label>'+
        '<label class="fld">Checks failed<input type="number" min="0" step="1" inputmode="numeric" data-f="fails" value="'+esc(L.fails)+'"><small class="hint">How many of those found it not working.</small></label></div>'+
        '<p class="calc" data-o="raw"></p><p class="calc" data-o="est"></p><p class="calc" data-o="tier"></p><p class="warn" data-o="warn"></p></div>'+
@@ -741,7 +741,7 @@ function renderLayers(){
      '<label class="fld" data-adv>Control type (hierarchy of controls)<select data-f="ctype">'+CTYPES.map(function(o){return '<option value="'+o+'"'+(L.ctype===o?' selected':'')+'>'+esc(o||'Not set')+'</option>';}).join("")+'</select></label>'+
      '<label class="sw"><input type="checkbox" data-f="ctlOn"'+(L.ctlOn?' checked':'')+'> Control is in place</label><small class="hint">Tick only when the control is actually in use. Then count checks made since.</small>'+
      '<label class="sw" data-adv><input type="checkbox" data-f="newHaz"'+(L.newHaz?' checked':'')+'> This layer may create a new hazard</label>'+
-     (L.ctlOn?'<div class="grp"><h4>Since the control went in</h4><div class="pair">'+
+     (L.ctlOn?'<div class="grp"><h3>Since the control went in</h3><div class="pair">'+
        '<label class="fld">Checks made<input type="number" min="0" step="1" inputmode="numeric" data-f="cChecks" value="'+esc(L.cChecks)+'"></label>'+
        '<label class="fld">Checks failed<input type="number" min="0" step="1" inputmode="numeric" data-f="cFails" value="'+esc(L.cFails)+'"></label></div>'+
        '<p class="calc" data-o="cest"></p><p class="warn" data-o="cwarn"></p></div>':'')+
@@ -931,30 +931,5 @@ window.addEventListener("storage",function(e){if(e.key===RKEY)renderAll();});
 window.addEventListener("pageshow",function(e){if(e.persisted)renderAll();});
 })();
 </script>
-<!-- Back to portfolio hub: paste this block just before </body> on every dashboard page -->
-<script>
-(function(){
-  if (document.getElementById('hub-link-host')) return;
-  var host = document.createElement('rm-hub-link');
-  host.id = 'hub-link-host';
-  host.style.cssText = 'display:block!important;position:static!important;visibility:visible!important;opacity:1!important;';
-  var root = host.attachShadow({mode:'open'});
-  root.innerHTML =
-    '<style>' +
-    ':host{all:initial}' +
-    'a{position:fixed;left:12px;bottom:12px;z-index:2147483647;display:inline-flex;align-items:center;' +
-    'min-height:44px;padding:0 16px;border-radius:999px;box-sizing:border-box;' +
-    'font:700 14px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;' +
-    'color:#f2f1ff;text-decoration:none;background:#1b1946;border:1px solid #8b78ff;' +
-    'box-shadow:0 0 18px rgba(139,92,246,.55);pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent}' +
-    'a:hover,a:focus-visible{border-color:#22d3ee;outline:2px solid #22d3ee;outline-offset:2px}' +
-    '@media print{a{display:none}}' +
-    '</style>' +
-    '<a href="https://rmilburn1980.github.io/" target="_top" aria-label="Back to Richard Milburn\'s portfolio hub">← Portfolio hub</a>';
-  /* attach to <html>, not <body>, so a transform or overflow on body cannot trap or clip it */
-  document.documentElement.appendChild(host);
-})();
-</script>
-<noscript><a href="https://rmilburn1980.github.io/" style="position:fixed;left:12px;bottom:12px;padding:12px 16px;background:#1b1946;color:#f2f1ff;border:1px solid #8b78ff;border-radius:999px;font:700 14px system-ui,sans-serif;text-decoration:none">&larr; Portfolio hub</a></noscript>
 </body>
 </html>
