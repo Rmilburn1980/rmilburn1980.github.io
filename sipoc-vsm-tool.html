@@ -524,13 +524,21 @@ function insights(k){
     over.sort(function(a,b){return b.c-a.c});
     if(over.length===1)out.push(over[0].n+' is slower than takt ('+fmt(over[0].c)+' against '+fmt(k.takt)+' '+u+'), so it holds back the whole process.');
     else if(over.length>1)out.push(over.length+' steps are slower than takt of '+fmt(k.takt)+' '+u+': '+joinNames(over.slice(0,4).map(function(o){return o.n}))+'. The slowest is '+over[0].n+'.');
-    else out.push('Every step keeps pace with takt of '+fmt(k.takt)+' '+u+'.');
+    else out.push('Every step keeps pace with takt of '+fmt(k.takt)+' '+u+' on cycle time.');
+    /* A step only runs for its uptime, so its effective time per item is cycle time divided by uptime */
+    var upOver=[];
+    steps.forEach(function(s,i){var c=num(s.ct),up=num(s.up);if(!isNaN(c)&&c<=k.takt&&!isNaN(up)&&up>0&&up<100&&c/(up/100)>k.takt)upOver.push(nm(s,i)+' ('+fmt(c)+' '+u+' at '+fmt(up)+'% uptime is about '+fmt1(c/(up/100))+' '+u+')');});
+    if(upOver.length)out.push('Once uptime is counted, '+joinNames(upOver)+(upOver.length===1?' falls':' fall')+' behind takt.');
+    /* Queue and wait should agree: a queue of Q items at takt T is about Q x T of waiting */
+    var qw=[];
+    steps.forEach(function(s,i){var q=num(s.qty),w=num(s.wait);if(!isNaN(q)&&q>0&&!isNaN(w)){var e=q*k.takt;if(Math.abs(w-e)>0.5*e)qw.push(nm(s,i)+' (queue of '+fmt(q)+' is about '+fmt(e)+' '+u+'; wait entered '+fmt(w)+' '+u+')');}});
+    if(qw.length)out.push('Queue and wait do not agree before '+joinNames(qw)+'. At takt, a queue takes about queue times takt to clear. Check one of them.');
   }else{
     out.push('Set the available time and demand in section 3 to see takt time and which steps are too slow.');
   }
   var lo=-1,lv=101;
   steps.forEach(function(s,i){var f=num(s.fpy);if(!isNaN(f)&&f<lv){lv=f;lo=i}});
-  if(lo>=0&&lv<100)out.push('The most rework is at '+nm(steps[lo],lo)+' (first pass yield '+fmt1(lv)+'%).'+(k.rtyN>1?' Across all steps, '+fmt1(k.rty)+'% of items are right first time.':''));
+  if(lo>=0&&lv<100)out.push('The most rework is at '+nm(steps[lo],lo)+' (first pass yield '+fmt1(lv)+'%).'+(k.rtyN>1?' Across the '+k.rtyN+(k.rtyN===steps.length?' steps':' of '+steps.length+' steps that have a first pass yield')+', '+fmt1(k.rty)+'% of items are right first time.':''));
   if(k.nVA+k.nBVA+k.nNVA>0){
     var tp='Step types: '+k.nVA+' value-add, '+k.nBVA+' business-value-add, '+k.nNVA+' non-value-add.';
     if(k.ctBVA+k.ctNVA>0&&k.ct>0)tp+=' Those last two take '+fmt1((k.ctBVA+k.ctNVA)/k.ct*100)+'% of the cycle time.';
@@ -592,7 +600,7 @@ function updateProcHint(){
 var FIELDS=[
   {k:'ops',l:'People on this step',u:'',basic:true,hint:'How many people work on it at once'},
   {k:'ct',l:'Cycle time',u:'t',basic:true,hint:'How often one finished item leaves this step'},
-  {k:'wait',l:'Wait before step',u:'t',basic:true,hint:'How long an item waits before this step starts'},
+  {k:'wait',l:'Wait before step',u:'t',basic:true,hint:'How long an item waits before this step starts. With a steady flow it is about the queue times takt'},
   {k:'qty',l:'Queue before step',u:'i',basic:true,hint:'How many items are waiting'},
   {k:'co',l:'Changeover or setup',u:'t',hint:'Time lost switching between products or jobs'},
   {k:'up',l:'Uptime or availability',u:'%',max:100,hint:'Share of time the step is ready to work'},
