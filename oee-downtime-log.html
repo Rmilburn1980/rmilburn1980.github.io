@@ -259,7 +259,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li><strong>Performance</strong> = the time the units made should have taken at the ideal rate, divided by run time.</li>
       <li><strong>Quality</strong> = good units divided by all units made.</li>
       <li><strong>OEE</strong> = availability times performance times quality. It is the same as the time spent making good units at the ideal rate, divided by planned time.</li>
-      <li><strong>Totals across runs</strong> add up the minutes and units first and then divide. They are not an average of each run's percentage, which would give a short or slow run the same weight as a full one.</li>
+      <li><strong>Totals across runs</strong> add up the minutes and units first and then divide. They are not an average of each run's percentage, which would give a short or slow run the same weight as a full one. When runs with different ideal rates are added together, quality is weighted by time at the ideal rate, so it can differ slightly from good units divided by all units.</li>
     </ul></div>
   <div class="card"><h2>The ideal rate decides everything</h2>
     <p>Performance and OEE depend on the ideal rate you enter, in units per hour. If it is set low, performance looks good. If it differs from line to line or year to year, the OEE figures cannot be compared. Write down where the ideal rate came from (design rate, best demonstrated rate, or the standard time) and keep it the same. The tool does not decide it for you. A common target such as 85 percent is only a talking point. It means nothing unless the ideal rate and the stop rules are defined the same way.</p></div>
@@ -268,6 +268,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
       <li>A run with a missing date, line, planned time, ideal rate or counts is listed and left out of the OEE figures.</li>
       <li>A run whose stops add up to more than the planned time, or with more good units than units made, is impossible and is left out.</li>
       <li>A run with performance over 100 percent is left out. It means the ideal rate is too low, the count is wrong, or stops were not recorded.</li>
+      <li>A shift lost entirely to stops, or one that made nothing, counts as 0% OEE. It is not left out, because those are the shifts OEE is meant to show.</li>
       <li>A stop with no reason is counted in the Pareto as "Reason not recorded", and a gap is raised if that is over 20 percent of downtime.</li>
       <li>Each run needs a person who recorded it and a different person who checked it.</li>
       <li>Two runs for the same date, line and shift are flagged as a possible duplicate.</li>
@@ -351,10 +352,10 @@ function calc(r){
   if(r.date>today())problems.push("The date is in the future.");
   if(problems.length)return c;
   c.run=r.planned-stopMin;c.idealMin=r.total/r.rate*60;c.goodMin=r.good/r.rate*60;
-  if(c.run<=0){problems.push("No run time is left after the stops, so performance cannot be worked out.");return c;}
-  c.A=c.run/r.planned;c.P=c.idealMin/c.run;c.Q=r.total>0?r.good/r.total:null;
-  if(c.P>1){problems.push("Performance is "+pct(c.P)+". Running above the ideal rate means the ideal rate is too low, the count is wrong, or stops were not recorded.");return c;}
-  if(c.Q===null){problems.push("No units were made, so quality cannot be worked out.");return c;}
+  if(c.run<=0&&r.total>0){problems.push("Units were made but the stops take up the whole planned time. Check the stop minutes or the counts.");return c;}
+  /* A shift lost to stops, or one that made nothing, is a real 0% OEE, not a gap */
+  c.A=c.run/r.planned;c.P=c.run>0?c.idealMin/c.run:null;c.Q=r.total>0?r.good/r.total:null;
+  if(c.P!==null&&c.P>1){problems.push("Performance is "+pct(c.P)+". Running above the ideal rate means the ideal rate is too low, the count is wrong, or stops were not recorded.");return c;}
   c.oee=c.goodMin/r.planned;c.ok=true;return c;}
 function analyseRun(r){var c=calc(r),g=[],n=[];
   if(c.missing.length)g.push("Missing: "+c.missing.join(", ")+". Left out of the OEE figures.");
@@ -364,7 +365,9 @@ function analyseRun(r){var c=calc(r),g=[],n=[];
   else if(!norm(r.chkBy))g.push("Not checked by a second person.");
   else if(norm(r.recBy)===norm(r.chkBy))g.push("Checked by the same person who recorded it.");
   if(c.stopMin>=30&&c.unrec/c.stopMin>0.2)n.push(Math.round(c.unrec/c.stopMin*100)+"% of the stop time has no reason recorded.");
-  if(c.ok&&r.stops.length===0&&c.P<0.97)n.push("No stops recorded but performance is "+pct(c.P)+". Short stops may not have been written down.");
+  if(c.ok&&c.run<=0)n.push("The whole planned time was lost to stops. Counted as 0% OEE.");
+  else if(c.ok&&r.total===0)n.push("Nothing was made in the run time. Counted as 0% OEE and 0% performance.");
+  if(c.ok&&r.stops.length===0&&c.P!==null&&c.P<0.97)n.push("No stops recorded but performance is "+pct(c.P)+". Short stops may not have been written down.");
   return {c:c,g:g,n:n};}
 function inPeriod(r){if(!period)return true;return r.date&&r.date>=off(-period);}
 function analyse(){
@@ -454,7 +457,7 @@ function renderDash(){
   items.forEach(function(it,i){cum+=it.m;pr.push([String(i+1)+" "+reasonLabel(it.k),Math.round(it.m)+" min",pct(it.m/tot),pct(cum/tot)]);});
   tbl($("paretoTable"),["Reason","Minutes","Share","Cumulative"],pr,1);
   if(items.length)add(wrap,pareto(items,tot));
-  $("paretoNote").textContent=items.length?"Counts "+Math.round(tot)+" recorded stop minutes. The Pareto only shows stops somebody wrote down. Short stops that were not recorded show up as performance loss above.":"No stops recorded in this period.";
+  $("paretoNote").textContent=items.length?"Counts "+Math.round(tot)+" recorded stop minutes. The Pareto only shows stops somebody wrote down. Short stops that were not recorded show up as performance loss above."+(Math.round(tot)!==Math.round(p.stopMin)?" It also counts stops from runs left out of the OEE figures for other reasons, so its total differs from the availability loss in the table above ("+Math.round(p.stopMin)+" min).":""):"No stops recorded in this period.";
   /* by line */
   var lines=[];runs.forEach(function(r){var l=r.line.trim();if(l&&lines.indexOf(l)<0)lines.push(l);});lines.sort();
   tbl($("lineTable"),["Line","Runs counted","Left out","OEE","Availability","Performance","Quality","Top stop reason"],lines.map(function(l){var q=pooled(runs,l),top="",tm=0;Object.keys(q.reasons).forEach(function(kk){if(q.reasons[kk]>tm){tm=q.reasons[kk];top=reasonLabel(kk);}});
@@ -544,7 +547,7 @@ $("btnClear").onclick=function(){var b=$("btnClear");if(armed!=="clr"){armed="cl
   armed=null;D=blank();b.textContent="Clear log";b.classList.remove("armed");touch();renderAll();};
 function csvCell(v){v=String(v===null||v===undefined?"":v);if(/^[=+\-@\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';}
 $("btnCsv").onclick=function(){var A=analyse(),rows=[["Date","Line","Shift","Planned min","Ideal rate per hour","Units made","Good units","Stop min","Availability","Performance","Quality","OEE","Counted in totals","Recorded by","Checked by","Gaps"]];
-  D.runs.forEach(function(r){var a=A.by[r.id],c=a.c;rows.push([r.date,r.line,r.shift,r.planned,r.rate,r.total,r.good,c.stopMin,c.ok?(c.A*100).toFixed(1):"",c.ok?(c.P*100).toFixed(1):"",c.ok?(c.Q*100).toFixed(1):"",c.ok?(c.oee*100).toFixed(1):"",c.ok?"yes":"no",r.recBy,r.chkBy,a.g.join(" | ")]);});
+  D.runs.forEach(function(r){var a=A.by[r.id],c=a.c;rows.push([r.date,r.line,r.shift,r.planned,r.rate,r.total,r.good,c.stopMin,c.ok?(c.A*100).toFixed(1):"",c.ok&&c.P!==null?(c.P*100).toFixed(1):"",c.ok&&c.Q!==null?(c.Q*100).toFixed(1):"",c.ok?(c.oee*100).toFixed(1):"",c.ok?"yes":"no",r.recBy,r.chkBy,a.g.join(" | ")]);});
   download("oee-downtime-log-"+today()+".csv",rows.map(function(r){return r.map(csvCell).join(",");}).join("\r\n"),"text/csv");};
 $("btnPrint").onclick=function(){var A=analyse(),R=$("report");R.innerHTML="";var p=pooled(D.runs.filter(inPeriod),lineF);
   add(R,h("h1",{text:"OEE and Downtime Log"}),h("p",{text:"Printed "+fmt(today())+". Period: "+(period?"last "+period+" days":"all records")+(lineF?". Line: "+lineF:". All lines.")+(D.example?" EXAMPLE DATA, NOT A REAL RECORD.":"")}));

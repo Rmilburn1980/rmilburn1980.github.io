@@ -276,13 +276,14 @@ td select{max-width:170px}
       <li><strong>Takt</strong> is available time divided by demand, in seconds. It is how often a unit must be finished to meet demand.</li>
       <li><strong>Station time</strong> is the total of the element times at that station. A station over takt cannot keep up on its own.</li>
       <li><strong>Balance efficiency</strong> is total element time divided by the number of stations times the slowest station's time. 100% would mean every station takes the same time. It says nothing about whether the line meets takt.</li>
+      <li><strong>Efficiency against takt</strong> is total element time divided by the number of stations times takt. It shows how full the stations are against demand. Over 100% means the stations cannot meet takt between them, however the work is moved.</li>
       <li><strong>Balance delay</strong> is 100% minus balance efficiency: the share of station time spent waiting on the slowest station.</li>
       <li><strong>Fewest stations at this takt</strong> is total element time divided by takt, rounded up. It is a floor from the arithmetic, not a design. The real answer is often higher because of the order of the work.</li>
       <li><strong>Output at the slowest station</strong> is available time divided by the slowest station's time, rounded down. Compare it with demand.</li>
     </ul></div>
   <div class="card"><h2>The rules the tool applies</h2>
     <ul>
-      <li>Time what the work actually takes, several times, and record how many timings you took. Fewer than three is noted. Use the time you observed, not a standard allowance.</li>
+      <li>Time what the work actually takes, several times, and record how many timings you took. Fewer than three is noted. Use one basis for every element and say which in the note: the time you observed, or a standard time (observed time adjusted by a performance rating, plus allowances for rest and delays), for example from the SMV tool. Observed times with no allowance assume nobody ever pauses, so they make a station look further under takt than it really is.</li>
       <li>Every element needs a class: value-adding, necessary but not value-adding, or waste. An element with no class is shown in grey and flagged.</li>
       <li>An element with no station is left out of the station times and is counted as unassigned. An element with no usable time is left out entirely. Both are flagged, never counted as zero.</li>
       <li>A station with no elements is flagged and still counts as a station, so it lowers balance efficiency.</li>
@@ -370,8 +371,8 @@ function calc(){
     var o=map[e.station];o.time+=e.time;o.count++;o[e.cls||"none"]+=e.time;total+=e.time;cl[e.cls||"none"]+=e.time;
   });
   var n=list.length,mx=0,slow="";list.forEach(function(o){if(o.time>mx){mx=o.time;slow=o.name;}o.pct=tk?o.time/tk*100:null;o.over=tk!==null&&o.time>tk+1e-9;o.low=tk!==null&&o.count>0&&o.time<tk*LOW/100-1e-9;});
-  var eff=(n>0&&mx>0)?total/(n*mx)*100:null;
-  return {takt:tk,stations:list,n:n,total:total,max:mx,slow:slow,eff:eff,delay:eff===null?null:100-eff,minSt:(tk&&total>0)?Math.ceil(total/tk-1e-9):null,
+  var eff=(n>0&&mx>0)?total/(n*mx)*100:null,effT=(tk&&n>0)?total/(n*tk)*100:null;
+  return {takt:tk,stations:list,n:n,total:total,max:mx,slow:slow,eff:eff,effT:effT,delay:eff===null?null:100-eff,minSt:(tk&&total>0)?Math.ceil(total/tk-1e-9):null,
     out:(mx>0&&D.avail!==null&&D.avail>0)?Math.floor(D.avail*60/mx+1e-9):null,overN:list.filter(function(o){return o.over;}).length,
     unassigned:unassigned,unTime:unTime,noTime:noTime,wasteShare:total>0?cl.waste/total*100:null,cl:cl};
 }
@@ -502,7 +503,7 @@ function renderDash(){
   if(!C.stations.length){$("dashNote").textContent=D.elements.length?"There are no stations yet, so nothing can be charted.":"";return;}
   $("dashNote").textContent=(A.gaps.length?"Gaps were found ("+A.gaps.length+"). The figures below leave out elements with no time or no station. Do not rely on them until the gaps are dealt with.":"")+(C.unassigned?" "+plural(C.unassigned,"element")+" ("+s1(C.unTime)+" s) not at any station.":"");
   add(k,kpi(C.takt===null?"n/a":s1(C.takt)+" s","Takt"),kpi(s1(C.max)+" s","Slowest station"+(C.slow?": "+C.slow:"")),
-    kpi(pc(C.eff),"Balance efficiency, total ÷ (stations × slowest)",C.eff!==null&&C.eff<80?"warn":""),kpi(pc(C.delay),"Balance delay"),
+    kpi(pc(C.eff),"Balance efficiency, total ÷ (stations × slowest)",C.eff!==null&&C.eff<80?"warn":""),kpi(pc(C.delay),"Balance delay"),kpi(pc(C.effT),"Efficiency against takt, total ÷ (stations × takt)"),
     kpi(C.n+(C.minSt!==null?" (floor "+C.minSt+")":""),"Stations used (fewest at this takt)"),
     kpi(C.overN,"Stations over takt",C.overN?"crit":(C.takt===null?"":"ok")),
     kpi(C.out===null?"n/a":C.out+(D.demand!==null?" of "+D.demand:""),"Output per shift at the slowest station, against demand",(C.out!==null&&D.demand!==null&&C.out<D.demand)?"crit":""),
@@ -542,7 +543,7 @@ function buildDlg(){
       lb("Station",sel(stList(),String(d.station),"sS","Not assigned")),lb("Class",sel(CLS,d.cls,"sC","Not classified")),
       lb("Time in seconds, as timed",h("input",{type:"number",id:"sT",min:"0",step:"any",value:d.time===null?"":String(d.time)})),lb("Number of timings taken",h("input",{type:"number",id:"sK",min:"0",max:"999",step:"1",value:d.n===null?"":String(d.n)})),
       lb("Note",h("input",{type:"text",id:"sX",value:d.note,maxlength:"200"}),true)));
-    b.appendChild(h("p",{class:"sm",text:"Use the time you observed, not an allowance. Walking, waiting and rework are waste. Say in the note if the time is for a part of the cycle that does not happen every unit."}));
+    b.appendChild(h("p",{class:"sm",text:"Use the same basis as the other elements, observed or standard time, and say which in the note. Walking, waiting and rework are waste. Say in the note if the time is for a part of the cycle that does not happen every unit."}));
     $("dlgDel").textContent="Delete element";$("dlgOk").textContent="Save element";
   }else{$("dlgT").textContent=(draftNew?"New station":"Station")+(d.ex?" (Example)":"");
     b.appendChild(h("div",{class:"f"},lb("Station name",h("input",{type:"text",id:"tN",value:d.name,maxlength:"40"}),true),lb("Note",h("input",{type:"text",id:"tX",value:d.note,maxlength:"200"}),true)));
