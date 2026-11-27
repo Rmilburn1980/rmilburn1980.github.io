@@ -308,7 +308,11 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 var KEY="rmilburn-a3-v1",UIK="rmilburn-a3-ui",TK="rmilburn-action-tracker-v1",TBASE=5000000,W5="fivewhys-tool-v1";
 var KINDS=[["remove","Removes or designs out the cause"],["safeguard","Builds in a safeguard or check"],["procedure","Procedure or training"],["reminder","Reminder, sign or instruction"]];
 var BASIS=[["gemba","Seen at the work place"],["data","Data or records"],["assumed","Assumption, not checked"]];
-var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*|forgot|didn'?t bother|not paying attention)\b/i;
+/* Blame wording: some words always judge a person; others ("failed to", "at fault") only do when a person is named */
+var BLAME_HARD=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|irresponsible|complacen\w*|wilful\w*|to blame|blame\w*|didn'?t bother|not paying attention)\b/i;
+var BLAME_SOFT=/\b(should have|failed to|failure to|at fault|forgot)\b/i;
+var PERSON=/\b(operators?|operatives?|he|she|they|him|her|them|his|staff|workers?|employees?|drivers?|fitters?|someone|somebody|people|person|team members?|supervisors?|engineers?|technicians?|managers?|crew)\b/i;
+var BLAME={test:function(t){t=String(t||"");return BLAME_HARD.test(t)||(BLAME_SOFT.test(t)&&PERSON.test(t));}};
 var SOLN=/\b(needs? to|should|must|install\w*|buy|purchase\w*|train(ing)?|implement\w*|introduce\w*|add a|fit a|we need)\b/i;
 var MAXS=100,MAXW=8,MAXC=12;
 var D=blank(),dirty=false,storeOk=true,saveT=null,edT=null,armed=null,armT=null,curId=0;
@@ -634,13 +638,13 @@ function example(){
    {id:2,no:2,ex:true,title:"Example: Pallets slipping on Line 3 racking",owner:"Example Team Leader",sponsor:"Example Safety Lead",date:off(-90),area:"Example Warehouse",
     background:"Example: Three near misses in two months where a pallet moved on the racking beam. Nobody was hurt.",
     current:"Example: 3 pallet slips on the 2.4 m beams in 8 weeks, all on pallets with the old chipped base.",
-    mName:"Pallet slips per month",mUnit:"",mDir:"lower",mBase:1.5,mTarget:0,goal:"Example: No pallet slips for 6 weeks.",goalDate:off(-20),
+    mName:"Pallet slips per month",mUnit:"",mDir:"lower",mBase:1.5,mTarget:0,goal:"Example: No pallet slips for 6 weeks.",goalDate:off(-8),
     whys:[W("Pallet bases were damaged.","gemba"),W("Damaged pallets were put in the racking.","gemba"),W("There was no check of pallet condition at put-away.","gemba")],
     root:"Example: There was no pallet condition check at put-away, so damaged pallets entered the racking.",rcOk:"yes",rcEv:"Example: Reviewed the last 12 put-aways. 4 of 12 pallets were damaged and none was rejected.",
     cms:[{id:1,text:"Example: Add a go and no-go gauge for the pallet base at the put-away station.",owner:"Example Engineer",due:off(-60),kind:"safeguard",status:"done",verBy:"Example Safety Lead",verOn:off(-55)},
-         {id:2,text:"Example: Fit beam support bars on the 2.4 m beams.",owner:"Example Engineer",due:off(-50),kind:"remove",status:"done",verBy:"Example Safety Lead",verOn:off(-45)}],
-    checkDate:off(-20),result:0,resultOn:off(-18),outcome:"Example: No slips in the 6 weeks after the changes.",standard:"yes",stdNote:"Example: Put-away work instruction changed to include the gauge check. Gauge added to the line audit.",learnt:"Example: The gauge is cheaper than the support bars and would have prevented all three events on its own.",
-    status:"closed",closedBy:"Example Operations Manager",closedOn:off(-15)},
+         {id:2,text:"Example: Fit beam support bars on the 2.4 m beams.",owner:"Example Engineer",due:off(-55),kind:"remove",status:"done",verBy:"Example Safety Lead",verOn:off(-50)}],
+    checkDate:off(-8),result:0,resultOn:off(-8),outcome:"Example: No slips in the 6 weeks after the changes.",standard:"yes",stdNote:"Example: Put-away work instruction changed to include the gauge check. Gauge added to the line audit.",learnt:"Example: The gauge is cheaper than the support bars and would have prevented all three events on its own.",
+    status:"closed",closedBy:"Example Operations Manager",closedOn:off(-6)},
    {id:3,no:3,ex:true,title:"Example: Late deliveries from the packing area",owner:"Example Team Leader",sponsor:"",date:off(-5),area:"Example Packing",
     background:"Example: Late orders are up.",
     current:"Example: The operators are careless with order priority and we need to install a new scheduling board.",

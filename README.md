@@ -28,7 +28,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | Tool | What it does |
 |---|---|
 | [DMAIC Improvement Board (first pass yield)](https://rmilburn1980.github.io/dmaic-fpy-dashboard.html) | Lean Six Sigma Green Belt project on first pass yield, with monthly figures from my line performance tracker. |
-| [5 Whys Root Cause Tool](https://rmilburn1980.github.io/5-whys-tool.html) | Ask why with evidence at each step, test the logic in reverse, then set actions and verify the fix. Prints as a one page report. |
+| [5 Whys Root Cause Tool](https://rmilburn1980.github.io/5-whys-tool.html) | Ask why with evidence at each step, test the logic in reverse, then set actions and verify the fix. Prints as a report. |
 | [A3 Problem Solving Sheet](https://rmilburn1980.github.io/a3-problem-solving.html) | One page from background to follow-up. Flags an unconfirmed cause, blame wording, countermeasures with no independent check, and a close-out with no measured result. Prints on A3. Opens with example data. |
 | [SIPOC and Value Stream Map](https://rmilburn1980.github.io/sipoc-vsm-tool.html) | Scope a process with a SIPOC, then map the current state: cycle times, queues, takt, lead time, process cycle efficiency and rolled throughput yield. |
 | [SPC Control Chart Tool](https://rmilburn1980.github.io/spc-control-chart.html) | Limits from a chosen baseline, signal rules, and capability shown only when the baseline is valid. |
