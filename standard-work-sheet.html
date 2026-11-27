@@ -276,7 +276,7 @@ td.num,th.num{text-align:right}
       <li>Each step has a <strong>walk</strong> time, a <strong>manual</strong> time and an <strong>automatic</strong> time, in seconds. Manual work is done by the operator. Automatic time is a machine running while the operator is free, unless the step is marked as one the operator waits for.</li>
       <li>The timeline adds walk, then manual, step by step. If the operator waits for the machine, the next step starts when the machine finishes. If not, the next step starts straight after the manual work.</li>
       <li><strong>Operator cycle</strong> is the time the operator finishes the last step, plus the walk back to the first step.</li>
-      <li><strong>Cycle</strong> is the longer of the operator cycle and the time the last automatic step finishes. It assumes each machine is ready again for the next cycle. Where the machine finishes later, the machine is setting the pace and the note says so.</li>
+      <li><strong>Cycle</strong> is the longer of the operator cycle and the longest machine time per part. A machine's time per part is its loading time plus its running time: if that fits in the operator's cycle, the machine is ready when the operator comes back to it, even if it is still running when the operator's cycle ends. If it does not fit, the machine sets the pace and the note says so. Steps the operator waits for are already counted in the operator's time.</li>
       <li><strong>Takt</strong> is available time divided by demand. A cycle over takt cannot meet demand.</li>
     </ul></div>
   <div class="card"><h2>What would make it a standard</h2>
@@ -347,16 +347,18 @@ function clean(d){
 /* ---------- the arithmetic ---------- */
 function takt(){return (D.avail!==null&&D.avail>0&&D.demand!==null&&D.demand>0)?D.avail*60/D.demand:null;}
 function calc(){
-  var t=0,rows=[],manual=0,walk=0,wait=0,maxAuto=0,skipped=0,tk=takt();
+  var t=0,rows=[],manual=0,walk=0,wait=0,maxAuto=0,mach=0,machName="",skipped=0,tk=takt();
   D.steps.forEach(function(e){
     if(e.manual===null){skipped++;return;}
     var w=e.walk||0,a=e.auto||0,ws=t,ms=t+w,me=ms+e.manual,ae=me+a,waitT=0;
     t=me;if(e.wait&&a>0){waitT=a;t=ae;}
     manual+=e.manual;walk+=w;wait+=waitT;if(a>0&&ae>maxAuto)maxAuto=ae;
+    /* A machine is ready for the next part if its load time plus run time fits in the operator's cycle. Steps the operator waits for are already in the operator's time. */
+    if(a>0&&!e.wait&&e.manual+a>mach){mach=e.manual+a;machName=e.name.trim()||"(unnamed step)";}
     rows.push({id:e.id,name:e.name,walkStart:ws,manualStart:ms,manualEnd:me,autoEnd:a>0?ae:null,auto:a,waitT:waitT,opEnd:t,w:w,m:e.manual});
   });
-  var ret=rows.length?(D.ret||0):0,opCycle=t+ret,cycle=Math.max(opCycle,maxAuto);
-  return {takt:tk,rows:rows,manual:manual,walk:walk+ret,ret:ret,wait:wait,opEnd:t,opCycle:opCycle,maxAuto:maxAuto,cycle:cycle,machinePaces:maxAuto>opCycle+1e-9,skipped:skipped,
+  var ret=rows.length?(D.ret||0):0,opCycle=t+ret,cycle=Math.max(opCycle,mach);
+  return {takt:tk,rows:rows,manual:manual,walk:walk+ret,ret:ret,wait:wait,opEnd:t,opCycle:opCycle,maxAuto:maxAuto,mach:mach,machName:machName,cycle:cycle,machinePaces:mach>opCycle+1e-9,skipped:skipped,
     over:tk!==null&&rows.length>0&&cycle>tk+1e-9,low:tk!==null&&rows.length>0&&cycle<tk*LOW/100-1e-9,
     pctTakt:(tk&&rows.length)?cycle/tk*100:null,manualShare:cycle>0?manual/cycle*100:null,walkShare:cycle>0?(walk+ret)/cycle*100:null,waitShare:cycle>0?wait/cycle*100:null};
 }
@@ -393,7 +395,7 @@ function analyse(){
   else if(noKey>0)n(0,plural(noKey,"step")+" of "+D.steps.length+" "+(noKey===1?"has":"have")+" no key point. Check each one really has no safety or quality point.");
   if(C.over)n(0,"The cycle is "+s1(C.cycle)+" s, over takt ("+s1(C.takt)+" s) by "+s1(C.cycle-C.takt)+" s. It cannot meet demand as it stands.");
   else if(C.low)n(0,"The cycle is "+s1(C.cycle)+" s, "+Math.round(C.pctTakt)+"% of takt. The operator may have capacity, but check the method before adding work.");
-  if(C.machinePaces)n(0,"The last automatic step finishes at "+s1(C.maxAuto)+" s, after the operator finishes ("+s1(C.opCycle)+" s). The machine sets the pace.");
+  if(C.machinePaces)n(0,"The machine at "+C.machName+" needs "+s1(C.mach)+" s for each part (loading plus running), longer than the operator's cycle ("+s1(C.opCycle)+" s). The machine sets the pace.");
   if(C.wait>0&&C.waitShare>=15)n(0,"The operator waits "+s1(C.wait)+" s ("+Math.round(C.waitShare)+"% of the cycle). Look at whether that time can be used for work that needs doing, without making the job unsafe or rushed.");
   if(C.walkShare!==null&&C.walkShare>=20)n(0,"Walking is "+Math.round(C.walkShare)+"% of the cycle. Look at the layout.");
   return {gaps:gaps,notes:notes,C:C};
@@ -474,7 +476,7 @@ function renderDash(){
   add(k,kpi(C.takt===null?"n/a":s1(C.takt)+" s","Takt"),kpi(s1(C.cycle)+" s","Cycle"+(C.machinePaces?" (set by the machine)":""),C.over?"crit":(C.takt===null?"":"ok")),
     kpi(pc(C.pctTakt),"Cycle as a share of takt",C.over?"crit":""),kpi(s1(C.opCycle)+" s","Operator cycle, with the walk back"),
     kpi(s1(C.manual)+" s","Manual work"+(C.manualShare!==null?" ("+Math.round(C.manualShare)+"% of cycle)":"")),kpi(s1(C.walk)+" s","Walking"+(C.walkShare!==null?" ("+Math.round(C.walkShare)+"%)":"")),
-    kpi(s1(C.wait)+" s","Operator waiting"+(C.waitShare!==null?" ("+Math.round(C.waitShare)+"%)":""),C.wait>0?"warn":""),kpi(s1(C.maxAuto)+" s","Last automatic step finishes"));
+    kpi(s1(C.wait)+" s","Operator waiting"+(C.waitShare!==null?" ("+Math.round(C.waitShare)+"%)":""),C.wait>0?"warn":""),kpi(C.mach?s1(C.mach)+" s":"none","Longest machine time per part, loading plus running"+(C.machName?" ("+C.machName+")":"")));
   $("chY").appendChild(yChart(C));
   var t=$("yTable");t.appendChild(h("thead",{},h("tr",{},["#","Step","Walk starts","Manual starts","Manual ends","Machine ends","Operator waits (s)","Operator free to start next"].map(function(x,i){return h("th",{class:i>1?"num":"",text:x});}))));
   var tb=h("tbody");C.rows.forEach(function(r,i){tb.appendChild(h("tr",{},h("td",{text:String(i+1)}),h("td",{text:r.name||"(unnamed step)"}),[s1(r.walkStart),s1(r.manualStart),s1(r.manualEnd),r.autoEnd===null?"":s1(r.autoEnd),s1(r.waitT),s1(r.opEnd)].map(function(v){return h("td",{class:"num",text:v});})));});
@@ -540,7 +542,7 @@ function buildReport(){
   if(D.example)add(r,h("p",{class:"gapx",text:"EXAMPLE DATA. Made up, not a real record."}));
   add(r,h("p",{text:"Printed "+fmt(today())+". "+(D.product||"No process named")+". Timed "+(D.date?fmt(D.date):"date not recorded")+". Timed by "+(D.timedBy||"not recorded")+"; times checked by "+(D.checkedBy||"not recorded")+"; approved by "+(D.approvedBy||"NOT APPROVED")+"; review date "+(D.review?fmt(D.review):"NOT SET")+"."}));
   add(r,h("p",{class:"gapx",text:!D.steps.length?"Nothing to check.":A.gaps.length?"Gaps found ("+A.gaps.length+"). Do not rely on this sheet until they are dealt with.":"No gaps found by the checks. A competent person must still judge the sheet."}));
-  var t=h("table",{});[["Takt",C.takt===null?"not set":s1(C.takt)+" s"],["Cycle",s1(C.cycle)+" s"+(C.machinePaces?" (set by the machine)":"")],["Cycle as a share of takt",pc(C.pctTakt)],["Operator cycle, with the walk back",s1(C.opCycle)+" s"],["Manual work",s1(C.manual)+" s"],["Walking",s1(C.walk)+" s"],["Operator waiting",s1(C.wait)+" s"],["Last automatic step finishes",s1(C.maxAuto)+" s"]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
+  var t=h("table",{});[["Takt",C.takt===null?"not set":s1(C.takt)+" s"],["Cycle",s1(C.cycle)+" s"+(C.machinePaces?" (set by the machine)":"")],["Cycle as a share of takt",pc(C.pctTakt)],["Operator cycle, with the walk back",s1(C.opCycle)+" s"],["Manual work",s1(C.manual)+" s"],["Walking",s1(C.walk)+" s"],["Operator waiting",s1(C.wait)+" s"],["Longest machine time per part, loading plus running",C.mach?s1(C.mach)+" s"+(C.machName?" ("+C.machName+")":""):"none"]].forEach(function(x){t.appendChild(h("tr",{},h("th",{text:x[0]}),h("td",{text:x[1]})));});add(r,t);
   add(r,h("h2",{text:"Steps in order"}));
   var by={};C.rows.forEach(function(x){by[x.id]=x;});
   var t2=h("table",{}),h2=h("tr",{});["#","Step","Walk","Manual","Auto","Waits","Walk starts","Machine ends","Key point"].forEach(function(x){h2.appendChild(h("th",{text:x}));});t2.appendChild(h2);
