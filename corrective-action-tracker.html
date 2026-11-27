@@ -231,7 +231,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
 
 <section id="overview">
   <div id="dpNotice" role="note" style="background:#16263d;border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px;color:#e8eef7"><strong style="display:block;margin-bottom:4px">Data protection notice</strong><span style="font-size:.82rem;color:#a9b8cf">This tool records the names of action owners and the people who check actions. It stays in this browser and in files you save. Nothing is sent to this website. Your employer is responsible for this data. Only use the tool with your employer's approval, on a company device, and save files only to your company's approved location. Do not email files or store them on personal devices. Keep action wording to the work needed. Do not record health, absence, beliefs, union membership, or criminal or disciplinary information about a person. Clear data from this browser when you have finished.</span></div>
-  <div class="banner" id="banner" hidden>Actions tagged Example hold made up details so you can see how the rules work. Do not use them for real decisions. Edit or delete the examples and add your own.</div>
+  <div class="banner" id="banner" hidden>Actions tagged Example hold made up details so you can see how the rules work. Do not use them for real decisions. Edit or delete the examples and add your own. Open the <a href="risk-assessment-dashboard.html">Risk Register</a> example first, in this browser, to see the example actions linked to risks.</div>
   <div id="status" class="status st-empty"></div>
   <p class="disc">This tracker shows whether actions are being completed and checked. A closed action does not prove the risk is controlled. After closing an action, update the control status and re-score in the Risk Register. A competent person must judge the result.</p>
   <div class="kpis" id="kpis"></div>
@@ -287,7 +287,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <h2>Rules the tool applies</h2>
     <ul>
       <li>Moving a due date needs a written reason. The move is recorded, and an action moved twice or more is flagged.</li>
-      <li>The change log records creation, status changes and due date moves. It cannot be edited in the tool. It lives in this browser, so it is a working record and not tamper proof. For a record that cannot be altered, use the multi-user Safety Risk Platform.</li>
+      <li>The change log records creation, status changes and due date moves. It cannot be edited in the tool. It lives in this browser, so it is a working record and not tamper proof. For a record that cannot be altered, use your organisation's controlled records system.</li>
       <li>An action is overdue when it is open or in progress after its due date.</li>
       <li>An action that is done but unchecked for more than the check window below is flagged.</li>
       <li>If the linked risk has severity 4 or 5 and the action relies on procedures or PPE, the tool asks you to look higher in the hierarchy of controls (eliminate, substitute, engineering).</li>
@@ -538,7 +538,7 @@ function renderOverview(){
     '<div class="kpi"><div class="n">'+act+'</div><div class="l">Active actions</div></div>'+
     '<div class="kpi '+(over?"crit":"ok")+'"><div class="n">'+over+'</div><div class="l">Overdue</div></div>'+
     '<div class="kpi '+(wait?"warn":"ok")+'"><div class="n">'+wait+'</div><div class="l">Done, waiting for an independent check</div></div>'+
-    '<div class="kpi"><div class="n">'+pc+'</div><div class="l">Closed on or before the due date (of '+closedAll+' closed)</div></div>'+
+    '<div class="kpi"><div class="n">'+pc+'</div><div class="l">Completed by the due date (of '+closedAll+' closed)</div></div>'+
     '<div class="kpi '+(mv?"high":"ok")+'"><div class="n">'+mv+'</div><div class="l">Due date moved twice or more</div></div>';
   var ob=Object.keys(owners).sort(function(a,b){return owners[b].n-owners[a].n;}),mx=1;ob.forEach(function(k){if(owners[k].n>mx)mx=owners[k].n;});
   $("byOwner").innerHTML=ob.length?ob.map(function(k){var o=owners[k];return '<div class="row"><span>'+esc(k)+'</span><div class="track"><div class="fill'+(o.over?" warn":"")+'" style="width:'+Math.round(100*o.n/mx)+'%"></div></div><b>'+o.n+'</b></div>';}).join("")+'<p class="sm">Orange bars have at least one overdue action.</p>':'<p class="sm">No active actions.</p>';
