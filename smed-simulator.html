@@ -96,11 +96,14 @@ tr.active td{background:rgba(34,211,238,.14)}
 .row2 label{display:flex;gap:6px;align-items:center}
 .row2 input{background:#0E0C2B;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 6px;width:70px;font-size:13px}
 @media(prefers-reduced-motion:reduce){#opB,#opA{transition:none!important}}
+@media print{.hub{display:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
-<a class="hub" href="https://rmilburn1980.github.io" aria-label="Back to the portfolio hub">&larr; Portfolio hub</a>
+<nav aria-label="Portfolio"><a class="hub" href="https://rmilburn1980.github.io" aria-label="Back to the portfolio hub">&larr; Portfolio hub</a></nav>
 
+<main>
 <header>
   <div>
     <div class="eyebrow">Continuous improvement</div>
@@ -115,9 +118,9 @@ tr.active td{background:rgba(34,211,238,.14)}
     <button class="btn play" id="play" aria-label="Play or pause">Play</button>
     <button class="btn" id="reset">Reset</button>
     <div class="speed" role="group" aria-label="Simulation speed">
-      <button class="btn" data-sp="15">x15</button>
-      <button class="btn on" data-sp="60">x60</button>
-      <button class="btn" data-sp="120">x120</button>
+      <button class="btn" data-sp="15" aria-pressed="false">x15</button>
+      <button class="btn on" data-sp="60" aria-pressed="true">x60</button>
+      <button class="btn" data-sp="120" aria-pressed="false">x120</button>
     </div>
     <div class="scrub"><input type="range" id="scrub" step="1" aria-label="Simulation time"></div>
     <div class="clock" id="clock" aria-live="off">0:00<small>from last OK part</small></div>
@@ -183,6 +186,7 @@ tr.active td{background:rgba(34,211,238,.14)}
 </div>
 
 <p class="note">Illustrative workshop scenario. The task times are invented to show the method and are not from a real changeover. Use Edit data to model your own changeover; changes are saved in this browser only.</p>
+</main>
 
 <script>
 (function(){
@@ -392,7 +396,7 @@ function buildSheet(){
   }
 }
 function buildIdeas(){
-  var h='<tr><th></th><th>Idea</th><th class="n">Saving (s)</th></tr>',tot=0;
+  var h='<tr><th><span class="sr">Category</span></th><th>Idea</th><th class="n">Saving (s)</th></tr>',tot=0;
   IDEAS.forEach(function(id){
     var sv=0;
     id.n.forEach(function(n){
@@ -417,7 +421,7 @@ function laneState(k,S,id){
   var st=$(id==='B'?'stB':'stA');st.className='chip '+(running?'run':'stop');st.textContent=running?'Running':'C/O in progress';
   var el=Math.max(0,Math.min(T,S.restart));
   $(id==='B'?'coB':'coA').textContent='C/O '+fmt(el)+' / '+fmt(S.restart);
-  var pc=T>=S.restart?Math.floor((T-S.restart)/Math.max(1,+data.takt||112))+1:0;
+  var pc=T>=S.restart?Math.floor((T-S.restart)/Math.max(1,+data.takt||112)):0;
   $(id==='B'?'ptB':'ptA').textContent='Parts after restart: '+pc;
   // conveyor
   var off=running?((T*0.4)%22+22)%22:0;
@@ -478,17 +482,17 @@ $('reset').addEventListener('click',function(){setPlaying(false);T=tmin;frame();
 document.querySelectorAll('[data-sp]').forEach(function(b){
   b.addEventListener('click',function(){
     speed=+b.dataset.sp;
-    document.querySelectorAll('[data-sp]').forEach(function(x){x.classList.toggle('on',x===b);});
+    document.querySelectorAll('[data-sp]').forEach(function(x){x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b);});
   });
 });
 $('scrub').addEventListener('input',function(e){T=+e.target.value;frame();});
 $('tabB').addEventListener('click',function(){tab='b';$('tabB').classList.add('on');$('tabA').classList.remove('on');$('tabB').setAttribute('aria-pressed','true');$('tabA').setAttribute('aria-pressed','false');buildSheet();frame();});
 $('tabA').addEventListener('click',function(){tab='a';$('tabA').classList.add('on');$('tabB').classList.remove('on');$('tabA').setAttribute('aria-pressed','true');$('tabB').setAttribute('aria-pressed','false');buildSheet();frame();});
 $('editBtn').addEventListener('click',function(){edit=!edit;$('editBtn').classList.toggle('on',edit);$('editBtn').setAttribute('aria-pressed',edit);$('editBtn').textContent=edit?'Done editing':'Edit data';buildSheet();frame();});
-$('target').addEventListener('change',function(){data.target=Math.max(1,+$('target').value||9);save();rebuild(true);});
-$('takt').addEventListener('change',function(){data.takt=Math.max(1,+$('takt').value||112);save();rebuild(true);});
+$('target').addEventListener('change',function(){data.target=Math.max(1,+$('target').value||9);$('target').value=data.target;save();rebuild(true);});
+$('takt').addEventListener('change',function(){data.takt=Math.max(1,+$('takt').value||112);$('takt').value=data.takt;save();rebuild(true);});
 document.addEventListener('keydown',function(e){
-  if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.target&&/^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(e.target.tagName))return;
   if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}
 });
 })();
