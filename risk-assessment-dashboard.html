@@ -475,7 +475,10 @@ function migrate(old){
 function load(){
   try{var d=JSON.parse(localStorage.getItem(KEY));var c=cleanAll(d);if(c.length)return c;}catch(e){}
   try{var o=JSON.parse(localStorage.getItem(OLD));if(Array.isArray(o)&&o.length){var m=migrate(o);if(m.length){try{localStorage.setItem(KEY,JSON.stringify(m));}catch(e){}return m;}}}catch(e){}
-  return cleanAll(seed());
+  /* First visit: keep the example in this browser, so the action tracker and Swiss Cheese tool can link to it */
+  var s=cleanAll(seed());
+  try{if(localStorage.getItem(KEY)===null&&localStorage.getItem(OLD)===null)localStorage.setItem(KEY,JSON.stringify(s));}catch(e){}
+  return s;
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(risks));}catch(e){}markEdit();}
 
