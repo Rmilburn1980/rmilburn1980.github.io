@@ -308,7 +308,7 @@ footer a{color:var(--cyan)}
   <div class="wrap">
     <p class="eyebrow">Manufacturing leader · Operations, Lean and EHS</p>
     <h1>I get results by <span class="hi">developing people.</span></h1>
-    <p class="kick">My Operations, Lean and EHS evidence portfolio: 29 working tools and dashboards, plus the quality, skills and safety results I led.</p>
+    <p class="kick">My Operations, Lean and EHS evidence portfolio: 30 working tools and dashboards, plus the quality, skills and safety results I led.</p>
     <p class="lede">Former Cell Leader of 29 people across 260 processes at Erwin Hymer Group UK, after 21 years in caravan manufacturing. I lifted line first pass yield from 58% to 92%, grew team skills cover from 36% to 86.6%, and was the top safety reporter on site, raising 108 of the 324 reports in our new EHS system's first year. The tools below show how I work.</p>
     <p class="open glass"><span class="pulse" aria-hidden="true"></span><span><strong>Open to work, available now, North East England:</strong> Operations Manager, Continuous Improvement, and EHS or Production Supervisor roles.</span></p>
     <div class="actions">
@@ -412,7 +412,7 @@ footer a{color:var(--cyan)}
       <h2>Hiring for a particular role? Start here.</h2>
       <div class="roles">
         <a class="role" style="--c:var(--green)" href="#operations"><b>Operations Manager</b><span>For site and production leadership roles. I run a team to SQCDP measures and develop the people in it.</span><em>8 tools</em></a>
-        <a class="role" style="--c:var(--pink)" href="#ci"><b>Continuous Improvement</b><span>For improvement roles. Root cause with data, measuring the work, and gains that stick.</span><em>11 tools</em></a>
+        <a class="role" style="--c:var(--pink)" href="#ci"><b>Continuous Improvement</b><span>For improvement roles. Root cause with data, measuring the work, and gains that stick.</span><em>12 tools</em></a>
         <a class="role" style="--c:var(--rose)" href="#ehs"><b>EHS and Production Supervisor</b><span>For safety and supervisor roles. Incident, risk and corrective action tools, and safety ownership on the line.</span><em>10 tools</em></a>
       </div>
       <div class="start">
@@ -568,6 +568,13 @@ footer a{color:var(--cyan)}
           <span class="kind">Tool</span>
           <h3>Cycle time and waste analysis</h3>
           <p>Time observation study with VA/NVA split, takt time comparison and a TIMWOODS waste breakdown, as a bar chart and a radar profile. Works for any process, timed live in the browser.</p>
+          <span class="open-link">Open tool</span>
+        </a>
+        <a class="tile" href="smed-simulator.html">
+          <svg class="tg" aria-hidden="true" focusable="false"><use href="#tg11"/></svg>
+          <span class="kind">Tool</span>
+          <h3>SMED changeover simulator</h3>
+          <p>Steps through the same die change before and after a kaizen, splitting internal from external work. Shows the machine-stop time saved, the gap to target and the extra output at takt. Opens with labelled illustrative data you can edit.</p>
           <span class="open-link">Open tool</span>
         </a>
         <a class="tile" href="https://rmilburn1980.github.io/SMV-TOOL/">
@@ -766,7 +773,7 @@ footer a{color:var(--cyan)}
 
   var box=document.createElement("div");
   box.className="wrap tabs";box.id="tools";
-  box.innerHTML='<h2 id="tabs-h">All 29 tools, by the role you are hiring for</h2><div class="tablist" role="tablist" aria-labelledby="tabs-h"></div>';
+  box.innerHTML='<h2 id="tabs-h">All 30 tools, by the role you are hiring for</h2><div class="tablist" role="tablist" aria-labelledby="tabs-h"></div>';
   var list=box.querySelector(".tablist");
   var tabs=roles.map(function(r,i){
     var p=panels[i],n=p.querySelectorAll(".tile").length;

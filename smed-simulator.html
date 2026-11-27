@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMED Changeover Simulator | Richard Milburn</title>
+<meta name="description" content="Step through the same die change before and after a SMED kaizen: which tasks move out of the machine stop, the time saved and the extra output. Illustrative data you can edit.">
+<meta property="og:title" content="SMED Changeover Simulator">
+<meta property="og:description" content="Step through the same die change before and after a SMED kaizen: which tasks move out of the machine stop, the time saved and the extra output.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://rmilburn1980.github.io/smed-simulator.html">
+<meta property="og:image" content="https://rmilburn1980.github.io/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Richard Milburn: Operations, Lean and EHS evidence portfolio.">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/special-gothic-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/special-gothic-latin-500-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/special-gothic-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Special Gothic';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/special-gothic-latin-700-normal.woff2') format('woff2')}
+:root{
+  --bg:#070A1A; --card:#1E1C48; --card2:#17153A; --line:#3B3578;
+  --text:#F2F1FF; --body:#D9D7F3; --muted:#B9B8DA;
+  --cyan:#22D3EE; --pink:#F0ABFC; --green:#4ADE80; --yellow:#FCD34D; --red:#F87171; --violet:#A78BFA;
+  --font:'Special Gothic','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--body);font-family:var(--font);font-size:15px;line-height:1.4}
+body{padding:20px 16px 80px;max-width:1240px;margin:0 auto}
+a{color:var(--cyan)}
+.hub{position:fixed;left:12px;bottom:12px;z-index:20;background:var(--card);border:1px solid var(--line);color:var(--text);
+  text-decoration:none;padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.hub:hover,.hub:focus-visible{border-color:var(--cyan);outline:none}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin:8px 0 16px}
+.eyebrow{font-size:12px;letter-spacing:.18em;font-weight:700;color:var(--violet);text-transform:uppercase}
+h1{margin:4px 0 4px;font-size:clamp(26px,5vw,40px);line-height:1.1;color:var(--text)}
+.sub{margin:0;color:var(--muted);max-width:60ch}
+.badge{background:var(--yellow);color:#070A1A;font-weight:800;font-size:12px;letter-spacing:.06em;padding:8px 14px;border-radius:999px;white-space:nowrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.card h2{margin:0 0 10px;font-size:15px;color:var(--text);letter-spacing:.02em}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+button,select,input{font-family:inherit}
+.btn{background:#2A2760;border:1px solid var(--line);color:var(--text);padding:9px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;min-height:40px}
+.btn:hover{border-color:var(--cyan)}
+.btn:focus-visible,select:focus-visible,input:focus-visible,.hub:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn.on{background:var(--cyan);color:#070A1A;border-color:var(--cyan)}
+.btn.play{background:var(--green);color:#070A1A;border-color:var(--green);min-width:92px}
+.btn.play.paused{background:#F87171;border-color:#F87171}
+.speed{display:flex;gap:6px}
+.scrub{flex:1 1 220px;display:flex;align-items:center;gap:10px;min-width:220px}
+.scrub input[type=range]{flex:1;accent-color:var(--cyan);min-height:28px}
+.clock{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);min-width:150px;text-align:right}
+.clock small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.grid>*{min-width:0}
+@media(min-width:980px){.grid.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll>.inner{min-width:640px}
+.hint{display:none;color:var(--muted);font-size:12px;margin:0 0 6px}
+@media(max-width:720px){.hint{display:block}}
+.lane{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.laneHead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:4px;font-size:13px}
+.laneHead b{color:var(--text);font-size:14px}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:12px;color:#070A1A}
+.chip.run{background:var(--green)} .chip.stop{background:var(--red)}
+.lane .meta{margin-left:auto;color:var(--muted)}
+.now{min-height:20px;color:var(--body);font-size:13px;margin-top:2px}
+.now .I{color:var(--red);font-weight:700}.now .E{color:var(--green);font-weight:700}
+svg text{font-family:var(--font)}
+.lane svg{display:block;max-height:150px;margin:0 auto}
+.scroll:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.active td{background:rgba(34,211,238,.14)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.dot.I{background:var(--red)} .dot.E{background:var(--green)}
+.good{color:var(--green);font-weight:700} .bad{color:var(--red);font-weight:700}
+.tabs{display:flex;gap:6px;margin-bottom:8px}
+.tabs .btn{padding:6px 12px;min-height:34px;font-size:13px}
+.edit input[type=number],.edit select{background:#0E0C2B;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 6px;width:76px;font-size:13px}
+.edit select{width:auto}
+.bars .row{display:grid;grid-template-columns:78px 1fr;gap:10px;align-items:center;margin:8px 0;font-size:13px}
+.bars .track{position:relative;height:30px;background:#0E0C2B;border-radius:8px;border:1px solid var(--line)}
+.bars .seg{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#070A1A;white-space:nowrap;overflow:hidden}
+.bars .seg.I{background:var(--red)} .bars .seg.E{background:var(--green)}
+.bars .seg.run{background-color:#4ADE80;background-image:repeating-linear-gradient(135deg,#4ADE80 0 6px,#34c46f 6px 12px)}
+.bars .tg{position:absolute;top:-4px;bottom:-4px;border-left:2px dashed var(--yellow)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--muted);font-size:12px;margin-top:8px}
+.note{color:var(--muted);font-size:12.5px;margin:14px 2px 0}
+.ideas td.c{width:34px}
+.tag{display:inline-block;min-width:22px;text-align:center;padding:1px 6px;border-radius:6px;background:#2A2760;color:var(--text);font-weight:700;font-size:12px}
+.row2{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;color:var(--muted);font-size:13px}
+.row2 label{display:flex;gap:6px;align-items:center}
+.row2 input{background:#0E0C2B;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px 6px;width:70px;font-size:13px}
+@media(prefers-reduced-motion:reduce){#opB,#opA{transition:none!important}}
+</style>
+</head>
+<body>
+<a class="hub" href="https://rmilburn1980.github.io" aria-label="Back to the portfolio hub">&larr; Portfolio hub</a>
+
+<header>
+  <div>
+    <div class="eyebrow">Continuous improvement</div>
+    <h1>SMED changeover simulator</h1>
+    <p class="sub">Step through the same die change before and after a kaizen. See which tasks move out of the machine stop, and what it is worth.</p>
+  </div>
+  <div class="badge">ILLUSTRATIVE DATA ONLY</div>
+</header>
+
+<section class="card" aria-label="Playback controls">
+  <div class="controls">
+    <button class="btn play" id="play" aria-label="Play or pause">Play</button>
+    <button class="btn" id="reset">Reset</button>
+    <div class="speed" role="group" aria-label="Simulation speed">
+      <button class="btn" data-sp="15">x15</button>
+      <button class="btn on" data-sp="60">x60</button>
+      <button class="btn" data-sp="120">x120</button>
+    </div>
+    <div class="scrub"><input type="range" id="scrub" step="1" aria-label="Simulation time"></div>
+    <div class="clock" id="clock" aria-live="off">0:00<small>from last OK part</small></div>
+  </div>
+
+  <p class="hint">Scroll sideways to see the full scene and timeline.</p>
+  <div class="scroll" tabindex="0" role="region" aria-label="Changeover scene, scrolls sideways"><div class="inner">
+    <div class="lane">
+      <div class="laneHead"><b>BEFORE: current method</b><span class="chip run" id="stB">Running</span><span id="coB"></span><span class="meta" id="ptB"></span></div>
+      <div id="sceneB"></div>
+      <div class="now" id="nowB"></div>
+    </div>
+    <div class="lane">
+      <div class="laneHead"><b>AFTER: SMED applied</b><span class="chip run" id="stA">Running</span><span id="coA"></span><span class="meta" id="ptA"></span></div>
+      <div id="sceneA"></div>
+      <div class="now" id="nowA"></div>
+    </div>
+  </div></div>
+</section>
+
+<section class="card" style="margin-top:14px" aria-label="Changeover timeline">
+  <h2>Changeover timeline <span style="color:var(--muted);font-weight:500">(red = internal, machine stopped. green = external, machine running)</span></h2>
+  <div class="scroll" tabindex="0" role="region" aria-label="Changeover timeline, scrolls sideways"><div class="inner" style="min-width:760px"><div id="gantt"></div></div></div>
+</section>
+
+<div class="grid two" style="margin-top:14px">
+  <section class="card" aria-label="KPI summary">
+    <h2>KPI summary: before vs after</h2>
+    <table id="kpi"></table>
+    <div class="row2" style="margin-top:12px">
+      <label>Target (min) <input type="number" id="target" min="1" step="1"></label>
+      <label>Takt (s per part) <input type="number" id="takt" min="1" step="1"></label>
+    </div>
+  </section>
+
+  <section class="card bars" aria-label="Internal and external split">
+    <h2>Split of total set-up time: internal vs external</h2>
+    <div id="split"></div>
+    <div class="legend">
+      <span><span class="dot I"></span>Internal (machine stopped)</span>
+      <span><span class="dot E"></span>External</span>
+      <span><span style="display:inline-block;width:14px;border-top:2px dashed var(--yellow);vertical-align:middle;margin-right:6px"></span>Target</span>
+    </div>
+  </section>
+</div>
+
+<div class="grid two" style="margin-top:14px">
+  <section class="card" aria-label="Changeover analysis sheet">
+    <h2>C/O analysis sheet</h2>
+    <div class="tabs" role="group" aria-label="Sheet view">
+      <button class="btn on" id="tabB" aria-pressed="true">Before</button>
+      <button class="btn" id="tabA" aria-pressed="false">After</button>
+      <button class="btn" id="editBtn" aria-pressed="false" style="margin-left:auto">Edit data</button>
+    </div>
+    <div class="scroll" tabindex="0" role="region" aria-label="Changeover analysis sheet, scrolls sideways"><div id="sheet"></div></div>
+  </section>
+
+  <section class="card ideas" aria-label="Improvement ideas">
+    <h2>Improvement ideas (kaizen)</h2>
+    <div class="scroll" tabindex="0" role="region" aria-label="Improvement ideas, scrolls sideways"><table id="ideas"></table></div>
+    <p class="note" style="margin-top:10px">Category: O = organisation, F = functional or fastening, M = motion, A = adjustment. Savings are machine-stop seconds, worked out from the sheet.</p>
+  </section>
+</div>
+
+<p class="note">Illustrative workshop scenario. The task times are invented to show the method and are not from a real changeover. Use Edit data to model your own changeover; changes are saved in this browser only.</p>
+
+<script>
+(function(){
+'use strict';
+var KEY='smed-sim-v1';
+var DEF={takt:112,target:9,tasks:[
+ {b:{st:'docs',op:'Search documents / program',dur:120,type:'E'},a:{st:'docs',op:'Pre-set documents and program',dur:60,type:'E'}},
+ {b:{st:'tools',op:'Walk to fetch tools',dur:120,type:'E'},a:{st:'tools',op:'Tool kit from shadow board',dur:60,type:'E'}},
+ {b:{st:'press',op:'Unclamp die bolts',dur:240,type:'I'},a:{st:'press',op:'Release functional clamps',dur:150,type:'I'}},
+ {b:{st:'slot',op:'Remove old die, carry to rack',dur:180,type:'I'},a:{st:'slot',op:'Roll old die out onto cart',dur:150,type:'I'}},
+ {b:{st:'slot',op:'Search new die at rack',dur:180,type:'E'},a:{st:'slot',op:'Pre-stage new die on die cart',dur:90,type:'E'}},
+ {b:{st:'press',op:'Carry in and position new die',dur:240,type:'I'},a:{st:'press',op:'Roll new die in, locating pins',dur:180,type:'I'}},
+ {b:{st:'press',op:'Clamp die bolts',dur:180,type:'I'},a:{st:'press',op:'Lock quick clamps',dur:120,type:'I'}},
+ {b:{st:'material',op:'Walk to fetch material',dur:180,type:'E'},a:{st:'material',op:'Material kitting',dur:90,type:'E'}},
+ {b:{st:'press',op:'Adjust: trial and error',dur:240,type:'I'},a:{st:'press',op:'Preset parameters, no trial',dur:180,type:'I'}},
+ {b:{st:'qc',op:'First-off part check',dur:120,type:'I'},a:{st:'qc',op:'First-off check per standard work',dur:120,type:'I'}}
+]};
+var IDEAS=[
+ {c:'O',t:'Move external work out of the stop (pre-C/O)',n:[1,2,5,8]},
+ {c:'F',t:'Functional clamps replace bolts',n:[3,7]},
+ {c:'M',t:'Die cart beside the machine, locating pins',n:[4,6]},
+ {c:'A',t:'Preset parameters, no trial and error',n:[9,10]}
+];
+var STX={docs:58,tools:132,slot:222,material:312,press:432,qc:616};
+var STN={docs:'Docs board',tools:'Tools',material:'Material',press:'Press',qc:'QC'};
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function load(){try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);if(d&&d.tasks&&d.tasks.length===10)return d;}}catch(e){}return clone(DEF);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+var data=load();
+
+var $=function(id){return document.getElementById(id);};
+var T=0,playing=false,speed=60,last=0,tmin=-300,tmax=1800,tab='b',edit=false,SB,SA;
+
+function fmt(s){var neg=s<0;s=Math.abs(Math.round(s));var m=Math.floor(s/60),r=s%60;return (neg?'-':'')+m+':'+(r<10?'0':'')+r;}
+function mins(s){return (Math.round(s/6)/10).toFixed(1).replace(/\.0$/,'');}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+function schedule(k){
+  var items=data.tasks.map(function(t,i){return {i:i,st:t[k].st,op:t[k].op,dur:Math.max(0,+t[k].dur||0),type:t[k].type,start:0,end:0};});
+  var t=0,sumI=0,sumE=0;
+  items.forEach(function(x){if(x.type==='I')sumI+=x.dur;else sumE+=x.dur;});
+  if(k==='b'){
+    items.forEach(function(x){x.start=t;x.end=t+x.dur;t=x.end;});
+    return {items:items,restart:t,sumI:sumI,sumE:sumE,stop:t};
+  }
+  t=-sumE;
+  items.filter(function(x){return x.type==='E';}).forEach(function(x){x.start=t;x.end=t+x.dur;t=x.end;});
+  t=0;
+  items.filter(function(x){return x.type==='I';}).forEach(function(x){x.start=t;x.end=t+x.dur;t=x.end;});
+  return {items:items,restart:t,sumI:sumI,sumE:sumE,stop:t};
+}
+
+/* ---------- scene ---------- */
+function scene(id,slotLabel){
+  var s='<svg viewBox="0 0 680 150" width="100%" role="img" aria-label="Press, stations and operator">';
+  s+='<rect x="0" y="126" width="680" height="3" fill="#3B3578"/>';
+  // docs board
+  s+='<rect x="38" y="62" width="40" height="52" rx="3" fill="#2A2760" stroke="#B9B8DA" stroke-width="1.5"/><path d="M46 74h24M46 83h24M46 92h24M46 101h16" stroke="#B9B8DA" stroke-width="2"/><rect x="56" y="114" width="4" height="12" fill="#B9B8DA"/>';
+  // tools
+  s+='<rect x="112" y="62" width="40" height="52" rx="3" fill="#2A2760" stroke="#B9B8DA" stroke-width="1.5"/><path d="M122 70v36M132 70v36M142 70v36" stroke="#B9B8DA" stroke-width="3"/>';
+  // rack / cart
+  s+='<rect x="196" y="54" width="52" height="72" rx="2" fill="none" stroke="#B9B8DA" stroke-width="2"/><path d="M196 80h52M196 104h52" stroke="#B9B8DA" stroke-width="2"/><rect x="206" y="62" width="14" height="18" fill="#FCD34D"/>';
+  // material
+  s+='<rect x="292" y="108" width="20" height="18" fill="#FB923C"/><rect x="314" y="96" width="20" height="30" fill="#FB923C"/><rect x="292" y="90" width="20" height="18" fill="#FDBA74"/>';
+  // press
+  s+='<rect x="396" y="116" width="76" height="10" fill="#3B3578"/><rect x="402" y="36" width="12" height="80" fill="#6D6BA8"/><rect x="454" y="36" width="12" height="80" fill="#6D6BA8"/><rect x="396" y="24" width="76" height="22" rx="3" fill="#8B89C9"/>';
+  s+='<rect id="'+id+'Die" x="420" y="92" width="28" height="24" fill="#FCD34D"/><rect id="'+id+'Ram" x="426" y="46" width="16" height="30" fill="#B9B8DA"/>';
+  s+='<circle id="'+id+'Led" cx="434" cy="16" r="6" fill="#4ADE80"/>';
+  // conveyor
+  s+='<rect x="490" y="112" width="100" height="6" fill="#6D6BA8"/><g id="'+id+'Conv"></g>';
+  // QC
+  s+='<rect x="596" y="86" width="44" height="6" fill="#B9B8DA"/><rect x="602" y="92" width="4" height="34" fill="#B9B8DA"/><rect x="630" y="92" width="4" height="34" fill="#B9B8DA"/>';
+  // labels
+  var lab=[['docs','Docs board'],['tools','Tools'],['slot',slotLabel],['material','Material'],['press','Press'],['qc','QC']];
+  lab.forEach(function(l){s+='<text x="'+STX[l[0]]+'" y="144" text-anchor="middle" font-size="12" fill="#B9B8DA">'+l[1]+'</text>';});
+  // operator
+  s+='<g id="op'+id+'" style="transition:transform .5s ease;transform:translate(432px,0px)"><circle cx="0" cy="90" r="7" fill="#F0ABFC"/><rect x="-7" y="98" width="14" height="22" rx="5" fill="#F0ABFC"/></g>';
+  s+='</svg>';
+  return s;
+}
+function buildScenes(){
+  $('sceneB').innerHTML=scene('B','Die rack');
+  $('sceneA').innerHTML=scene('A','Die cart');
+  var parts='';
+  for(var i=0;i<6;i++)parts+='<rect class="p" x="'+(492+i*22)+'" y="102" width="12" height="10" fill="#22D3EE"/>';
+  $('BConv').innerHTML=parts;$('AConv').innerHTML=parts;
+}
+
+/* ---------- gantt ---------- */
+function buildGantt(){
+  SB=schedule('b');SA=schedule('a');
+  tmin=Math.min(0,SA.items.reduce(function(m,x){return Math.min(m,x.start);},0))-60;
+  tmax=Math.max(SB.restart,SA.restart)+60;
+  var W=900,LX=250,PX=LX+8,PW=W-PX-14,RH=16,TOP=34;
+  var X=function(t){return PX+(t-tmin)/(tmax-tmin)*PW;};
+  var H=TOP+2*(10*RH+34)+46,AX=H-42;
+  var s='<svg id="gsvg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Before and after changeover timeline">';
+  // axis ticks every 5 min
+  var t0=Math.ceil(tmin/300)*300;
+  for(var t=t0;t<=tmax;t+=300){
+    s+='<line x1="'+X(t)+'" x2="'+X(t)+'" y1="'+(TOP-6)+'" y2="'+AX+'" stroke="#3B3578" stroke-width="1"/>';
+    s+='<text x="'+X(t)+'" y="'+(AX+16)+'" text-anchor="middle" font-size="12" fill="#B9B8DA">'+(t/60)+'</text>';
+  }
+  s+='<text x="'+(PX+PW)+'" y="'+(AX+34)+'" text-anchor="end" font-size="11" fill="#B9B8DA">Minutes (0 = last OK part)</text>';
+  [['b',SB,'BEFORE'],['a',SA,'AFTER']].forEach(function(g,gi){
+    var y0=TOP+gi*(10*RH+34);
+    s+='<text x="6" y="'+(y0+4)+'" font-size="13" font-weight="700" fill="#F2F1FF">'+g[2]+'</text>';
+    // stop window
+    s+='<rect x="'+X(0)+'" y="'+(y0+10)+'" width="'+Math.max(0,X(g[1].restart)-X(0))+'" height="'+(10*RH+4)+'" fill="#F87171" opacity=".12"/>';
+    s+='<text x="'+(X(0)+4)+'" y="'+(y0+8)+'" font-size="11" fill="#F87171" font-weight="700">C/O '+mins(g[1].restart)+' min</text>';
+    g[1].items.forEach(function(x,i){
+      var y=y0+12+i*RH;
+      s+='<text x="6" y="'+(y+11)+'" font-size="11" fill="#D9D7F3">'+(i+1)+'. '+esc(x.op.length>34?x.op.slice(0,33)+'.':x.op)+'</text>';
+      var w=Math.max(2,X(x.end)-X(x.start));
+      s+='<rect id="g'+g[0]+i+'" x="'+X(x.start)+'" y="'+y+'" width="'+w+'" height="11" rx="2" fill="'+(x.type==='I'?'#F87171':'#4ADE80')+'"/>';
+      if(w>18)s+='<text x="'+(X(x.start)+w/2)+'" y="'+(y+9)+'" text-anchor="middle" font-size="9" font-weight="700" fill="#070A1A">'+mins(x.dur)+'</text>';
+    });
+    s+='<line x1="'+X(g[1].restart)+'" x2="'+X(g[1].restart)+'" y1="'+(y0+10)+'" y2="'+(y0+10*RH+16)+'" stroke="#4ADE80" stroke-width="1.5"/>';
+    var rx=X(g[1].restart),nr=rx>W-110;
+    s+='<text x="'+(nr?rx-4:rx+4)+'" y="'+(y0+10*RH+28)+'" text-anchor="'+(nr?'end':'start')+'" font-size="11" fill="#4ADE80">first OK part</text>';
+  });
+  var tg=(+data.target||9)*60;
+  s+='<line x1="'+X(tg)+'" x2="'+X(tg)+'" y1="'+(TOP-6)+'" y2="'+AX+'" stroke="#FCD34D" stroke-width="2" stroke-dasharray="6 4"/>';
+  s+='<text x="'+(X(tg)-4)+'" y="'+(TOP-12)+'" text-anchor="end" font-size="11" font-weight="700" fill="#FCD34D">Target '+(+data.target||9)+' min</text>';
+  s+='<line id="head" x1="0" x2="0" y1="'+(TOP-6)+'" y2="'+AX+'" stroke="#22D3EE" stroke-width="2"/>';
+  s+='</svg>';
+  $('gantt').innerHTML=s;
+  $('gantt').dataset.px=PX;$('gantt').dataset.pw=PW;$('gantt').dataset.w=W;
+  var sc=$('scrub');sc.min=Math.floor(tmin);sc.max=Math.ceil(tmax);
+  if(T<tmin)T=tmin;if(T>tmax)T=tmax;
+}
+
+/* ---------- tables ---------- */
+function kp(){
+  var tk=Math.max(1,+data.takt||112),tg=(+data.target||9)*60;
+  var rec=SB.stop-SA.stop;
+  return {tk:tk,tg:tg,rec:rec,pcs:Math.floor(rec/tk),
+    gapB:Math.max(0,SB.stop-tg),gapA:Math.max(0,SA.stop-tg)};
+}
+function pct(b,a){if(b===0)return a===0?'0%':'+'+mins(a)+' min';var p=Math.round((a-b)/b*100);return (p>0?'+':'')+p+'%';}
+function buildKpi(){
+  var k=kp();
+  var rows=[
+   ['Changeover time (machine stopped)',SB.stop,SA.stop,true],
+   ['Internal',SB.sumI,SA.sumI,true],
+   ['External during stop',SB.sumE,0,true],
+   ['External while running',0,SA.sumE,false],
+   ['Gap to '+(+data.target||9)+' min target',k.gapB,k.gapA,true]
+  ];
+  var h='<tr><th>Metric</th><th class="n">Before</th><th class="n">After</th><th class="n">Change</th></tr>';
+  rows.forEach(function(r){
+    var better=r[3]?(r[2]<=r[1]):(r[2]>=r[1]);
+    var d=pct(r[1],r[2]);
+    h+='<tr><td>'+r[0]+'</td><td class="n">'+mins(r[1])+'</td><td class="n">'+mins(r[2])+'</td><td class="n '+(r[1]===r[2]?'':(better?'good':'bad'))+'">'+d+'</td></tr>';
+  });
+  h+='<tr><td>Production time recovered per C/O</td><td class="n">-</td><td class="n">'+mins(k.rec)+'</td><td class="n good">'+(k.rec>=0?'+':'')+mins(k.rec)+' min</td></tr>';
+  h+='<tr><td>Extra output at takt '+k.tk+' s</td><td class="n">-</td><td class="n">'+k.pcs+'</td><td class="n good">+'+k.pcs+' pcs</td></tr>';
+  h+='<tr><td colspan="4" style="color:var(--muted);font-size:12px;border-bottom:0">Minutes unless stated.</td></tr>';
+  $('kpi').innerHTML=h;
+}
+function buildSplit(){
+  var k=kp(),mx=Math.max(SB.stop,SA.stop+SA.sumE,k.tg)*1.08||1;
+  var w=function(v){return (v/mx*100)+'%';};
+  var h='';
+  h+='<div class="row"><div>Before</div><div class="track">'+
+     '<div class="seg I" style="left:0;width:'+w(SB.sumI)+'">'+mins(SB.sumI)+'</div>'+
+     '<div class="seg E" style="left:'+w(SB.sumI)+';width:'+w(SB.sumE)+'">'+mins(SB.sumE)+'</div>'+
+     '<div class="tg" style="left:'+w(k.tg)+'"></div></div></div>';
+  h+='<div class="row"><div>After</div><div class="track">'+
+     '<div class="seg I" style="left:0;width:'+w(SA.sumI)+'">'+mins(SA.sumI)+'</div>'+
+     '<div class="seg E run" style="left:'+w(SA.sumI)+';width:'+w(SA.sumE)+'">'+mins(SA.sumE)+'</div>'+
+     '<div class="tg" style="left:'+w(k.tg)+'"></div></div></div>';
+  var tl=function(big,lab,col){return '<div style="background:#17153A;border:1px solid var(--line);border-radius:12px;padding:10px 12px"><div style="font-size:22px;font-weight:800;color:'+col+'">'+big+'</div><div style="font-size:12px;color:var(--muted)">'+lab+'</div></div>';};
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0 4px">'+
+     tl(mins(SB.stop)+' to '+mins(SA.stop)+' min','Changeover, machine stopped','var(--cyan)')+
+     tl(mins(k.gapB)+' to '+mins(k.gapA)+' min','Gap to target','var(--pink)')+
+     tl('+'+k.pcs+' pcs','Extra output per changeover','var(--green)')+'</div>';
+  h+='<p class="note" style="margin:8px 0 0">After: the striped green block is external work done while the machine is running, so it no longer counts as stopped time.</p>';
+  $('split').innerHTML=h;
+}
+function stName(st,k){return st==='slot'?(k==='b'?'Die rack':'Die cart'):STN[st];}
+function buildSheet(){
+  var k=tab,S=k==='b'?SB:SA,cum=0;
+  var h='<table class="'+(edit?'edit':'')+'"><tr><th class="n">No</th><th>Station</th><th>Operation</th><th class="n">Dur (s)</th><th class="n">Cum (min)</th><th>Int/Ext</th></tr>';
+  var order=k==='b'?S.items.slice():S.items.slice().sort(function(a,b){return a.start-b.start;});
+  order.forEach(function(x){
+    var i=x.i;
+    cum+=x.dur;
+    var d=edit?'<input type="number" min="0" step="10" data-i="'+i+'" data-f="dur" value="'+x.dur+'" aria-label="Duration of task '+(i+1)+'">':x.dur;
+    var ty=edit?'<select data-i="'+i+'" data-f="type" aria-label="Type of task '+(i+1)+'"><option value="I"'+(x.type==='I'?' selected':'')+'>Internal</option><option value="E"'+(x.type==='E'?' selected':'')+'>External</option></select>':
+      '<span class="dot '+x.type+'"></span>'+(x.type==='I'?'INT':'EXT');
+    h+='<tr data-row="'+i+'"><td class="n">'+(i+1)+'</td><td>'+stName(x.st,k)+'</td><td>'+esc(x.op)+'</td><td class="n">'+d+'</td><td class="n">'+mins(cum)+'</td><td>'+ty+'</td></tr>';
+  });
+  h+='<tr><td></td><td></td><td><b>Total</b></td><td class="n"><b>'+(S.sumI+S.sumE)+'</b></td><td class="n"><b>'+mins(S.sumI+S.sumE)+'</b></td><td>Int '+mins(S.sumI)+' / Ext '+mins(S.sumE)+'</td></tr></table>';
+  if(edit)h+='<div style="margin-top:10px"><button class="btn" id="resetData">Reset to example data</button></div>';
+  $('sheet').innerHTML=h;
+  if(edit){
+    $('sheet').querySelectorAll('[data-i]').forEach(function(el){
+      el.addEventListener('change',function(){
+        var i=+el.dataset.i,f=el.dataset.f;
+        data.tasks[i][k][f]=f==='dur'?Math.max(0,Math.round(+el.value||0)):el.value;
+        save();rebuild(true);
+      });
+    });
+    $('resetData').addEventListener('click',function(){data=clone(DEF);save();$('target').value=data.target;$('takt').value=data.takt;rebuild(true);});
+  }
+}
+function buildIdeas(){
+  var h='<tr><th></th><th>Idea</th><th class="n">Saving (s)</th></tr>',tot=0;
+  IDEAS.forEach(function(id){
+    var sv=0;
+    id.n.forEach(function(n){
+      var i=n-1,b=SB.items[i],a=SA.items[i];
+      var aStop=a.type==='I'?a.dur:0;
+      sv+=b.dur-aStop;
+    });
+    tot+=sv;
+    h+='<tr><td class="c"><span class="tag">'+id.c+'</span></td><td>'+esc(id.t)+'<div style="color:var(--muted);font-size:12px">Tasks '+id.n.join(', ')+'</div></td><td class="n '+(sv>=0?'good':'bad')+'">'+sv+'</td></tr>';
+  });
+  h+='<tr><td></td><td><b>Total machine-stop time saved</b></td><td class="n"><b>'+tot+'</b></td></tr>';
+  $('ideas').innerHTML=h;
+}
+
+/* ---------- frame update ---------- */
+function laneState(k,S,id){
+  var running=(T<0)||(T>=S.restart);
+  var active=null;
+  S.items.forEach(function(x){if(x.dur>0&&T>=x.start&&T<x.end)active=x;});
+  // press light and die
+  var led=$(id+'Led');led.setAttribute('fill',running?'#4ADE80':'#F87171');
+  var st=$(id==='B'?'stB':'stA');st.className='chip '+(running?'run':'stop');st.textContent=running?'Running':'C/O in progress';
+  var el=Math.max(0,Math.min(T,S.restart));
+  $(id==='B'?'coB':'coA').textContent='C/O '+fmt(el)+' / '+fmt(S.restart);
+  var pc=T>=S.restart?Math.floor((T-S.restart)/Math.max(1,+data.takt||112))+1:0;
+  $(id==='B'?'ptB':'ptA').textContent='Parts after restart: '+pc;
+  // conveyor
+  var off=running?((T*0.4)%22+22)%22:0;
+  $(id+'Conv').setAttribute('transform','translate('+off+',0)');
+  // operator
+  var key=active?active.st:'press';
+  var x=STX[key];
+  var op=$('op'+id);
+  op.style.transform='translate('+x+'px,0px)';
+  // die colour: old die until swapped, new after (simple cue)
+  var done=S.items[5]&&T>=S.items[5].end;
+  $(id+'Die').setAttribute('fill',done?'#22D3EE':'#FCD34D');
+  // caption
+  var nowEl=$(id==='B'?'nowB':'nowA');
+  if(active){nowEl.innerHTML='Now: '+(active.i+1)+'. '+esc(active.op)+' <span class="'+(active.type==='I'?'I':'E')+'">'+(active.type==='I'?'INT':'EXT')+'</span>';}
+  else if(T>=S.restart){nowEl.textContent='Changeover complete. First OK part off the line.';}
+  else if(T<0&&k==='b'){nowEl.textContent='Producing the last parts of the previous run.';}
+  else{nowEl.textContent='';}
+  return active;
+}
+function frame(){
+  var aB=laneState('b',SB,'B'),aA=laneState('a',SA,'A');
+  var g=$('gantt'),px=+g.dataset.px,pw=+g.dataset.pw;
+  var x=px+(T-tmin)/(tmax-tmin)*pw;
+  var h=$('head');if(h){h.setAttribute('x1',x);h.setAttribute('x2',x);}
+  $('scrub').value=T;
+  $('clock').firstChild.nodeValue=(T<0?'-':'')+fmt(Math.abs(T)).replace('-','');
+  // highlight sheet row
+  var act=tab==='b'?aB:aA;
+  $('sheet').querySelectorAll('tr[data-row]').forEach(function(r){r.classList.toggle('active',!!act&&+r.dataset.row===act.i);});
+}
+function tick(ts){
+  if(playing){
+    var dt=(ts-last)/1000;last=ts;
+    T+=dt*speed;
+    if(T>=tmax){T=tmax;setPlaying(false);}
+    frame();
+    requestAnimationFrame(tick);
+  }
+}
+function setPlaying(p){
+  playing=p;var b=$('play');
+  b.textContent=p?'Pause':'Play';b.classList.toggle('paused',p);
+  if(p){if(T>=tmax)T=tmin;last=performance.now();requestAnimationFrame(tick);}
+}
+function rebuild(keepT){
+  buildGantt();buildKpi();buildSplit();buildSheet();buildIdeas();
+  if(!keepT)T=tmin;
+  frame();
+}
+
+/* ---------- wiring ---------- */
+buildScenes();
+$('target').value=data.target;$('takt').value=data.takt;
+rebuild(false);
+$('play').addEventListener('click',function(){setPlaying(!playing);});
+$('reset').addEventListener('click',function(){setPlaying(false);T=tmin;frame();});
+document.querySelectorAll('[data-sp]').forEach(function(b){
+  b.addEventListener('click',function(){
+    speed=+b.dataset.sp;
+    document.querySelectorAll('[data-sp]').forEach(function(x){x.classList.toggle('on',x===b);});
+  });
+});
+$('scrub').addEventListener('input',function(e){T=+e.target.value;frame();});
+$('tabB').addEventListener('click',function(){tab='b';$('tabB').classList.add('on');$('tabA').classList.remove('on');$('tabB').setAttribute('aria-pressed','true');$('tabA').setAttribute('aria-pressed','false');buildSheet();frame();});
+$('tabA').addEventListener('click',function(){tab='a';$('tabA').classList.add('on');$('tabB').classList.remove('on');$('tabA').setAttribute('aria-pressed','true');$('tabB').setAttribute('aria-pressed','false');buildSheet();frame();});
+$('editBtn').addEventListener('click',function(){edit=!edit;$('editBtn').classList.toggle('on',edit);$('editBtn').setAttribute('aria-pressed',edit);$('editBtn').textContent=edit?'Done editing':'Edit data';buildSheet();frame();});
+$('target').addEventListener('change',function(){data.target=Math.max(1,+$('target').value||9);save();rebuild(true);});
+$('takt').addEventListener('change',function(){data.takt=Math.max(1,+$('takt').value||112);save();rebuild(true);});
+document.addEventListener('keydown',function(e){
+  if(e.target&&/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.code==='Space'){e.preventDefault();setPlaying(!playing);}
+});
+})();
+</script>
+</body>
+</html>
