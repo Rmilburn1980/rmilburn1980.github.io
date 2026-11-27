@@ -229,7 +229,11 @@ function metrics(t){
       if(st.lv>=3)claimed++;
       if(st.ok){ok.push(p);counted++;if(st.lv===4)tr++;if(daysBetween(td,st.exp)<=90)expSoon++;}
       if(st.unsigned||st.expired)gaps.push(pn+", "+nm+": level "+st.lv+" not counted, "+st.why+".");
-      if(st.late)gaps.push(pn+", "+nm+": "+st.why+" and the person is still below competent.");});
+      if(st.late)gaps.push(pn+", "+nm+": "+st.why+" and the person is still below competent.");
+      /* As in the builder: an assessor who is in the team should be signed off as able to train others in this skill */
+      var c=cellOf(m,p.id,s.id);
+      if(st.lv>=3&&c.by.trim()&&norm(c.by)!==norm(p.name)){var as=null;m.people.forEach(function(q){if(q.id!==p.id&&norm(q.name)&&norm(q.name)===norm(c.by))as=q;});
+        if(as){var ast=state(m,as,s);if(!(ast.ok&&ast.lv===4))notes.push(pn+", "+nm+": signed off by "+as.name+", who is not signed off as able to train others in this skill. An assessor should be.");}}});
     cov[s.id]={ok:ok.length,tr:tr};
     if(ok.length===1)key[ok[0].id].push(nm);
     needSum+=s.need;okSum+=Math.min(ok.length,s.need);

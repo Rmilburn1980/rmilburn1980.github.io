@@ -293,8 +293,13 @@ var SPEC=[["fracture","Fracture, other than to fingers, thumbs or toes"],["amput
 var DIS=[["carpal","Carpal tunnel syndrome"],["cramp","Severe cramp of the hand or forearm"],["derm","Occupational dermatitis"],["havs","Hand-arm vibration syndrome"],["asthma","Occupational asthma"],["tendon","Tendonitis or tenosynovitis of the hand or forearm"],["cancer","Occupational cancer"],["bio","Disease from exposure to a biological agent"]];
 var SEVA=["Not set","0 No injury or damage","1 First aid only","2 Minor, back at work","3 Lost time","4 Major or specified injury","5 Fatal or life changing"];
 var HOC=["Eliminate","Substitute","Engineering","Administrative","PPE"];
-var BLAME=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|should have|failed to|failure to|irresponsible|complacen\w*|wilful\w*|to blame|at fault|blame\w*)\b/i;
-var HEALTH=/\b(diagnos\w*|medicat\w*|prescri\w*|disabilit\w*|disabled|pregnan\w*|depress\w*|anxiety|mental health|epilep\w*|diabet\w*|asthma|dyslex\w*|hiv|cancer|surgery|operation|sick note|fit note|sickness|illness)\b/i;
+/* Wording checks. Some words always judge a person or describe health; others ("failed to", "at fault", "diagnosis") only do when a person is named */
+var BLAME_HARD=/\b(careless\w*|negligen\w*|lazy|laziness|stupid\w*|idiot\w*|reckless\w*|human error|operator error|user error|irresponsible|complacen\w*|wilful\w*|to blame|blame\w*)\b/i;
+var BLAME_SOFT=/\b(should have|failed to|failure to|at fault)\b/i;
+var HEALTH_HARD=/\b(medicat\w*|prescri\w*|disabilit\w*|disabled|pregnan\w*|depress\w*|anxiety|mental health|epilep\w*|diabet\w*|asthma|dyslex\w*|hiv|cancer|surgery|sick note|fit note|sickness|illness)\b/i;
+var HEALTH_SOFT=/\b(diagnos\w*)\b/i;
+var PERSON=/\b(operators?|operatives?|he|she|they|him|her|them|his|staff|workers?|employees?|drivers?|fitters?|someone|somebody|people|person|team members?|supervisors?|engineers?|technicians?|managers?|crew|visitors?|contractors?|colleagues?|injured person|IP)\b/i;
+function wordMatch(t,hard,soft){var m=t.match(hard);if(m)return m;return PERSON.test(t)?t.match(soft):null;}
 var MAXI=500,MAXA=20;
 var D=blank(),dirty=false,storeOk=true,saveT=null,armed=null,armT=null,draft=null,draftNew=false,period=365;
 function blank(){return {example:false,incidents:[]};}
@@ -444,7 +449,7 @@ function analyse(){
       if(i.actions.some(function(a){return a.status!=="done";}))g(i,"Closed with actions still open.");
     }else if(age>30)n(i,"Open for "+age+" days.");
     /* wording */
-    var txt=[i.desc,i.immediate,i.invNote,i.dopNote,i.rdNote].join(" "),m1=txt.match(BLAME),m2=txt.match(HEALTH);
+    var txt=[i.desc,i.immediate,i.invNote,i.dopNote,i.rdNote].join(" "),m1=wordMatch(txt,BLAME_HARD,BLAME_SOFT),m2=wordMatch(txt,HEALTH_HARD,HEALTH_SOFT);
     if(m1)n(i,"The wording \""+m1[0]+"\" sounds like a judgement of a person. Rewrite it as what was seen or recorded.");
     if(m2)n(i,"The wording \""+m2[0]+"\" may be health detail. Say what happened and what the person cannot do, and keep medical detail in occupational health or HR.");
   });
