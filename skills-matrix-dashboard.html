@@ -305,7 +305,7 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
   <section id="matrix" aria-labelledby="matrix-h">
     <div class="panel">
       <h2 id="matrix-h">Skills by operator, direct team of 11</h2>
-      <p class="note">Each radar shows one operator's share of assigned processes at Operating in each area, against the team average. Dot colours mark the coverage bands. Switch to the matrix for exact counts. Team totals match the verified figures. The split by person and by area is illustrative, and operator names are anonymised.</p>
+      <p class="note">Each radar shows one operator's share of assigned processes at Operating in each area, against the team average. Dot colours mark the coverage bands. Switch to the matrix for exact counts. Team totals match my competency matrix. The split by person and by area is illustrative, and operator names are anonymised.</p>
       <div class="controls">
         <div class="seg" role="group" aria-label="Choose view">
           <button type="button" id="view-radar" aria-pressed="true">Radar per operator</button>
@@ -343,7 +343,7 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
     <div class="charts">
       <figure class="panel" style="margin:0">
         <h3>Skills coverage over two years</h3>
-        <p class="note">Share of assigned processes at Operating status, by quarter. The start point is the first measurement and the end point comes from the matrix. The quarters between are illustrative.</p>
+        <p class="note">Share of assigned processes at Operating status at the first measurement and two years later, from the competency matrix. Only these two points are measured; the straight line between them is not a measured trend.</p>
         <div class="chart-host" id="chart-coverage"></div>
       </figure>
       <figure class="panel" style="margin:0">
@@ -374,15 +374,14 @@ footer { margin: 36px 0 40px; color: var(--muted); font-size: 14px; }
       <ul class="evidence">
         <li><span class="ev-head">Built from scratch</span><span class="ev-body">Built the skills matrix covering 260 processes, 86 of them critical, and led a team of 29.</span></li>
         <li><span class="ev-head">Cross-training that landed</span><span class="ev-body">The 3x3 programme took critical-to-quality SOPs with three or more trained operators from 70% (60 of 86) in September 2025 to 97.7% (84 of 86) by December, and 98.8% (85 of 86) in the latest status. All 36 in Bays 5 to 8 are covered.</span></li>
-        <li><span class="ev-head">Coverage you can verify</span><span class="ev-body">Skills coverage rose from 36% to 86.6% over two years, with 348 of 401 processes at Operating status across my direct team of 11.</span></li>
-        <li><span class="ev-head">Engagement in safety</span><span class="ev-body">108 reports raised through SafetyQube, an EHS management system (102 near misses and hazards, 6 accident reports), which is 33% of the 324 site reports logged from April 2025 to March 2026. All 108 show as closed in the export, 21 of them in one batch on 8 January 2026, so a closed status does not show the risk was removed. One needed investment that was not going to happen because production was transferring from the site, so the risk was left unresolved.</span></li>
+        <li><span class="ev-head">Coverage from the matrix</span><span class="ev-body">Skills coverage rose from 36% to 86.6% over two years, with 348 of 401 processes at Operating status across my direct team of 11.</span></li>
       </ul>
     </div>
   </section>
 </main>
 
 <footer>
-  <div class="wrap">Richard Milburn, operations and continuous improvement. Team totals are verified against the matrix. The person-level and month-level detail is illustrative.</div>
+  <div class="wrap">Richard Milburn, operations and continuous improvement. Team totals are checked against my competency matrix, not independently audited. The split by person and by area is illustrative; the 3x3 monthly figures come from the competency matrix.</div>
 <br>Portfolio evidence prepared by Richard Milburn. It is not an audit report, a certification or advice.Names are anonymised and person-level detail is illustrative.</footer>
 
 <script>
@@ -819,34 +818,65 @@ const DATA = {
   ],
   "coverage": {
     "labels": [
-      "Start",
-      "Q1",
-      "Q2",
-      "Q3",
-      "Q4",
-      "Q5",
-      "Q6",
-      "Q7",
-      "Q8"
+      "First measurement",
+      "Two years on"
     ],
     "values": [
       36,
-      44,
-      53,
-      61,
-      69,
-      75,
-      80,
-      84,
       86.6
     ]
   },
   "cross": {
-    "labels": ["Sep 25", "Oct", "Nov", "Dec", "Jan 26", "Feb", "Mar"],
+    "labels": [
+      "Sep 25",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan 26",
+      "Feb",
+      "Mar",
+      "Latest"
+    ],
     "roles": [
-      { "name": "Actual", "values": [69.8, 90.7, 90.7, 97.7, 97.7, 97.7, 97.7] },
-      { "name": "Plan", "values": [69.8, 89.5, 91.9, 94.2, 96.5, 96.5, 96.5] },
-      { "name": "Target 90%", "values": [90, 90, 90, 90, 90, 90, 90] }
+      {
+        "name": "Actual",
+        "values": [
+          69.8,
+          90.7,
+          90.7,
+          97.7,
+          97.7,
+          97.7,
+          97.7,
+          98.8
+        ]
+      },
+      {
+        "name": "Plan",
+        "values": [
+          69.8,
+          89.5,
+          91.9,
+          94.2,
+          96.5,
+          96.5,
+          96.5,
+          96.5
+        ]
+      },
+      {
+        "name": "Target 90%",
+        "values": [
+          90,
+          90,
+          90,
+          90,
+          90,
+          90,
+          90,
+          90
+        ]
+      }
     ]
   }
 };
@@ -1085,12 +1115,12 @@ function drawCharts() {
   const series = cr.roles.map((r, i) => Object.assign({ name: r.name, values: r.values }, styles[i]));
   const low = series.reduce((a, s, i) => (s.values[0] < series[a].values[0] ? i : a), 0);
   lineChart($('#chart-cross'), {
-    label: 'Critical SOPs with three or more trained operators rose from 70% to 97.7% between September and December 2025',
+    label: 'Critical SOPs with three or more trained operators rose from 70% in September 2025 to 97.7% by December, and 98.8% in the latest status',
     xLabels: cr.labels, yMin: 60, yMax: 100, yTicks: [60, 70, 80, 90, 100], height: 300,
     series,
     labels: [
       { s: low, i: 0, text: '70%', pos: 'below', anchor: 'start' },
-      { s: 0, i: cr.labels.length - 1, text: '97.7%', pos: 'above', anchor: 'end' }
+      { s: 0, i: cr.labels.length - 1, text: cr.roles[0].values[cr.labels.length - 1] + '%', pos: 'above', anchor: 'end' }
     ]
   });
   $('#cross-key').innerHTML = series.map(s => `<li>${swatch(s.color, s.dash)}${s.name}</li>`).join('');
