@@ -558,8 +558,9 @@ function compute(ans,mode){
     factors[k]={name:FACTOR_DEF[k].name,score:v,level:levelOf(v,FACTOR_DEF[k].cuts),code:ans[codeKey]};
   });
   var Xmax=mode==='static'?162:176;
-  var pct=Math.round(X/Xmax*100);
-  var ol=pct<=40?0:pct<=50?1:pct<=70?2:3;
+  var exact=X/Xmax*100,pct=Math.round(exact*10)/10;
+  /* Band from the exact figure, so 70.45% is "above 70", not rounded down into "change soon" */
+  var ol=exact<=40?0:exact<=50?1:exact<=70?2:3;
   return {mode:mode,areas:areas,factors:factors,X:X,Xmax:Xmax,pct:pct,overallLevel:ol,flagged:flagged};
 }
 window.QEC={compute:compute};
