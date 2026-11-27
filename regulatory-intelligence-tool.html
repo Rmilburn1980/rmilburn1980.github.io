@@ -290,19 +290,19 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
       o:["After an auditor or regulator raises it","Someone checks agency websites by hand","Consultants or a dedicated tool tell us","Verified alerts from one system"] },
     { short:"Visibility across sites", t:"How complete is your view across every site and country?",
       o:["Probably big gaps","Main countries only","Mostly covered, some gaps","Full and kept current"] },
-    { short:"Countries tracked", t:"How many countries do you actively track?", hint:"A single-country site can still score well on the other nine.",
+    { short:"Countries tracked", t:"How many countries do you actively track?", hint:"Choose Not applicable for a single-country operation. It is then left out of the score.", na:"Not applicable: single country or small site",
       o:["1 to 5","6 to 15","16 to 30","31 or more"] },
     { short:"Applicability", t:"When law changes, how do you decide which sites it applies to?",
       o:["One person's judgement","A structured checklist","The tool filters by site","Automatic, expert checked and tied to specific obligations"] },
     { short:"Missed requirements", t:"How often are requirements missed or found late?",
-      o:["6 or more times a year","3 to 6 times a year","1 or 2 times a year","Rarely or never"] },
+      o:["6 or more times a year","3 to 5 times a year","1 or 2 times a year","Rarely or never"] },
     { short:"Time spent tracking", t:"How much team time goes on manually tracking and researching change?",
       o:["Over 60%","40 to 60%","20 to 40%","Under 20%"] },
     { short:"Time to understand impact", t:"How long does it take to work out what a change means for your sites?",
       o:["Weeks to months","One to two weeks","A few days","Same day, with expert interpretation built in"] },
     { short:"Horizon visibility", t:"How far ahead do you see regulatory change?",
       o:["After it takes effect","Major changes only","We monitor proactively","We forecast and plan around what is coming"] },
-    { short:"Frameworks tracked", t:"How many regulatory frameworks do you track across EHS topics?", hint:"Scale matters less for a small single-site operation.",
+    { short:"Frameworks tracked", t:"How many regulatory frameworks do you track across EHS topics?", hint:"Choose Not applicable for a small single-site operation. It is then left out of the score.", na:"Not applicable: single country or small site",
       o:["Fewer than 20","20 to 50","51 to 100","Over 100"] },
     { short:"Joined-up data", t:"Is EHS compliance data held alongside product and chemical compliance data?",
       o:["Not looked at it","Completely separate systems","Separate, with some overlap","One shared source"] }
@@ -352,12 +352,14 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
         q.o.map(function(txt,j){
           var sel = state['q'+i]===j+1;
           return '<label class="q-opt'+(sel?' sel':'')+'"><input type="radio" name="riq'+i+'" value="'+(j+1)+'"'+(sel?' checked':'')+'><span>'+txt+'</span></label>';
-        }).join('')+'</div></div>';
+        }).join('')+
+        (q.na ? '<label class="q-opt'+(state['q'+i]==='na'?' sel':'')+'"><input type="radio" name="riq'+i+'" value="na"'+(state['q'+i]==='na'?' checked':'')+'><span>'+q.na+'</span></label>' : '')+
+        '</div></div>';
     }).join('');
     $('qList').querySelectorAll('input[type=radio]').forEach(function(r){
       r.addEventListener('change', function(e){
         var idx = e.target.name.replace('riq','');
-        state['q'+idx] = parseInt(e.target.value,10);
+        state['q'+idx] = e.target.value==='na' ? 'na' : parseInt(e.target.value,10);
         save();
         var group = e.target.closest('.q-opts');
         group.querySelectorAll('.q-opt').forEach(function(o){ o.classList.remove('sel'); });
@@ -376,18 +378,26 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.q-opt:focus-within{o
       renderStrip(null);
       return;
     }
-    var total = QUESTIONS.reduce(function(s,_,i){ return s + state['q'+i]; }, 0);
+    var nums = QUESTIONS.map(function(_,i){ return state['q'+i]; }).filter(function(v){ return typeof v==='number'; });
+    var raw = nums.reduce(function(s,v){ return s+v; }, 0), na = QUESTIONS.length - nums.length;
+    /* Each answer is 1 to 4, so scale the answered questions back to the 10 to 40 range */
+    var total = na ? Math.round(raw*QUESTIONS.length/nums.length) : raw;
     var band = BANDS.filter(function(b){ return total>=b.min && total<=b.max; })[0];
-    var lvl = LEVELS[band.lvl-1];
+    var capped = false, lvlN = band.lvl;
+    /* Level 3 means knowing which changes apply to which site, so one person's judgement holds the result at Level 2 */
+    if(state.q3===1 && lvlN>2){ lvlN = 2; capped = true; }
+    var lvl = LEVELS[lvlN-1];
     var gaps = QUESTIONS.map(function(q,i){ return {short:q.short, v:state['q'+i]}; })
-      .filter(function(x){ return x.v<=2; }).sort(function(a,b){ return a.v-b.v; }).slice(0,3);
+      .filter(function(x){ return typeof x.v==='number' && x.v<=2; }).sort(function(a,b){ return a.v-b.v; }).slice(0,3);
     body.innerHTML =
       '<div class="score-head"><div class="score-num">'+total+' <small>/ 40</small></div><div class="score-lvl">Level '+lvl.n+': '+lvl.name+'</div></div>'+
+      (na ? '<p class="meta" style="margin:0 0 8px">'+na+' question'+(na>1?'s':'')+' marked not applicable, so the score is scaled from '+raw+' of '+(nums.length*4)+'.</p>' : '')+
+      (capped ? '<p class="meta" style="margin:0 0 8px">The total points to Level '+band.lvl+', but deciding which sites a change applies to by one person\'s judgement holds the result at Level 2. Level 3 starts with knowing which changes hit which site.</p>' : '')+
       '<p class="score-note">'+lvl.looks+'</p>'+
       '<div class="tag">What typically holds a workplace here</div><ul class="list">'+lvl.holds.map(function(h){return '<li>'+h+'</li>';}).join('')+'</ul>'+
       '<div class="tag" style="margin-top:12px">Next moves</div><ul class="list">'+lvl.moves.map(function(h){return '<li>'+h+'</li>';}).join('')+'</ul>'+
       (gaps.length ? '<p class="meta" style="margin:12px 0 0">Lowest scoring areas: '+gaps.map(function(g){return g.short;}).join(', ')+'</p>' : '')+
-      '<p class="meta" style="margin:8px 0 0">Score bands (my own): L1 10 to 15, L2 16 to 21, L3 22 to 28, L4 29 to 34, L5 35 to 40.</p>';
+      '<p class="meta" style="margin:8px 0 0">Score bands (my own): L1 10 to 15, L2 16 to 21, L3 22 to 28, L4 29 to 34, L5 35 to 40. Not applicable answers are left out and the total scaled to 40. Applicability decided by one person\'s judgement caps the result at Level 2.</p>';
     renderStrip(lvl.n);
   }
 
