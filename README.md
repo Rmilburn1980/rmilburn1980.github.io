@@ -10,7 +10,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## What is in it
 
-31 tools. Every link opens the working page.
+32 tools. Every link opens the working page.
 
 ### Operations
 | Tool | What it does |
@@ -23,6 +23,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Daily Management Board](https://rmilburn1980.github.io/daily-management-board.html) | A tier meeting board. Safety, Quality, Delivery, Cost and People readings against target, the reason for each miss, actions with owners, escalation, and checks for missing readings, misses with no action and actions not independently verified. Opens with example data. |
 | [Kaizen and Improvement Idea Log](https://rmilburn1980.github.io/kaizen-idea-log.html) | Ideas from the floor with owner, expected benefit, decision and result. Flags ideas waiting too long, people not told the outcome, and benefits claimed without an independent check. Opens with example data. |
 | [Schedule Adherence](https://rmilburn1980.github.io/schedule-adherence.html) | Planned against actual output by hour or day, with a reason for every miss. Blocks on plan, units short and over, and a Pareto of reasons. Opens with example data. |
+| [Shift Handover Issue Log](https://rmilburn1980.github.io/handover-issue-tool.html) | Prototype. Every issue has an owner, action and due date. Safety first, a second person checks every safety fix, repeats are matched with the reason shown, and each incoming shift signs that it has read the open issues. Backup and restore included. Opens with demo issues. |
 
 ### Continuous improvement
 | Tool | What it does |
