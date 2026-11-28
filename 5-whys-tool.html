@@ -71,6 +71,9 @@ button.small{padding:5px 10px;font-size:14px}
 .rootpick{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--text);margin:0;cursor:pointer}
 .rootpick input{width:auto;accent-color:var(--accent);transform:scale(1.2)}
 .warn{border:1px solid var(--warn);background:#2B2210;color:var(--warn);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.95rem}
+.handoff{border:1px solid var(--warn);background:#2B2210;border-radius:var(--radius);padding:12px 14px;margin:0 0 16px}
+.handoff p{margin:0 0 8px}
+.nextl{margin:0;padding-left:20px}.nextl li{margin:0 0 6px}
 .ok{border:1px solid var(--good);background:#0B2A1E;color:var(--good);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:.95rem}
 .readback ol{margin:8px 0 0;padding-left:22px}
 .readback li{margin-bottom:4px;overflow-wrap:anywhere}
@@ -161,9 +164,11 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
     <button class="danger" id="btnClear" type="button">Clear all</button>
     <input type="file" id="fileIn" accept="application/json,.json" hidden>
   </div>
+  <div id="handoffBox" class="handoff noprint" hidden></div>
 
   <section class="card">
     <h2>1. Problem statement</h2>
+    <p class="sub" id="srcLine" hidden></p>
     <div class="grid g3">
       <div><label for="p_area">Process / line / area</label><textarea id="p_area" data-p="area"></textarea></div>
       <div><label for="p_date">Date raised</label><input id="p_date" type="date" data-p="date"></div>
@@ -218,7 +223,8 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
       <tbody id="actBody"></tbody>
     </table>
     </div>
-    <div class="btnrow noprint" style="margin-top:8px;margin-bottom:0"><button id="btnAddAct" type="button">+ Add action</button></div>
+    <div class="btnrow noprint" style="margin-top:8px;margin-bottom:0"><button id="btnAddAct" type="button">+ Add action</button><button id="btnSendAct" type="button">Send actions to the corrective action tracker</button></div>
+    <p class="sub noprint" id="sendNote" role="status" style="margin:8px 0 0"></p>
   </section>
 
   <section class="card">
@@ -236,6 +242,17 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
           <option value="ineffective">Not effective, restart</option>
         </select></div>
     </div>
+  </section>
+
+  <section class="card noprint">
+    <h2>Next steps</h2>
+    <ul class="nextl">
+      <li>Follow each action to a checked close in the <a href="corrective-action-tracker.html">Corrective action tracker</a>. Use the button under Actions to send them.</li>
+      <li>Prove the fix held with a <a href="spc-control-chart.html">SPC control chart</a> of the measure in step 5.</li>
+      <li>Lock in the new method with a <a href="standard-work-sheet.html">Standard work sheet</a>.</li>
+      <li>Need a one-page write-up for a bigger problem? The <a href="a3-problem-solving.html">A3 sheet</a> can copy this analysis.</li>
+      <li>Several causes at once, or someone was hurt? Use the <a href="causal-tree-builder.html">Causal tree builder</a> instead.</li>
+    </ul>
   </section>
 
   <section class="card checklistcard noprint">
@@ -262,13 +279,15 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
   'use strict';
   var KEY='fivewhys-tool-v1';
   var mkWhy=function(){return {why:'',evidence:'',status:''};};
+  var newAid=function(){return 1+Math.floor(Math.random()*999);};
   var mkAct=function(){return {text:'',type:'Corrective',owner:'',due:'',status:'Open'};};
   var blank=function(){return {
     problem:{area:'',date:'',owner:'',statement:'',size:''},
     whys:[mkWhy(),mkWhy(),mkWhy(),mkWhy(),mkWhy()],
     rootIdx:-1,rootText:'',category:'',reverse:'',
     actions:[mkAct()],
-    verify:{measure:'',target:'',checkDate:'',result:'',effective:''}
+    verify:{measure:'',target:'',checkDate:'',result:'',effective:''},
+    aid:newAid(),ex:false,source:null
   };};
   var S=blank();
   var STATUS=[['','How do you know?'],['gemba','Verified at the gemba'],['data','Data or records'],['assumed','Assumption, unchecked']];
@@ -291,7 +310,7 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
     },250);
   }
   function load(){
-    try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.whys&&o.problem){S=o;}}}catch(e){}
+    try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.whys&&o.problem){S=o;if(!(S.aid>=1&&S.aid<=999))S.aid=newAid();}}}catch(e){}
   }
   function autosize(el){el.style.height='auto';el.style.height=(el.scrollHeight+2)+'px';}
   function autosizeAll(){var t=document.querySelectorAll('textarea');for(var i=0;i<t.length;i++)autosize(t[i]);}
@@ -505,12 +524,13 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
         {text:'Stores also check the MRB system as a backup, so quality is not a single point of failure.',type:'Preventive',owner:'Stores',due:'',status:'Done'},
         {text:'Production told to put any defective or damaged in production part on the shortfall system as soon as it is found.',type:'Corrective',owner:'Production',due:'',status:'Done'}
       ],
-      verify:{measure:'Recurrence of running out of front panels because damaged stock was still on the MRB system',target:'No recurrence',checkDate:'',result:'It did not happen again',effective:'effective'}
+      verify:{measure:'Recurrence of running out of front panels because damaged stock was still on the MRB system',target:'No recurrence',checkDate:'',result:'It did not happen again',effective:'effective'},
+      aid:newAid(),ex:true,source:null
     };
     fullRender();save();
   }
 
-  function fullRender(){bindStatic();renderWhys();renderActs();derive();autosizeAll();}
+  function fullRender(){bindStatic();renderWhys();renderActs();derive();autosizeAll();if($('srcLine'))showSource();}
 
   /* ---------- buttons ---------- */
   $('btnAddWhy').onclick=function(){if(S.whys.length<8){S.whys.push(mkWhy());renderWhys();derive();save();}};
@@ -525,12 +545,72 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
   };
   $('btnPrint').onclick=function(){autosizeAll();window.print();};
   window.addEventListener('beforeprint',autosizeAll);
-  $('btnExport').onclick=function(){
+  function exportBackup(){
     var blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
     var a=document.createElement('a');a.href=URL.createObjectURL(blob);
     a.download='5-whys-backup.json';document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},500);
+  }
+  $('btnExport').onclick=exportBackup;
+
+  /* ---------- links to other tools ---------- */
+/* Hand-offs between portfolio tools: a short queue in this browser only. A person always chooses whether to use one. */
+  var HANDOFF={KEY:"rm-handoff-v1",
+   all:function(){try{var q=JSON.parse(localStorage.getItem(this.KEY));return Array.isArray(q)?q.filter(function(x){return x&&x.to&&x.data&&x.from}):[]}catch(e){return []}},
+   put:function(list){try{localStorage.setItem(this.KEY,JSON.stringify(list.slice(-20)));return true}catch(e){return false}},
+   send:function(to,from,data){var q=this.all().filter(function(x){return !(x.to===to&&x.from.tool===from.tool&&x.from.ref===from.ref)});
+    q.push({id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),to:to,made:new Date().toISOString(),from:from,data:data});return this.put(q)},
+   forMe:function(to){return this.all().filter(function(x){return x.to===to})},
+   drop:function(id){this.put(this.all().filter(function(x){return x.id!==id}))}};
+  
+  function cleanSrc(x){if(!x||typeof x!=='object')return null;var f=function(v,n){return String(v||'').slice(0,n);};var u=f(x.url,80);return {tool:f(x.tool,60),ref:f(x.ref,60),url:/^[a-z0-9-]+\.html$/.test(u)?u:'',made:f(x.made,30)};}
+  function hasWork(){return !!(S.problem.statement.trim()||S.whys.some(function(w){return w.why.trim();})||S.rootText.trim());}
+  function showSource(){
+    var p=$('srcLine'),x=S.source;p.textContent='';p.hidden=!x;if(!x)return;
+    p.appendChild(document.createTextNode('Started from '+x.ref+' in the '));
+    if(x.url){var a=el('a',{href:x.url,text:x.tool});p.appendChild(a);}else p.appendChild(document.createTextNode(x.tool));
+    p.appendChild(document.createTextNode('. Check the statement and add what you have seen yourself.'));
+  }
+  var later={};
+  function showHandoff(){
+    var box=$('handoffBox'),list=HANDOFF.forMe('5-whys').filter(function(x){return !later[x.id];});
+    box.textContent='';box.hidden=!list.length;if(!list.length)return;
+    var x=list[list.length-1],d=x.data;
+    box.appendChild(el('p',{},[el('strong',{text:'Sent from the '+x.from.tool+', '+x.from.ref+'. '}),document.createTextNode('"'+trunc(d.statement,160)+'"'+(list.length>1?' ('+(list.length-1)+' more waiting)':''))]));
+    box.appendChild(el('p',{class:'sub',text:hasWork()?'Using it starts a new analysis. Your current one downloads as a backup first.':'Using it fills in the problem statement. Nothing is filled in until you choose.'}));
+    var use=el('button',{type:'button',class:'primary',text:'Start a 5 Whys from this'}),not=el('button',{type:'button',text:'Not now'}),bin=el('button',{type:'button',text:'Discard it'});
+    use.onclick=function(){
+      function go(){
+        if(hasWork())exportBackup();
+        var b=blank();b.problem.area=String(d.area||'').slice(0,200);b.problem.date=/^\d{4}-\d{2}-\d{2}$/.test(d.date||'')?d.date:'';b.problem.owner=String(d.owner||'').slice(0,100);
+        b.problem.statement=String(d.statement||'').slice(0,1000);b.problem.size=String(d.size||'').slice(0,400);b.ex=d.ex===true;b.source=cleanSrc({tool:x.from.tool,ref:x.from.ref,url:x.from.url,made:x.made});
+        S=b;HANDOFF.drop(x.id);fullRender();save();showHandoff();$('p_statement')&&$('p_statement').focus();
+      }
+      if(hasWork())askConfirm('Start a new 5 Whys from '+x.from.ref+'? Your current analysis downloads as a backup first, then it is replaced.',go);else go();
+    };
+    not.onclick=function(){later[x.id]=1;showHandoff();};
+    bin.onclick=function(){HANDOFF.drop(x.id);showHandoff();};
+    box.appendChild(el('div',{class:'btnrow',style:'margin:0'},[use,not,bin]));
+  }
+  $('btnSendAct').onclick=function(){
+    var note=$('sendNote'),TK='rmilburn-action-tracker-v1',BASE=6000000+S.aid*1000;
+    var list=S.actions.map(function(a,i){return {a:a,i:i};}).filter(function(x){return x.a.text.trim();}).slice(0,999);
+    if(!list.length){note.textContent='There are no actions with wording to send.';return;}
+    askConfirm('Send '+list.length+' action'+(list.length===1?'':'s')+' to the corrective action tracker? Sending again updates them there.',function(){
+      var cur={actions:[]};try{var dd=JSON.parse(localStorage.getItem(TK));if(dd&&Array.isArray(dd.actions))cur=dd;}catch(e){}
+      var kept=cur.actions.filter(function(z){return !(z&&z.id>=BASE&&z.id<BASE+1000);});
+      var src=S.source?' Started from '+S.source.ref+' in the '+S.source.tool+'.':'';
+      list.forEach(function(x){var a=x.a,done=a.status==='Done'||a.status==='Verified';
+        kept.push({id:BASE+x.i,example:S.ex===true,title:a.text.trim().slice(0,140),detail:('From a 5 Whys: '+(S.problem.statement||'')+(S.rootText?' Root cause: '+S.rootText:'')+src).slice(0,400),source:'5 Whys',hoc:'',riskId:null,riskText:'',
+          owner:a.owner.trim(),raised:S.problem.date||new Date().toISOString().slice(0,10),due:a.due,status:done?'done':'open',doneDate:'',doneNote:'',verifier:'',verDate:'',verNote:'',result:'',cancel:'',log:[]});});
+      try{localStorage.setItem(TK,JSON.stringify({actions:kept,timescales:cur.timescales}));
+        note.textContent='Sent '+list.length+' action'+(list.length===1?'':'s')+' to the tracker. Checks are not carried across, so each one needs its own check there.';
+        note.appendChild(document.createTextNode(' '));note.appendChild(el('a',{href:'corrective-action-tracker.html',text:'Open the tracker'}));
+      }catch(e){note.textContent='This browser would not let the page write to the tracker. Nothing was sent.';}
+    });
   };
+  window.addEventListener('storage',function(e){if(e.key===HANDOFF.KEY)showHandoff();});
+
   $('btnImport').onclick=function(){$('fileIn').click();};
   $('fileIn').onchange=function(e){
     var f=e.target.files[0];if(!f)return;
@@ -543,7 +623,7 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
         S={problem:Object.assign(b.problem,o.problem),whys:o.whys.slice(0,8).map(function(w){return Object.assign(mkWhy(),w);}),
            rootIdx:typeof o.rootIdx==='number'?o.rootIdx:-1,rootText:o.rootText||'',category:o.category||'',reverse:o.reverse||'',
            actions:(Array.isArray(o.actions)&&o.actions.length?o.actions:[mkAct()]).map(function(a){return Object.assign(mkAct(),a);}),
-           verify:Object.assign(b.verify,o.verify||{})};
+           verify:Object.assign(b.verify,o.verify||{}),aid:(o.aid>=1&&o.aid<=999)?o.aid:newAid(),ex:o.ex===true,source:cleanSrc(o.source)};
         if(S.whys.length<2)S.whys=[mkWhy(),mkWhy()];
         if(S.rootIdx>=S.whys.length)S.rootIdx=-1;
         fullRender();save();
@@ -553,7 +633,7 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
     r.readAsText(f);
   };
 
-  load();fullRender();
+  load();fullRender();showHandoff();
 })();
 </script>
 <style>.rm-disc{max-width:900px;margin:24px auto;padding:0 16px 24px;font:13px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color:#c9c8e6;text-align:center}@media print{.rm-disc{color:#000!important}}</style>

@@ -277,6 +277,13 @@ footer a{color:var(--cyan)}
 .figrow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
 .rg{flex:0 0 auto;width:88px;height:44px;color:var(--c)}
 .case .chart{margin:0;min-width:0;grid-column:1/-1}
+.path-steps{margin:0;padding:0 18px 16px 42px;display:grid;gap:8px}
+.path-steps li{color:var(--muted);font-size:.92rem}
+.path-steps a{font-weight:700}
+.path-steps span{display:block}
+.passes{display:inline-block;margin-left:6px;font-size:.72rem;font-weight:700;color:var(--c);border:1px solid var(--c);border-radius:99px;padding:0 7px;vertical-align:1px}
+.cases .lead .passes{--c:var(--cyan)}
+.note-try{color:var(--muted);font-size:.92rem;margin:14px 0 0}.note-try a{color:var(--cyan)}
 .case .chart svg{display:block;width:100%;max-width:440px;height:auto;margin:6px 0 4px}
 .case .chart figcaption{font-size:.82rem;color:var(--muted)}
 .chart .gl{stroke:rgba(185,184,218,.28);stroke-width:1}
@@ -459,6 +466,88 @@ footer a{color:var(--cyan)}
         <figure class="chart"><h3>Hazard and near miss reports a month</h3><svg viewBox="0 0 290 172" role="img" aria-label="Bar chart of hazard and near miss reports raised each month from April 2025 to February 2026: 23 in April 2025, rising to a peak of 48 in November 2025."><rect class="b1" x="10.0" y="85.7" width="17.3" height="54.3" rx="3"/><text class="lb" x="18.6" y="80.7" text-anchor="middle">23</text><text class="ax" x="18.6" y="154" text-anchor="middle">A</text><rect class="b0" x="35.3" y="99.9" width="17.3" height="40.1" rx="3"/><text class="ax" x="43.9" y="94.9" text-anchor="middle">17</text><text class="ax" x="43.9" y="154" text-anchor="middle">M</text><rect class="b0" x="60.5" y="73.9" width="17.3" height="66.1" rx="3"/><text class="ax" x="69.2" y="68.9" text-anchor="middle">28</text><text class="ax" x="69.2" y="154" text-anchor="middle">J</text><rect class="b0" x="85.8" y="52.7" width="17.3" height="87.3" rx="3"/><text class="ax" x="94.5" y="47.7" text-anchor="middle">37</text><text class="ax" x="94.5" y="154" text-anchor="middle">J</text><rect class="b0" x="111.1" y="107.0" width="17.3" height="33.0" rx="3"/><text class="ax" x="119.7" y="102.0" text-anchor="middle">14</text><text class="ax" x="119.7" y="154" text-anchor="middle">A</text><rect class="b0" x="136.4" y="45.6" width="17.3" height="94.4" rx="3"/><text class="ax" x="145.0" y="40.6" text-anchor="middle">40</text><text class="ax" x="145.0" y="154" text-anchor="middle">S</text><rect class="b0" x="161.6" y="102.2" width="17.3" height="37.8" rx="3"/><text class="ax" x="170.3" y="97.2" text-anchor="middle">16</text><text class="ax" x="170.3" y="154" text-anchor="middle">O</text><rect class="b1" x="186.9" y="26.7" width="17.3" height="113.3" rx="3"/><text class="lb" x="195.5" y="21.7" text-anchor="middle">48</text><text class="ax" x="195.5" y="154" text-anchor="middle">N</text><rect class="b0" x="212.2" y="78.6" width="17.3" height="61.4" rx="3"/><text class="ax" x="220.8" y="73.6" text-anchor="middle">26</text><text class="ax" x="220.8" y="154" text-anchor="middle">D</text><rect class="b0" x="237.5" y="88.1" width="17.3" height="51.9" rx="3"/><text class="ax" x="246.1" y="83.1" text-anchor="middle">22</text><text class="ax" x="246.1" y="154" text-anchor="middle">J</text><rect class="b0" x="262.7" y="104.6" width="17.3" height="35.4" rx="3"/><text class="ax" x="271.4" y="99.6" text-anchor="middle">15</text><text class="ax" x="271.4" y="154" text-anchor="middle">F</text><line class="gl" x1="6" x2="284" y1="140" y2="140"/><text class="ax" x="10" y="168">Apr 2025</text><text class="ax" x="280" y="168" text-anchor="end">Feb 2026</text></svg><figcaption>Site-wide reports raised in SafetyQube, April 2025 to February 2026. Before SafetyQube, reporting relied on a paper form that was rarely filled in.</figcaption></figure><figure class="chart"><h3>Site accidents a month, on average</h3><svg viewBox="0 0 290 62" role="img" aria-label="Bar chart. Site accidents averaged about 2.5 a month from August 2024 to March 2025 and about 1.5 a month from April 2025 to February 2026."><text class="ax" x="8" y="17">Aug 2024 to Mar 2025</text><rect class="b0" x="128" y="6" width="108.3" height="15" rx="3"/><text class="lb" x="242.3" y="18">2.5</text><text class="ax" x="8" y="43">Apr 2025 to Feb 2026</text><rect class="b1" x="128" y="32" width="65.0" height="15" rx="3"/><text class="lb" x="199.0" y="44">1.5</text></svg><figcaption>20 accidents from August 2024 to March 2025, then 17 from April 2025 to February 2026, by date of occurrence in the SafetyQube export.</figcaption></figure><div><h3>The evidence</h3><ul><li><a href="ehs-dashboard/">EHS readiness dashboard</a></li><li><a href="incident-log.html">Incident and near-miss log</a></li><li><a href="risk-assessment-dashboard.html">Risk assessment dashboard</a></li></ul></div>
       </div>
     </details>
+  </section>
+
+  <section class="wrap cases" id="problems" aria-labelledby="pr-h">
+    <h2 id="pr-h">Start from the problem</h2>
+    <p class="lead">Pick the problem you are facing. Each path lists the tools in the order I would use them and the question each one answers. Steps marked <b class="passes">passes it on</b> can send their details straight to the next tool in your browser, and the next tool asks before using them.</p>
+    <details class="case" style="--c:var(--green)">
+      <summary>Output is below plan<span>Find where the time goes, then fix the biggest loss</span></summary>
+      <ol class="path-steps">
+        <li><a href="schedule-adherence.html">Schedule adherence</a><span>When and where are we short of plan?</span></li>
+        <li><a href="oee-downtime-log.html">OEE and downtime log</a> <b class="passes">passes it on</b><span>Is it availability, performance or quality, and what is the top stop reason?</span></li>
+        <li><a href="smed-simulator.html">SMED changeover simulator</a><span>If changeovers lead: how much shorter could they be?</span></li>
+        <li><a href="toc-simulator.html">TOC bottleneck simulator</a><span>If running slow leads: which station limits output?</span></li>
+        <li><a href="line-balancing.html">Line balancing</a><span>How do we share the work against takt?</span></li>
+        <li><a href="standard-work-sheet.html">Standard work sheet</a><span>How do we lock in the new way of working?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--pink)">
+      <summary>The same fault keeps coming back<span>Find the cause, fix it, and prove it stays fixed</span></summary>
+      <ol class="path-steps">
+        <li><a href="handover-issue-tool.html">Shift handover issue log</a> <b class="passes">passes it on</b><span>How often has it come back, and who owns it?</span></li>
+        <li><a href="5-whys-tool.html">5 Whys root cause analysis</a> <b class="passes">passes it on</b><span>Why does it happen, with evidence at each step?</span></li>
+        <li><a href="a3-problem-solving.html">A3 problem solving sheet</a> <b class="passes">passes it on</b><span>Does it need a one-page plan? It can copy the 5 Whys in.</span></li>
+        <li><a href="corrective-action-tracker.html">Corrective action tracker</a><span>Is every action done, and checked by someone else?</span></li>
+        <li><a href="spc-control-chart.html">SPC control chart</a><span>Has the fix really held?</span></li>
+        <li><a href="gemba-walk-tracker.html">Gemba walk tracker</a><span>Does it look right when we go back and see?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--pink)">
+      <summary>Quality is falling<span>Separate a real change from noise before acting</span></summary>
+      <ol class="path-steps">
+        <li><a href="spc-control-chart.html">SPC control chart</a><span>Is this a real signal or normal variation?</span></li>
+        <li><a href="5-whys-tool.html">5 Whys root cause analysis</a><span>What is causing the change?</span></li>
+        <li><a href="dmaic-fpy-dashboard.html">DMAIC improvement board</a><span>How does a full improvement project run, from define to control?</span></li>
+        <li><a href="standard-work-sheet.html">Standard work sheet</a><span>How do we stop it slipping back?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--rose)">
+      <summary>Someone was hurt, or nearly was<span>Record it, investigate it, and close every action with a check</span></summary>
+      <ol class="path-steps">
+        <li><a href="incident-log.html">Incident and near-miss tracker</a> <b class="passes">passes it on</b><span>What happened, and is it reportable under RIDDOR?</span></li>
+        <li><a href="causal-tree-builder.html">Causal tree builder</a> <b class="passes">passes it on</b><span>What combination of causes led to it?</span></li>
+        <li><a href="swiss-cheese-dashboard.html">Swiss Cheese layers of defence</a><span>Which defences failed, and how often do they line up?</span></li>
+        <li><a href="corrective-action-tracker.html">Corrective action tracker</a><span>Is every action done, and checked by someone else?</span></li>
+        <li><a href="risk-assessment-dashboard.html">Risk assessment register</a><span>Does the risk assessment need to change?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--rose)">
+      <summary>A risky job is coming up<span>Plan the controls before the work starts</span></summary>
+      <ol class="path-steps">
+        <li><a href="risk-assessment-dashboard.html">Risk assessment register</a><span>What could go wrong, and how bad is it?</span></li>
+        <li><a href="rams-dashboard.html">RAMS dashboard</a><span>Is the method statement complete and signed?</span></li>
+        <li><a href="qec-ergonomics-dashboard.html">Quick Exposure Check</a><span>If there is manual handling: what is the strain on the body?</span></li>
+        <li><a href="bowtie-builder.html">Bow-tie builder</a><span>Which barriers stop it happening, and which limit the harm?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--pink)">
+      <summary>The line cannot hit takt<span>Measure the work, then rebalance it</span></summary>
+      <ol class="path-steps">
+        <li><a href="cycle-time-waste-tool.html">Cycle time and waste analysis</a><span>How long does each task really take, and how much is waste?</span></li>
+        <li><a href="line-balancing.html">Line balancing</a><span>Which stations are over takt?</span></li>
+        <li><a href="standard-work-sheet.html">Standard work sheet</a><span>Does the operator's sequence fit the cycle?</span></li>
+        <li><a href="sipoc-vsm-tool.html">SIPOC and value stream map</a><span>Where does work wait between steps?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--green)">
+      <summary>Only one person can do the job<span>Find the single points of failure and train cover</span></summary>
+      <ol class="path-steps">
+        <li><a href="skills-matrix-builder.html">Skills Matrix Builder</a><span>Who is signed off on what, and who checked them?</span></li>
+        <li><a href="company-skills-dashboard.html">Company Skills Dashboard</a><span>Which critical skills have too few people?</span></li>
+        <li><a href="standard-work-sheet.html">Standard work sheet</a><span>What is the method to train against?</span></li>
+      </ol>
+    </details>
+    <details class="case" style="--c:var(--green)">
+      <summary>Running the shift day to day<span>Keep the routine tight and the issues moving</span></summary>
+      <ol class="path-steps">
+        <li><a href="daily-management-board.html">Daily management board</a><span>Did we hit our measures, and what is the action on each miss?</span></li>
+        <li><a href="handover-issue-tool.html">Shift handover issue log</a><span>What does the next shift need to know?</span></li>
+        <li><a href="gemba-walk-tracker.html">Gemba walk tracker</a><span>What did we see on the floor, and who owns it?</span></li>
+        <li><a href="kaizen-idea-log.html">Kaizen and improvement idea log</a><span>Which ideas from the team are we acting on?</span></li>
+      </ol>
+    </details>
+    <p class="note-try"><b>Try a chain:</b> open the <a href="handover-issue-tool.html">Shift handover issue log</a>, go to Open, and on the trailing air hose press <i>Find the root cause</i>. The 5 Whys opens with the problem filled in. Add the whys and actions, then send the actions to the <a href="corrective-action-tracker.html">Corrective action tracker</a>, where each one needs its own check before it closes. The demo data is made up.</p>
   </section>
 
   <section class="group" id="operations" style="--c:var(--green)">
