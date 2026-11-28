@@ -10,7 +10,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 
 ## What is in it
 
-30 tools. Every link opens the working page.
+31 tools. Every link opens the working page.
 
 ### Operations
 | Tool | What it does |
@@ -36,6 +36,7 @@ A hub of working tools and dashboards built from 21 years on a caravan productio
 | [Standard Work Combination Sheet](https://rmilburn1980.github.io/standard-work-sheet.html) | Walking, manual and machine time on one timeline against takt. Cycle, waiting, and flags for missing key points, independent check, approval and review date. Opens with example data. |
 | [Cycle Time and Waste Analysis](https://rmilburn1980.github.io/cycle-time-waste-tool.html) | Time observation study with value-added split, takt comparison and a TIMWOODS waste breakdown. |
 | [SMED Changeover Simulator](https://rmilburn1980.github.io/smed-simulator.html) | The same die change before and after a kaizen: internal and external work, machine-stop time saved, gap to target and extra output at takt. Illustrative data you can edit. |
+| [TOC Bottleneck Simulator](https://rmilburn1980.github.io/toc-simulator.html) | Find the station that limits output, test Drum-Buffer-Rope release, buffer and stoppage settings, and track where the bottleneck moves through the 5 Focusing Steps. Illustrative data you can edit. |
 | [Standard Minute Value Tool](https://rmilburn1980.github.io/SMV-TOOL/) | Time study, SMV, line efficiency and production targets, with MOST sequence models. |
 | [Gemba Walk Tracker](https://rmilburn1980.github.io/gemba-walk-tracker.html) | Log what you see on a walk and trace each observation to its owner, the evidence that closed it and the re-walk that checked the fix. Opens with example data. |
 | [7S Audit Dashboard](https://rmilburn1980.github.io/7s-audit-dashboard/) | Workplace organisation audit covering Sort, Set, Shine, Standardize, Sustain, Safety and Spirit. |
