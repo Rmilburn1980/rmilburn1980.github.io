@@ -239,6 +239,15 @@ function getSuggestions(note,ar){
 }
 function decide(s,d){s.decisions.push(d);if(s.decisions.length>500)s.decisions=s.decisions.slice(-500)}
 
+/* Hand-offs between portfolio tools: a short queue in this browser only. A person always chooses whether to use one. */
+var HANDOFF={KEY:"rm-handoff-v1",
+ all:function(){try{var q=JSON.parse(localStorage.getItem(this.KEY));return Array.isArray(q)?q.filter(function(x){return x&&x.to&&x.data&&x.from}):[]}catch(e){return []}},
+ put:function(list){try{localStorage.setItem(this.KEY,JSON.stringify(list.slice(-20)));return true}catch(e){return false}},
+ send:function(to,from,data){var q=this.all().filter(function(x){return !(x.to===to&&x.from.tool===from.tool&&x.from.ref===from.ref)});
+  q.push({id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),to:to,made:new Date().toISOString(),from:from,data:data});return this.put(q)},
+ forMe:function(to){return this.all().filter(function(x){return x.to===to})},
+ drop:function(id){this.put(this.all().filter(function(x){return x.id!==id}))}};
+
 /* ---------- messages, errors and focus ---------- */
 function say(t){$("msg").textContent=t+(storageOK?"":" This browser is not saving, so changes will be lost on closing. Download a backup from Handover.")}
 var eid=0;
@@ -455,7 +464,16 @@ function viewOpen(root){
    commit(function(s){var j=find(s,i.id);if(!j)return false;j.status="closed";j.fix=v.fix;j.closedBy=v.by;j.closedOn=iso();j.checkedBy=isS(j)?v.chk:"";j.checkHow=isS(j)?v.how:"";
     j.updates.push({at:now(),date:iso(),text:"Closed. Fix: "+v.fix+(isS(j)?". Checked by "+v.chk+": "+v.how:""),repeat:false,by:v.by})});
    render({focus:"open"});say("Issue #"+i.id+" closed. The fix is now searchable.")}})));
-  c.appendChild(cls);c.appendChild(history(i));root.appendChild(c)});
+  c.appendChild(cls);
+  var nxt=el("div",{"class":"actions"},el("button",{type:"button",text:repeats(i)?"It keeps coming back: find the root cause (5 Whys)":"Find the root cause (5 Whys)",onclick:function(){
+   var first=i.updates[0]||{},lastU=i.updates[i.updates.length-1]||{},n=repeats(i)+1;
+   var size="Reported "+plural(n,"time")+(n>1?", from "+uk(first.date)+" to "+uk(lastU.date):", on "+uk(first.date))+"."+(isS(i)?" Safety issue"+(i.sev?", "+SEVS[i.sev].toLowerCase()+" risk":"")+(i.made?". Made safe: "+i.made:"")+".":"");
+   var ok=HANDOFF.send("5-whys",{tool:"Shift handover log",ref:"issue #"+i.id,url:"handover-issue-tool.html"},{area:i.area,date:first.date||iso(),owner:i.owner,statement:i.note,size:size,ex:i.demo===true});
+   if(!ok){say("This browser would not let the page pass the issue on. Nothing was sent.");return}
+   commit(function(s){var j=find(s,i.id);if(j)j.updates.push({at:now(),date:iso(),text:"Sent to the 5 Whys tool to find the root cause",repeat:false,by:""})});
+   location.href="5-whys-tool.html"}}));
+  if(isS(i))nxt.appendChild(el("p",{"class":"muted",style:"flex-basis:100%;margin:0"},"Someone hurt, or a serious near miss? Record it in the ",el("a",{href:"incident-log.html",text:"incident tracker"})," and investigate it with a ",el("a",{href:"causal-tree-builder.html",text:"causal tree"}),"."));
+  c.appendChild(nxt);c.appendChild(history(i));root.appendChild(c)});
 }
 
 /* ---------- Fixes ---------- */

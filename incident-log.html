@@ -582,9 +582,9 @@ function buildDlg(){
     lab("Where is it recorded (for example a Causal Tree file name)?",h("input",{type:"text",id:"fInvNote",value:draft.invNote,maxlength:"300"}))));
   if(serious(draft,r))f3.appendChild(h("p",{class:"sm",text:"This is serious or reportable, so it needs a completed investigation before it can be closed."}));
   var tools=h("div",{class:"toolbar",style:"margin-top:8px"});
+  tools.appendChild(h("button",{class:"btn sec small",type:"button",text:"Start a causal tree from this event",onclick:function(){pull();sendToTree(draft);}}));
   tools.appendChild(h("button",{class:"btn sec small",type:"button",text:"Download a Causal Tree starter file",onclick:function(){pull();downloadStarter(draft);}}));
-  tools.appendChild(h("a",{class:"btn sec small",href:"causal-tree-builder.html",text:"Open the Causal Tree Builder"}));
-  f3.appendChild(tools);f3.appendChild(h("p",{class:"sm",text:"In the Causal Tree Builder, press Load data file and choose the starter file. It replaces whatever is open there, so save your current work first."}));
+  f3.appendChild(tools);f3.appendChild(h("p",{class:"sm",text:"Start a causal tree opens the Causal Tree Builder in this browser and asks before using the event. Save this event first so nothing is lost. Use the starter file to move the event to another device."}));
   b.appendChild(f3);
   /* actions */
   var f4=h("fieldset",{},h("legend",{text:"4. Actions"}));
@@ -666,8 +666,21 @@ function renderChecks(){
 }
 
 /* ---------- exports and links ---------- */
+function starterEvent(i){return {title:(i.desc||"").slice(0,300),date:i.date,place:i.place.slice(0,200),sev:Math.max(0,Math.min(5,(i.sevA||1)-1)),lead:"",reviewer:"",suff:"",reported:false,example:i.ex===true};}
+/* Hand-offs between portfolio tools: a short queue in this browser only. A person always chooses whether to use one. */
+var HANDOFF={KEY:"rm-handoff-v1",
+ all:function(){try{var q=JSON.parse(localStorage.getItem(this.KEY));return Array.isArray(q)?q.filter(function(x){return x&&x.to&&x.data&&x.from}):[]}catch(e){return []}},
+ put:function(list){try{localStorage.setItem(this.KEY,JSON.stringify(list.slice(-20)));return true}catch(e){return false}},
+ send:function(to,from,data){var q=this.all().filter(function(x){return !(x.to===to&&x.from.tool===from.tool&&x.from.ref===from.ref)});
+  q.push({id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),to:to,made:new Date().toISOString(),from:from,data:data});return this.put(q)},
+ forMe:function(to){return this.all().filter(function(x){return x.to===to})},
+ drop:function(id){this.put(this.all().filter(function(x){return x.id!==id}))}};
+function sendToTree(i){
+  var ok=HANDOFF.send("causal-tree",{tool:"Incident log",ref:ref(i),url:"incident-log.html"},starterEvent(i));
+  if(ok)location.href="causal-tree-builder.html";else alert("This browser would not let the page pass the event on. Use the starter file instead.");
+}
 function downloadStarter(i){
-  var r=riddor(i);var ev={title:(i.desc||"").slice(0,300),date:i.date,place:i.place.slice(0,200),sev:Math.max(0,Math.min(5,(i.sevA||1)-1)),lead:"",reviewer:"",suff:"",reported:false,example:i.ex===true};
+  var ev=starterEvent(i);
   download("causal-tree-"+ref(i).toLowerCase()+".json",JSON.stringify({app:"causal-tree-builder",version:1,saved:new Date().toISOString(),data:{event:ev,nodes:[],actions:[]}},null,2),"application/json");
 }
 $("btnTrack").onclick=function(){

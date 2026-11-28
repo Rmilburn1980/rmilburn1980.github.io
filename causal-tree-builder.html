@@ -240,6 +240,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <button class="btn sec" id="btnPrint">Print report</button>
     <input type="file" id="file" accept="application/json,.json" style="position:absolute;left:-9999px" tabindex="-1" aria-label="Load data file">
   </div>
+  <div id="handoffBox" hidden style="border:1px solid #facc15;border-radius:12px;padding:12px 16px;margin:0 0 14px"></div>
   <div class="legend" aria-label="Key">
     <span><i class="sw" style="background:var(--lv-i)"></i>Immediate cause</span>
     <span><i class="sw" style="background:var(--lv-u)"></i>Underlying cause</span>
@@ -394,6 +395,7 @@ function clean(d){
     o.actions.push({id:id,node:ids[node]?node:null,text:str(a.text,400),owner:str(a.owner,100),due:dOk(a.due),hoc:HOC.indexOf(a.hoc)>=0?a.hoc:"",status:a.status==="done"?"done":"open",verBy:str(a.verBy,100),verOn:dOk(a.verOn),ex:a.ex===true});
   });
   var aid={};o.actions=o.actions.filter(function(a){if(aid[a.id]||ids[a.id])return false;aid[a.id]=1;return true;});
+  if(d.source&&typeof d.source==="object"){var su=str(d.source.url,80);o.source={tool:str(d.source.tool,60),ref:str(d.source.ref,60),url:/^[a-z0-9-]+\.html$/.test(su)?su:""};}
   return o;
 }
 
@@ -572,7 +574,7 @@ function renderTree(){
   var F=flags(),box=$("tree");box.innerHTML="";
   var e=S.event,fl=F.byNode.e||[];
   var ec=h("div",{class:"nc ev"+(fl.some(function(x){return !x.note;})?" hasgap":""),id:"node-e"});
-  add(ec,h("div",{class:"nh"},h("span",{class:"chip c-type",text:"Event"}),e.example?h("span",{class:"chip c-no",text:"Example"}):null));
+  add(ec,h("div",{class:"nh"},h("span",{class:"chip c-type",text:"Event"}),e.example?h("span",{class:"chip c-no",text:"Example"}):null,S.source?h("span",{class:"chip c-type",text:"From "+S.source.ref+" ("+S.source.tool.toLowerCase()+")"}):null));
   add(ec,h("label",{class:"sm"},"What happened, and what was the actual outcome?",ta(e.title,"et",function(v){e.title=v;touch();renderStatusLite();})));
   var f=h("div",{class:"nf"});
   add(f,field("Date of the event",inp("date",e.date,"ed",function(v){e.date=dOk(v);touch();renderStatusLite();})));
@@ -792,10 +794,36 @@ function example(){
 }
 
 /* ---------- start ---------- */
+/* Hand-offs between portfolio tools: a short queue in this browser only. A person always chooses whether to use one. */
+var HANDOFF={KEY:"rm-handoff-v1",
+ all:function(){try{var q=JSON.parse(localStorage.getItem(this.KEY));return Array.isArray(q)?q.filter(function(x){return x&&x.to&&x.data&&x.from}):[]}catch(e){return []}},
+ put:function(list){try{localStorage.setItem(this.KEY,JSON.stringify(list.slice(-20)));return true}catch(e){return false}},
+ send:function(to,from,data){var q=this.all().filter(function(x){return !(x.to===to&&x.from.tool===from.tool&&x.from.ref===from.ref)});
+  q.push({id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),to:to,made:new Date().toISOString(),from:from,data:data});return this.put(q)},
+ forMe:function(to){return this.all().filter(function(x){return x.to===to})},
+ drop:function(id){this.put(this.all().filter(function(x){return x.id!==id}))}};
+var later={};
+function showHandoff(){
+  var box=$("handoffBox"),list=HANDOFF.forMe("causal-tree").filter(function(x){return !later[x.id];});box.innerHTML="";box.hidden=!list.length;if(!list.length)return;
+  var x=list[list.length-1],d=x.data,busy=!S.event.example&&(S.nodes.length||S.event.title.trim()||S.actions.length);
+  add(box,h("p",{style:"margin:0 0 6px"},h("strong",{text:"Sent from the "+x.from.tool+", "+x.from.ref+". "}),"\u201c"+short(String(d.title||""),160)+"\u201d"+(list.length>1?" ("+(list.length-1)+" more waiting)":"")));
+  add(box,h("p",{class:"sm",style:"margin:0 0 8px",text:busy?"Using it starts a new investigation. Your current one downloads as a data file first.":"Using it fills in the event. Nothing is filled in until you choose."}));
+  var row=h("div",{class:"toolbar",style:"margin:0"});
+  add(row,h("button",{class:"btn",type:"button",text:"Start a causal tree from this",onclick:function(){
+    if(busy&&!confirm("Start a new investigation from "+x.from.ref+"? Your current one downloads as a data file first, then it is replaced."))return;
+    if(busy)$("btnSave").click();
+    S=clean({event:{title:d.title,date:d.date,place:d.place,sev:d.sev,example:d.example===true},nodes:[],actions:[],source:{tool:x.from.tool,ref:x.from.ref,url:x.from.url}});
+    HANDOFF.drop(x.id);touch();rerender();showTab("tree");showHandoff();var t=document.querySelector('[data-k="et"]');if(t)t.focus();}}),
+    h("button",{class:"btn sec",type:"button",text:"Not now",onclick:function(){later[x.id]=1;showHandoff();}}),
+    h("button",{class:"btn sec",type:"button",text:"Discard it",onclick:function(){HANDOFF.drop(x.id);showHandoff();}}));
+  add(box,row);
+}
+window.addEventListener("storage",function(e){if(e.key===HANDOFF.KEY)showHandoff();});
 var saved=load();if(saved)S=saved;else{S=example();saveNow();}
 var ui=uiGet();
 renderAll();renderSave();
 showTab(["tree","actions","checks","guide"].indexOf(ui.tab)>=0?ui.tab:"tree");
+showHandoff();
 window.__ct={flags:flags,state:function(){return S;},clean:clean,example:example,set:function(x){S=clean(x);rerender();}};
 })();
 </script>

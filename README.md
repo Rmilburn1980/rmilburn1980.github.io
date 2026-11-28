@@ -8,6 +8,15 @@ Live site: https://rmilburn1980.github.io/
 
 A hub of working tools and dashboards built from 21 years on a caravan production line, for Operations Manager, Continuous Improvement and EHS or Production Supervisor roles. Every tool is a single HTML page. There is no build step, no server of mine and no sign-in. Open a page and use it.
 
+## Start from the problem
+
+The hub opens with eight problem paths, such as "Output is below plan" and "Someone was hurt, or nearly was". Each lists the tools in the order I would use them and the question each one answers. Some tools pass their details straight to the next one in your browser, and the next tool always asks before using them:
+
+- Shift handover issue log or OEE and downtime log to the 5 Whys
+- 5 Whys, A3 sheet, incident log and causal tree to the Corrective action tracker
+- Incident log to the Causal tree builder
+- 5 Whys into the A3 sheet
+
 ## What is in it
 
 32 tools. Every link opens the working page.

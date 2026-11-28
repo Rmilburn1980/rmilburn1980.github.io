@@ -43,6 +43,7 @@ input:focus,select:focus,textarea:focus,.btn:focus-visible,nav button:focus-visi
 .btn.sec:hover{border-color:var(--accent)}
 .btn.danger{background:transparent;color:#ff8f8f;border:1px solid #ff8f8f}
 .btn.danger.armed{background:var(--crit);color:var(--ink);border-color:var(--crit)}
+.nextl{margin:0;padding-left:20px}.nextl li{margin:0 0 8px}
 .btn.small{padding:5px 10px;font-size:.78rem;min-height:32px}
 .linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit;font-size:.8rem;padding:2px 0}
 .banner{background:var(--panel2);border:1px solid var(--med);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.88rem}
@@ -243,6 +244,7 @@ footer{padding:20px;text-align:center;color:var(--muted);font-size:.8rem}
     <p class="sm">Each row is a share of planned production time. Availability loss is stop time. Performance loss is time spent running below the ideal rate. Quality loss is the time spent making units that were rejected.</p></div>
   <div class="card"><h2>Downtime Pareto</h2><div id="paretoWrap"></div><div class="tablewrap"><table id="paretoTable"></table></div>
     <p class="sm" id="paretoNote"></p></div>
+  <div class="card"><h2>Next step</h2><div id="nextStep"></div></div>
   <div class="card"><h2>By line</h2><div class="tablewrap"><table id="lineTable"></table></div></div>
   <div class="card"><h2>By week</h2><div class="tablewrap"><table id="weekTable"></table></div></div>
 </section>
@@ -438,6 +440,38 @@ function kpi(n,l,cls){return h("div",{class:"kpi "+(cls||"")},h("div",{class:"n"
 function tbl(el,heads,rows,numFrom){el.innerHTML="";var tr=h("tr");heads.forEach(function(x,i){add(tr,h("th",{class:i>=numFrom?"num":"",scope:"col",text:x}));});add(el,h("thead",{},tr));var tb=h("tbody");
   rows.forEach(function(r){var t=h("tr");r.forEach(function(c,i){add(t,h(i===0?"th":"td",{class:i>=numFrom?"num":"",scope:i===0?"row":null,style:i===0?"text-transform:none;letter-spacing:0;font-size:.86rem;color:var(--text);background:transparent;white-space:normal":null},c));});add(tb,t);});
   if(!rows.length)add(tb,h("tr",{},h("td",{colspan:heads.length,class:"sm",text:"Nothing to show for this period."})));add(el,tb);}
+/* Hand-offs between portfolio tools: a short queue in this browser only. A person always chooses whether to use one. */
+var HANDOFF={KEY:"rm-handoff-v1",
+ all:function(){try{var q=JSON.parse(localStorage.getItem(this.KEY));return Array.isArray(q)?q.filter(function(x){return x&&x.to&&x.data&&x.from}):[]}catch(e){return []}},
+ put:function(list){try{localStorage.setItem(this.KEY,JSON.stringify(list.slice(-20)));return true}catch(e){return false}},
+ send:function(to,from,data){var q=this.all().filter(function(x){return !(x.to===to&&x.from.tool===from.tool&&x.from.ref===from.ref)});
+  q.push({id:"h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),to:to,made:new Date().toISOString(),from:from,data:data});return this.put(q)},
+ forMe:function(to){return this.all().filter(function(x){return x.to===to})},
+ drop:function(id){this.put(this.all().filter(function(x){return x.id!==id}))}};
+function renderNext(p,items,tot){
+  var box=$("nextStep");box.innerHTML="";var ul=h("ul",{class:"nextl"});
+  function li(){var l=h("li",{});for(var i=0;i<arguments.length;i++)add(l,arguments[i]);add(ul,l);}
+  function a(href,t){return h("a",{href:href,text:t});}
+  if(!p.n){add(box,h("p",{class:"sm",text:"Add runs to see where to go next."}));return;}
+  var pl=p.planned,losses=pl>0?[["A",p.stopMin],["P",p.run-p.ideal],["Q",p.ideal-p.goodMin]].sort(function(x,y){return y[1]-x[1];}):[],big=losses.length?losses[0][0]:"";
+  var top=items[0],per=period?"the last "+period+" days":"all records",where=lineF||"all lines";
+  if(top&&top.k==="none")li("The biggest block of stop time has no reason recorded. Record a reason for every stop before acting on the Pareto.");
+  else if(top){
+    var lab=reasonLabel(top.k),share=pct(top.m/tot);
+    li(h("strong",{text:lab+" is the top recorded stop reason: "+Math.round(top.m)+" minutes, "+share+" of recorded stop time. "}),
+      h("button",{class:"btn sec small",type:"button",text:"Find its root cause in the 5 Whys",onclick:function(){
+        var ok=HANDOFF.send("5-whys",{tool:"OEE and downtime log",ref:"top stop reason, "+where+", "+per,url:"oee-downtime-log.html"},
+          {area:where,date:today(),owner:"",statement:lab+" was the top recorded stop reason on "+where+" over "+per+".",size:Math.round(top.m)+" minutes of stop time, "+share+" of recorded stops, across "+p.n+" counted runs.",ex:D.example===true});
+        if(ok)location.href="5-whys-tool.html";else alert("This browser would not let the page pass the reason on. Nothing was sent.");}}));
+    if(top.k==="changeover")li("Changeovers lead the losses. Model a shorter one with the ",a("smed-simulator.html","SMED changeover simulator"),".");
+    if(top.k==="labour")li("Waiting for people or cover points at skills. Check who can cover each job in the ",a("skills-matrix-builder.html","Skills matrix builder"),".");
+    if(top.k==="material")li("Waiting for material is a flow problem as much as a stop. Map it in the ",a("sipoc-vsm-tool.html","SIPOC and value stream map"),".");
+  }
+  if(big==="P")li("Running below the ideal rate is the largest loss. Find the station that limits output with the ",a("toc-simulator.html","TOC bottleneck simulator"),", then share the work with ",a("line-balancing.html","Line balancing"),".");
+  if(big==="Q")li("Rejected units are the largest loss. Check whether the reject rate has really changed with a ",a("spc-control-chart.html","SPC control chart"),".");
+  li("Follow every fix to a checked close in the ",a("corrective-action-tracker.html","Corrective action tracker"),".");
+  add(box,ul);
+}
 function renderDash(){
   fillLines();
   var runs=D.runs.filter(inPeriod),p=pooled(runs,lineF),k=$("kpis");k.innerHTML="";
@@ -457,6 +491,7 @@ function renderDash(){
   items.forEach(function(it,i){cum+=it.m;pr.push([String(i+1)+" "+reasonLabel(it.k),Math.round(it.m)+" min",pct(it.m/tot),pct(cum/tot)]);});
   tbl($("paretoTable"),["Reason","Minutes","Share","Cumulative"],pr,1);
   if(items.length)add(wrap,pareto(items,tot));
+  renderNext(p,items,tot);
   $("paretoNote").textContent=items.length?"Counts "+Math.round(tot)+" recorded stop minutes. The Pareto only shows stops somebody wrote down. Short stops that were not recorded show up as performance loss above."+(Math.round(tot)!==Math.round(p.stopMin)?" It also counts stops from runs left out of the OEE figures for other reasons, so its total differs from the availability loss in the table above ("+Math.round(p.stopMin)+" min).":""):"No stops recorded in this period.";
   /* by line */
   var lines=[];runs.forEach(function(r){var l=r.line.trim();if(l&&lines.indexOf(l)<0)lines.push(l);});lines.sort();
