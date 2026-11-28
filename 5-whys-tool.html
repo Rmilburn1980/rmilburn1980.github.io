@@ -261,7 +261,7 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
   </section>
 
   <p class="foot">5 Whys Root Cause Tool &middot; Continuous Improvement toolkit.<br>
-  Data saves automatically in this browser only. It will not appear on another device or browser. Use Export backup and Import backup to move an analysis between them. The example is based on a real stoppage on Line 8.</p>
+  Data saves automatically in this browser only. It will not appear on another device or browser. Use Export backup and Import backup to move an analysis between them. The example is based on a real stoppage on Line 8. The action dates and the check date were not recorded at the time, so the completeness check shows them as gaps.</p>
 </div>
 
 <div class="confirm-overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmMsg" hidden>
@@ -520,11 +520,11 @@ table.actions td{padding:0 6px 8px 0;vertical-align:top}
       rootText:'The rejection process had no quality review step and the MRB system does not flag rejected parts, so damaged stock stayed on the system and nobody was alerted.',
       category:'Method or process design',reverse:'yes',
       actions:[
-        {text:'Quality instructed to check the shortfall system for any line stopping parts and whether they need taking off the MRB system.',type:'Corrective',owner:'Quality',due:'',status:'Done'},
-        {text:'Stores also check the MRB system as a backup, so quality is not a single point of failure.',type:'Preventive',owner:'Stores',due:'',status:'Done'},
-        {text:'Production told to put any defective or damaged in production part on the shortfall system as soon as it is found.',type:'Corrective',owner:'Production',due:'',status:'Done'}
+        {text:'Quality instructed to check the shortfall system for any line stopping parts and whether they need taking off the MRB system. Dates not recorded at the time.',type:'Corrective',owner:'Quality',due:'',status:'Done'},
+        {text:'Stores also check the MRB system as a backup, so quality is not a single point of failure. Dates not recorded at the time.',type:'Preventive',owner:'Stores',due:'',status:'Done'},
+        {text:'Production told to put any defective or damaged in production part on the shortfall system as soon as it is found. Dates not recorded at the time.',type:'Corrective',owner:'Production',due:'',status:'Done'}
       ],
-      verify:{measure:'Recurrence of running out of front panels because damaged stock was still on the MRB system',target:'No recurrence',checkDate:'',result:'It did not happen again',effective:'effective'},
+      verify:{measure:'Recurrence of running out of front panels because damaged stock was still on the MRB system',target:'No recurrence',checkDate:'',result:'It did not happen again. The check date and the period checked were not recorded at the time.',effective:'effective'},
       aid:newAid(),ex:true,source:null
     };
     fullRender();save();
