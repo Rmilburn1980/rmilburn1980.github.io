@@ -525,6 +525,7 @@ footer a{color:var(--cyan)}
       <summary>The line cannot hit takt<span>Measure the work, then rebalance it</span></summary>
       <ol class="path-steps">
         <li><a href="cycle-time-waste-tool.html">Cycle time and waste analysis</a><span>How long does each task really take, and how much is waste?</span></li>
+        <li><a href="SMV-TOOL/">Standard minute value tool</a><span>What should each job take, and what target does that set?</span></li>
         <li><a href="line-balancing.html">Line balancing</a><span>Which stations are over takt?</span></li>
         <li><a href="standard-work-sheet.html">Standard work sheet</a><span>Does the operator's sequence fit the cycle?</span></li>
         <li><a href="sipoc-vsm-tool.html">SIPOC and value stream map</a><span>Where does work wait between steps?</span></li>
@@ -544,6 +545,7 @@ footer a{color:var(--cyan)}
         <li><a href="daily-management-board.html">Daily management board</a><span>Did we hit our measures, and what is the action on each miss?</span></li>
         <li><a href="handover-issue-tool.html">Shift handover issue log</a><span>What does the next shift need to know?</span></li>
         <li><a href="gemba-walk-tracker.html">Gemba walk tracker</a><span>What did we see on the floor, and who owns it?</span></li>
+        <li><a href="7s-audit-dashboard/">7S audit review</a><span>Is the workplace organised, and is it staying that way?</span></li>
         <li><a href="kaizen-idea-log.html">Kaizen and improvement idea log</a><span>Which ideas from the team are we acting on?</span></li>
       </ol>
     </details>
@@ -871,6 +873,8 @@ footer a{color:var(--cyan)}
     {id:"ci",label:"Continuous Improvement"},
     {id:"ehs",label:"EHS and Supervisor"}
   ];
+  /* An earlier SQCDP dashboard could keep an API key in this site's storage. That feature is gone, so clear it here too. */
+  try{localStorage.removeItem("anthropic_api_key_v1");localStorage.removeItem("ai_insights_v1");}catch(e){}
   var panels=roles.map(function(r){return document.getElementById(r.id);});
   if(panels.some(function(p){return !p;}))return;
 
